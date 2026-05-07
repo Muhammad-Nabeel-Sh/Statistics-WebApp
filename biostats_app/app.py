@@ -851,6 +851,9 @@ def render_latex(formula_text):
 
 def render_test_widget(test_name):
     """Render interactive widget for specific statistical test."""
+
+    # One Sample Tests
+
     if test_name == "One-sample t-test":
         import plotly.graph_objects as go
         from scipy.stats import ttest_1samp
@@ -1191,6 +1194,271 @@ def render_test_widget(test_name):
 
         st.plotly_chart(fig, use_container_width=True)
 
+    # Categorial Tests
+    elif test_name == "Chi-Square Test":
+        import plotly.graph_objects as go
+        from scipy.stats import chi2_contingency
+
+        st.subheader("Interactive Chi-Square Test of Independence")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        a = st.slider("Cell A", 1, 100, 40)
+        b = st.slider("Cell B", 1, 100, 20)
+        c = st.slider("Cell C", 1, 100, 10)
+        d = st.slider("Cell D", 1, 100, 30)
+
+        # =========================
+        # TABLE
+        # =========================
+
+        table = np.array(
+            [
+                [a, b],
+                [c, d],
+            ]
+        )
+
+        chi2, p, dof, expected = chi2_contingency(table)
+
+        # =========================
+        # STATS
+        # =========================
+
+        st.latex(rf"\chi^2 = {chi2:.3f}")
+
+        st.write(f"Degrees of Freedom = {dof}")
+
+        st.write(f"p-value = {p:.5f}")
+
+        # =========================
+        # HEATMAP
+        # =========================
+
+        fig = go.Figure(
+            data=go.Heatmap(
+                z=table,
+                text=table,
+                texttemplate="%{text}",
+            )
+        )
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=550,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "McNemar's Test":
+        import plotly.graph_objects as go
+        from statsmodels.stats.contingency_tables import mcnemar
+
+        st.subheader("Interactive McNemar's Test")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        yes_yes = st.slider("Yes → Yes", 0, 100, 40)
+
+        yes_no = st.slider("Yes → No", 0, 100, 10)
+
+        no_yes = st.slider("No → Yes", 0, 100, 30)
+
+        no_no = st.slider("No → No", 0, 100, 20)
+
+        # =========================
+        # TABLE
+        # =========================
+
+        table = np.array(
+            [
+                [yes_yes, yes_no],
+                [no_yes, no_no],
+            ]
+        )
+
+        result = mcnemar(table)
+
+        # =========================
+        # STATS
+        # =========================
+
+        st.latex(rf"\chi^2 = {result.statistic:.3f}")
+
+        st.write(f"p-value = {result.pvalue:.5f}")
+
+        # =========================
+        # HEATMAP
+        # =========================
+
+        fig = go.Figure(
+            data=go.Heatmap(
+                z=table,
+                text=table,
+                texttemplate="%{text}",
+            )
+        )
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=550,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "Cochran's Q Test":
+        import pandas as pd
+        import plotly.graph_objects as go
+        from statsmodels.stats.contingency_tables import cochrans_q
+
+        st.subheader("Interactive Cochran's Q Test")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        prob1 = st.slider(
+            "Condition 1 Success Probability",
+            0.0,
+            1.0,
+            0.3,
+            0.01,
+        )
+
+        prob2 = st.slider(
+            "Condition 2 Success Probability",
+            0.0,
+            1.0,
+            0.5,
+            0.01,
+        )
+
+        prob3 = st.slider(
+            "Condition 3 Success Probability",
+            0.0,
+            1.0,
+            0.7,
+            0.01,
+        )
+
+        subjects = st.slider(
+            "Subjects",
+            10,
+            300,
+            100,
+        )
+
+        # =========================
+        # DATA
+        # =========================
+
+        np.random.seed(42)
+
+        c1 = np.random.binomial(1, prob1, subjects)
+
+        c2 = np.random.binomial(1, prob2, subjects)
+
+        c3 = np.random.binomial(1, prob3, subjects)
+
+        data = np.column_stack([c1, c2, c3])
+
+        result = cochrans_q(data)
+
+        # =========================
+        # STATS
+        # =========================
+
+        st.latex(rf"Q = {result.statistic:.3f}")
+
+        st.write(f"p-value = {result.pvalue:.5f}")
+
+        # =========================
+        # PLOT
+        # =========================
+
+        means = data.mean(axis=0)
+
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Bar(
+                x=["Condition 1", "Condition 2", "Condition 3"],
+                y=means,
+            )
+        )
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=550,
+            yaxis=dict(range=[0, 1]),
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "Fisher's Exact Test":
+        import plotly.graph_objects as go
+        from scipy.stats import fisher_exact
+
+        st.subheader("Interactive Fisher's Exact Test")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        a = st.slider("Cell A", 0, 50, 8)
+
+        b = st.slider("Cell B", 0, 50, 2)
+
+        c = st.slider("Cell C", 0, 50, 1)
+
+        d = st.slider("Cell D", 0, 50, 9)
+
+        # =========================
+        # TABLE
+        # =========================
+
+        table = np.array(
+            [
+                [a, b],
+                [c, d],
+            ]
+        )
+
+        odds_ratio, p = fisher_exact(table)
+
+        # =========================
+        # STATS
+        # =========================
+
+        st.latex(rf"OR = {odds_ratio:.3f}")
+
+        st.write(f"p-value = {p:.5f}")
+
+        # =========================
+        # HEATMAP
+        # =========================
+
+        fig = go.Figure(
+            data=go.Heatmap(
+                z=table,
+                text=table,
+                texttemplate="%{text}",
+            )
+        )
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=550,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    # Parametric Two Sample Tests
+
     elif test_name == "Student's t-test (Independent)":
         import plotly.graph_objects as go
         from scipy.stats import ttest_ind
@@ -1386,6 +1654,8 @@ def render_test_widget(test_name):
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+    # Parametric Multiple Group Tests
 
     elif test_name == "One-way ANOVA":
         import plotly.graph_objects as go
@@ -1599,6 +1869,8 @@ def render_test_widget(test_name):
 
         st.plotly_chart(fig, use_container_width=True)
 
+    # Non-parametric Two Sample Tests
+
     elif test_name == "Wilcoxon Signed-Rank Test":
         import plotly.graph_objects as go
         from scipy.stats import wilcoxon
@@ -1744,6 +2016,8 @@ def render_test_widget(test_name):
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+    # Non-parametric Multiple Group Tests
 
     elif test_name == "Kruskal-Wallis Test":
         import plotly.graph_objects as go
@@ -1966,6 +2240,8 @@ def render_test_widget(test_name):
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+    # Correlation and Association Tests
 
     elif test_name == "Pearson Correlation":
         st.subheader("Interactive Pearson Correlation")
@@ -2218,6 +2494,8 @@ def render_test_widget(test_name):
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+    # Regression Tests
 
     elif test_name == "Logistic Regression":
 
