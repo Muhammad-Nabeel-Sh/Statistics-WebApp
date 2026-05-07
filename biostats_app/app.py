@@ -1,149 +1,361 @@
 import streamlit as st
 
+RULES = [
+    # Comparison Tests
+    {
+        "name": "One-sample t-test",
+        "objective": "Comparison",
+        "dep_var": "Continuous",
+        "ind_var": "None",
+        "groups": "1",
+        "relation_type": "any",
+        "distribution": "Normal",
+    },
+    {
+        "name": "One-sample z-test",
+        "objective": "Comparison",
+        "dep_var": "Continuous",
+        "ind_var": "None",
+        "groups": "1",
+        "relation_type": "any",
+        "distribution": "Normal",
+    },
+    {
+        "name": "One-sample Proportion Test",
+        "objective": "Comparison",
+        "dep_var": "Binary/Dichotomous" or "Categorical",
+        "ind_var": "None",
+        "groups": "1",
+        "relation_type": "any",
+        "distribution": "Normal" or "Non-normal" or "any",
+    },
+    {
+        "name": "Student's t-test (InDependent)",
+        "objective": "Comparison",
+        "dep_var": "Continuous",
+        "ind_var": "Categorical",
+        "groups": "2",
+        "relation_type": "InDependent",
+        "distribution": "Normal",
+    },
+    {
+        "name": "Paired t-test",
+        "objective": "Comparison",
+        "dep_var": "Continuous",
+        "ind_var": "Categorical",
+        "groups": "2",
+        "relation_type": "Dependent",
+        "distribution": "Normal",
+    },
+    {
+        "name": "One-way ANOVA",
+        "objective": "Comparison",
+        "dep_var": "Continuous",
+        "ind_var": "Categorical",
+        "groups": ">2",
+        "relation_type": "InDependent",
+        "distribution": "Normal",
+    },
+    {
+        "name": "Wilcoxon Signed-Rank Test",
+        "objective": "Comparison",
+        "dep_var": "ordinal",
+        "ind_var": "Categorical",
+        "groups": "2",
+        "relation_type": "Dependent",
+        "distribution": "Non-normal",
+    },
+    {
+        "name": "Mann-Whitney U Test",
+        "objective": "Comparison",
+        "dep_var": "ordinal",
+        "ind_var": "Categorical",
+        "groups": "2",
+        "relation_type": "InDependent",
+        "distribution": "Non-normal",
+    },
+    {
+        "name": "Kruskal-Wallis Test",
+        "objective": "Comparison",
+        "dep_var": "ordinal",
+        "ind_var": "Categorical",
+        "groups": ">2",
+        "relation_type": "InDependent",
+        "distribution": "Non-normal",
+    },
+    {
+        "name": "Repeated Measures ANOVA",
+        "objective": "Comparison",
+        "dep_var": "Continuous",
+        "ind_var": "Categorical",
+        "groups": ">2",
+        "relation_type": "Dependent",
+        "distribution": "Normal",
+    },
+    {
+        "name": "MANOVA",
+        "objective": "Comparison",
+        "dep_var": "Multiple Continuous",
+        "ind_var": "Categorical",
+        "groups": ">2",
+        "relation_type": "InDependent",
+        "distribution": "Normal",
+    },
+    {
+        "name": "Friedman Test",
+        "objective": "Comparison",
+        "dep_var": "ordinal",
+        "ind_var": "Categorical",
+        "groups": ">2",
+        "relation_type": "Dependent",
+        "distribution": "Non-normal",
+    },
+    {
+        "name": "Permutation MANOVA or Non-Parametric MANOVA",
+        "objective": "Comparison",
+        "dep_var": "Multiple Continuous",
+        "ind_var": "Categorical",
+        "groups": ">2",
+        "relation_type": "InDependent",
+        "distribution": "Non-normal",
+    },
+    {
+        "name": "Chi-Square Goodness-of-Fit Test",
+        "objective": "Comparison",
+        "dep_var": "Categorical",
+        "ind_var": "None",
+        "groups": "1",
+        "relation_type": "any",
+        "distribution": "Non-normal",
+    },
+    {
+        "name": "Chi-Square Test",
+        "objective": "Comparison",
+        "dep_var": "Categorical",
+        "ind_var": "Categorical",
+        "groups": "any",
+        "relation_type": "InDependent",
+        "distribution": "Non-normal",
+    },
+    {
+        "name": "McNemar's Test",
+        "objective": "Comparison",
+        "dep_var": "Categorical",
+        "ind_var": "Categorical",
+        "groups": "2",
+        "relation_type": "Dependent",
+        "distribution": "Non-normal",
+    },
+    {
+        "name": "Cochen's Q Test",
+        "objective": "Comparison",
+        "dep_var": "Categorical",
+        "ind_var": "Categorical",
+        "groups": ">2",
+        "relation_type": "Dependent",
+        "distribution": "Non-normal",
+    },
+    {
+        "name": "Fisher's Exact Test",
+        "objective": "Comparison",
+        "dep_var": "Categorical",
+        "ind_var": "Categorical",
+        "groups": "2",
+        "relation_type": "InDependent",
+        "distribution": "Non-normal",
+    },
+    # Association/Correlation Tests
+    {
+        "name": "Pearson Correlation",
+        "objective": "Association/Correlation",
+        "dep_var": "Continuous",
+        "ind_var": "Continuous",
+        "groups": "any",
+        "relation_type": "any",
+        "distribution": "Normal",
+    },
+    {
+        "name": "Spearman Rank Correlation",
+        "objective": "Association/Correlation",
+        "dep_var": "ordinal",
+        "ind_var": "ordinal",
+        "groups": "any",
+        "relation_type": "any",
+        "distribution": "Non-normal",
+    },
+    {
+        "name": "Chi-Square Test of Independence",
+        "objective": "Association/Correlation",
+        "dep_var": "Categorical",
+        "ind_var": "Categorical",
+        "groups": "any",
+        "relation_type": "any",
+        "distribution": "Non-normal",
+    },
+    {
+        "name": "Point-Biserial Correlation",
+        "objective": "Association/Correlation",
+        "dep_var": "Continuous",
+        "ind_var": "Binary/Dichotomous",
+        "groups": "2",
+        "relation_type": "any",
+        "distribution": "Normal",
+    },
+    # Prediction Tests
+    {
+        "name": "Simple Linear Regression",
+        "objective": "Prediction",
+        "dep_var": "Continuous",
+        "ind_var": "Continuous",
+        "groups": "any",
+        "relation_type": "any",
+        "distribution": "Normal",
+    },
+    {
+        "name": "Multiple Linear Regression",
+        "objective": "Prediction",
+        "dep_var": "Continuous",
+        "ind_var": "Multiple Continuous",
+        "groups": "any",
+        "relation_type": "any",
+        "distribution": "Normal",
+    },
+    {
+        "name": "Logistic Regression",
+        "objective": "Prediction",
+        "dep_var": "Binary/Dichotomous" or "Categorical",
+        "ind_var": "Continuous",
+        "groups": "any",
+        "relation_type": "any",
+        "distribution": "any",
+    },
+    {
+        "name": "Multinomial Logistic Regression",
+        "objective": "Prediction",
+        "dep_var": "Categorical",
+        "ind_var": "Continuous",
+        "groups": "any",
+        "relation_type": "any",
+        "distribution": "any",
+    },
+    {
+        "name": "Ordinal Logistic Regression",
+        "objective": "Prediction",
+        "dep_var": "Ordinal",
+        "ind_var": "Continuous",
+        "groups": "any",
+        "relation_type": "any",
+        "distribution": "any",
+    },
+    {
+        "name": "Poisson Regression",
+        "objective": "Prediction",
+        "dep_var": "Discrete",
+        "ind_var": "Continuous",
+        "groups": "any",
+        "relation_type": "any",
+        "distribution": "any",
+    },
+]
 
-def get_statistical_test(
-    objective, outcome_type, predictor_type, groups, relationship, distribution
-):
+
+def find_best_test(user_params):
     """
-    Logic to determine the appropriate statistical test.
+    Compares user input against the RULES database.
+    The 'score' is how many criteria the rule matches.
     """
-    if objective == "Comparison":
-        if outcome_type == "Continuous":
-            if predictor_type == "Categorical":
-                if relationship == "Independent":
-                    if groups == "2 groups":
-                        return (
-                            "Independent Samples t-test"
-                            if distribution == "Normal"
-                            else "Mann-Whitney U Test"
-                        )
-                    else:
-                        return (
-                            "One-way ANOVA"
-                            if distribution == "Normal"
-                            else "Kruskal-Wallis Test"
-                        )
-                elif relationship == "Paired":
-                    if groups == "2 groups":
-                        return (
-                            "Paired Samples t-test"
-                            if distribution == "Normal"
-                            else "Wilcoxon Signed-Rank Test"
-                        )
-                    else:
-                        return (
-                            "Repeated Measures ANOVA"
-                            if distribution == "Normal"
-                            else "Friedman Test"
-                        )
-                elif predictor_type == "Continuous":
-                    return "Correlation/Regression analysis is more appropriate for continuous predictors."
+    matches = []
 
-            elif predictor_type == "Categorical":
-                if relationship == "Independent":
-                    return "Chi-square Test"
+    for rule in RULES:
+        score = 0
+        # Check each criterion in the rule
+        for key, value in rule.items():
+            if key in user_params:
+                if value == "any" or value == user_params[key]:
+                    score += 1
                 else:
-                    return "McNemar's Test"
-
-        elif outcome_type == "Categorical":
-            if predictor_type == "Categorical":
-                if relationship == "Independent":
-                    return "Chi-square Test of Independence"
-                else:
-                    return "McNemar's Test"
+                    score = 0  # Mismatch found, invalidate this rule
+                    break
             else:
-                return "Logistic Regression (Categorical outcome, Continuous predictor)"
+                # If rule requires a parameter the user didn't provide, it's a partial match
+                pass
 
-    elif objective == "Association / Correlation":
-        if outcome_type == "Continuous" and predictor_type == "Continuous":
-            return (
-                "Pearson Correlation"
-                if distribution == "Normal"
-                else "Spearman's Rank Correlation"
+        if score > 0:
+            matches.append((rule["name"], score))
+
+    # Sort matches by highest score (most specific match first)
+    matches.sort(key=lambda x: x[1], reverse=True)
+    return matches
+
+
+def main():
+    import streamlit as st  # Assuming you use streamlit for the UI
+
+    st.title("🔬 Statistical Test Finder")
+    st.write(
+        "Select your variables below to find the most appropriate statistical test."
+    )
+
+    st.subheader("1. Research Objective")
+    objective = st.selectbox(
+        "What is your goal?", ["Comparison", "Association/Correlation", "Predicition"]
+    )
+
+    st.subheader("2. Variables")
+    dep_var = st.selectbox(
+        "Dependent Variable Type",
+        [
+            "Binary/Dichotomous",
+            "Categorical",
+            "Ordinal",
+            "Discrete",
+            "Continuous",
+            "Multiple Continuous",
+        ],
+    )
+    ind_var = st.selectbox(
+        "InDependent Variable Type",
+        [
+            "Binary/Dichotomous",
+            "Categorical",
+            "Ordinal",
+            "Discrete",
+            "Continuous",
+            "Multiple Continuous",
+            "None",
+        ],
+    )
+
+    st.subheader("3. Experimental Design and Distribution")
+    groups = st.selectbox("Number of Groups / Levels", ["1", "2", "More than 2", "any"])
+    relation_type = st.selectbox(
+        "Relationship Type", ["InDependent", "Dependent", "any"]
+    )
+    Distribution = st.selectbox("Distribution", ["Normal", "Non-normal", "any"])
+
+    # User's input packaged for the engine
+    user_input = {
+        "objective": objective,
+        "dep_var": dep_var,
+        "ind_var": ind_var,
+        "groups": groups,
+        "relation_type": relation_type,
+        "distribution": Distribution,
+    }
+
+    if st.button("Find My Test"):
+        results = find_best_test(user_input)
+
+        if results:
+            st.success(f"Found {len(results)} possible match(es)!")
+            for name, score in results:
+                st.markdown(f"### 🎯 {name}")
+                st.caption(f"Match confidence score: {score}")
+        else:
+            st.error(
+                "No exact match found. Try broadening your criteria (e.g., set a value to 'any')."
             )
-        elif outcome_type == "Categorical" or predictor_type == "Categorical":
-            return "Chi-square Test of Independence"
-        else:
-            return "Point-Biserial Correlation"
-
-    elif objective == "Prediction":
-        if outcome_type == "Continuous" and predictor_type == "Continuous":
-            return "Simple Linear Regression"
-        elif outcome_type == "Continuous" and predictor_type == "Categorical":
-            return "Multiple Linear Regression (using dummy variables)"
-        elif outcome_type == "Categorical" and predictor_type == "Continuous":
-            return "Logistic Regression"
-        else:
-            return "Generalized Linear Model (GLM)"
-
-    return "No specific test found for the selected parameters. Please refine your selection."
 
 
-# --- Streamlit UI ---
-st.set_page_config(page_title="Biostatistician Assistant", page_icon="🧬")
-
-st.title("🧬 Biostatistical Test Selector")
-st.markdown("Identify the correct statistical test for your research design.")
-
-st.header("Step 1: Define Your Study Parameters")
-st.subheader("Variables")
-outcome_type = st.selectbox(
-    "Outcome (Dependent) Variable Type", ["Continuous", "Categorical"]
-)
-predictor_type = st.selectbox(
-    "Predictor (Independent) Variable Type", ["Continuous", "Categorical"]
-)
-
-st.divider()
-
-st.header("Step 2: Research Objective")
-objective = st.selectbox(
-    "Objective", ["Comparison", "Association / Correlation", "Prediction"]
-)
-
-st.divider()
-
-st.header("Step 3: Experimental Design & Distribution")
-
-col1, col2 = st.columns(2)
-
-with col1:
-    if objective == "Comparison":
-        groups = st.selectbox("Number of Groups", ["2 groups", "More than 2 groups"])
-        relationship = st.selectbox(
-            "Relationship between groups", ["Independent", "Paired"]
-        )
-    else:
-        groups = "N/A"
-        relationship = "N/A"
-        st.info(
-            "Design details (groups/relationship) are primarily used for Comparison objectives."
-        )
-
-with col2:
-    if objective in ["Comparison", "Association / Correlation"]:
-        distribution = st.selectbox("Distribution", ["Normal", "Non-normal"])
-    else:
-        distribution = "N/A"
-        st.info(
-            "Distribution is primarily used for Parametric vs Non-parametric tests."
-        )
-
-st.divider()
-
-# Final Result Calculation
-result = get_statistical_test(
-    objective, outcome_type, predictor_type, groups, relationship, distribution
-)
-
-st.header("Recommended Test:")
-st.success(result)
-
-st.markdown("""
----
-**How to use this app:**
-1. Define your **Variables** in the sidebar.
-2. Select your **Research Objective**.
-3. Configure the **Design and Distribution** in the main area.
-4. The recommended test will appear below!
-""")
+if __name__ == "__main__":
+    main()
