@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 
 rules = [
     # Comparison Tests
@@ -763,33 +764,48 @@ def main():
     # FIND TEST
     # =========================
     if st.button("Find My Test"):
+        st.session_state.results = find_matching_tests(user_input)
+        # Clear open states when new search is performed
+        st.session_state.open_tests = set()
 
-        results = find_matching_tests(user_input)
+    # Initialize open_tests in session state
+    if "open_tests" not in st.session_state:
+        st.session_state.open_tests = set()
 
-        if results:
+    # Display results from session state
+    if hasattr(st.session_state, "results") and st.session_state.results:
+        st.success("Recommended Statistical Test(s):")
 
-            st.success("Recommended Statistical Test(s):")
+        for test in st.session_state.results:
+            rule = next((r for r in rules if r["name"] == test), None)
+            if rule:
+                # Button to toggle open/close
+                is_open = test in st.session_state.open_tests
+                btn_label = f"▶ {test}" if not is_open else f"▼ {test}"
 
-            for test in results:
-                rule = next((r for r in rules if r["name"] == test), None)
-                if rule:
-                    with st.expander(f"✅ {test}"):
-                        if "Explanation" in rule:
-                            st.markdown("## Explanation:")
-                            st.markdown(rule["Explanation"])
-                        if "Example" in rule:
-                            st.markdown("## Example:")
-                            st.markdown(rule["Example"])
-                        if "Formula" in rule:
-                            st.markdown("## Formula:")
-                            render_latex(rule["Formula"])
-                        render_test_widget(test)
+                if st.button(btn_label, key=f"btn_{test}"):
+                    if is_open:
+                        st.session_state.open_tests.remove(test)
+                    else:
+                        st.session_state.open_tests.add(test)
+                    st.rerun()
 
-        else:
+                # Show content if test is in open_tests
+                if test in st.session_state.open_tests:
+                    if "Explanation" in rule:
+                        st.markdown("## Explanation:")
+                        st.markdown(rule["Explanation"])
+                    if "Example" in rule:
+                        st.markdown("## Example:")
+                        st.markdown(rule["Example"])
+                    if "Formula" in rule:
+                        st.markdown("## Formula:")
+                        render_latex(rule["Formula"])
+                    render_test_widget(test)
+                    st.markdown("---")
 
-            st.error(
-                "No matching statistical test found. Try adjusting your selections."
-            )
+    elif hasattr(st.session_state, "results") and not st.session_state.results:
+        st.error("No matching statistical test found. Try adjusting your selections.")
     # =========================
     # FLOWCHART MODE
     # =========================
@@ -891,34 +907,312 @@ def render_test_widget(test_name):
             st.markdown(f"**Standard Error:** {std_error:.4f}")
             st.markdown(f"**z-statistic:** {z_stat:.4f}")
 
+    elif test_name == "Logistic Regression":
+
+        st.subheader("Interactive Logistic Regression")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            beta0 = st.slider("Intercept (β₀)", -10.0, 10.0, 0.0, 0.1)
+
+        with col2:
+            beta1 = st.slider("Slope (β₁)", -5.0, 5.0, 1.0, 0.1)
+
+        # =========================
+        # DATA
+        # =========================
+
+        x = np.linspace(-10, 10, 1000)
+
+        logit = beta0 + beta1 * x
+
+        p = 1 / (1 + np.exp(-logit))
+
+        # =========================
+        # LATEX
+        # =========================
+
+        st.latex(rf"""
+            p = \frac{{1}}{{1 + e^{{-({beta0:.2f} + {beta1:.2f}x)}}}}
+            """)
+
+        # =========================
+        # PLOTLY FIGURE
+        # =========================
+
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Scatter(
+                x=x,
+                y=p,
+                mode="lines",
+                name="Sigmoid Curve",
+            )
+        )
+
+        fig.update_layout(
+            height=500,
+            template="plotly_dark",
+            margin=dict(l=20, r=20, t=40, b=20),
+            xaxis_title="Predictor (x)",
+            yaxis_title="Probability",
+            yaxis=dict(range=[0, 1]),
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
     elif test_name == "Simple Linear Regression":
-        import numpy as np
-        import matplotlib.pyplot as plt
-        import streamlit as st
+        st.subheader("Interactive Simple Linear Regression")
 
-        st.header("Interactive Simple Linear Regression")
+        # =========================
+        # CONTROLS
+        # =========================
 
-        # Controllers
-        beta0 = st.slider("Intercept (β₀)", -10.0, 10.0, 0.0)
-        beta1 = st.slider("Slope (β₁)", -5.0, 5.0, 1.0)
+        col1, col2 = st.columns(2)
 
-        # Generate data
-        x = np.linspace(-10, 10, 200)
+        with col1:
+            beta0 = st.slider("Intercept (β₀)", -20.0, 20.0, 0.0, 0.1)
+
+        with col2:
+            beta1 = st.slider("Slope (β₁)", -10.0, 10.0, 1.0, 0.1)
+
+        # =========================
+        # DATA
+        # =========================
+
+        x = np.linspace(-10, 10, 500)
+
         y = beta0 + beta1 * x
 
-        # Formula
+        # =========================
+        # EQUATION
+        # =========================
+
         st.latex(rf"y = {beta0:.2f} + ({beta1:.2f})x")
 
-        # Plot
-        fig, ax = plt.subplots()
+        # =========================
+        # PLOT
+        # =========================
 
-        ax.plot(x, y)
+        fig = go.Figure()
 
-        ax.set_xlabel("x")
-        ax.set_ylabel("y")
-        ax.set_title("Simple Linear Regression")
+        fig.add_trace(
+            go.Scatter(
+                x=x,
+                y=y,
+                mode="lines",
+                name="Regression Line",
+            )
+        )
 
-        st.pyplot(fig)
+        fig.update_layout(
+            template="plotly_dark",
+            height=500,
+            xaxis_title="x",
+            yaxis_title="y",
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "Multiple Linear Regression":
+        st.subheader("Interactive Multiple Linear Regression")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        beta0 = st.slider("β₀", -20.0, 20.0, 0.0, 0.1)
+
+        beta1 = st.slider("β₁ (x₁ coefficient)", -10.0, 10.0, 1.0, 0.1)
+
+        beta2 = st.slider("β₂ (x₂ coefficient)", -10.0, 10.0, 1.0, 0.1)
+
+        # =========================
+        # GRID
+        # =========================
+
+        x1 = np.linspace(-10, 10, 50)
+        x2 = np.linspace(-10, 10, 50)
+
+        X1, X2 = np.meshgrid(x1, x2)
+
+        Y = beta0 + beta1 * X1 + beta2 * X2
+
+        # =========================
+        # EQUATION
+        # =========================
+
+        st.latex(rf"y = {beta0:.2f} + ({beta1:.2f})x_1 + ({beta2:.2f})x_2")
+
+        # =========================
+        # SURFACE PLOT
+        # =========================
+
+        fig = go.Figure(
+            data=[
+                go.Surface(
+                    x=X1,
+                    y=X2,
+                    z=Y,
+                )
+            ]
+        )
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=700,
+            scene=dict(
+                xaxis_title="x₁",
+                yaxis_title="x₂",
+                zaxis_title="y",
+            ),
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "Multinomial Logistic Regression":
+        st.subheader("Interactive Multinomial Logistic Regression")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        beta1 = st.slider("Class A coefficient", -5.0, 5.0, 1.0, 0.1)
+
+        beta2 = st.slider("Class B coefficient", -5.0, 5.0, -1.0, 0.1)
+
+        # =========================
+        # DATA
+        # =========================
+
+        x = np.linspace(-10, 10, 500)
+
+        score1 = np.exp(beta1 * x)
+        score2 = np.exp(beta2 * x)
+        score3 = np.exp(0)
+
+        total = score1 + score2 + score3
+
+        p1 = score1 / total
+        p2 = score2 / total
+        p3 = score3 / total
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Scatter(x=x, y=p1, mode="lines", name="Class A"))
+        fig.add_trace(go.Scatter(x=x, y=p2, mode="lines", name="Class B"))
+        fig.add_trace(go.Scatter(x=x, y=p3, mode="lines", name="Reference"))
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=500,
+            yaxis=dict(range=[0, 1]),
+            xaxis_title="Predictor",
+            yaxis_title="Class Probability",
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "Ordinal Logistic Regression":
+        st.subheader("Interactive Ordinal Logistic Regression")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        beta = st.slider("β coefficient", -5.0, 5.0, 1.0, 0.1)
+
+        threshold1 = st.slider("Threshold θ₁", -5.0, 5.0, -1.0, 0.1)
+
+        threshold2 = st.slider("Threshold θ₂", -5.0, 5.0, 1.0, 0.1)
+
+        # =========================
+        # DATA
+        # =========================
+
+        x = np.linspace(-10, 10, 500)
+
+        cum1 = 1 / (1 + np.exp(-(threshold1 - beta * x)))
+        cum2 = 1 / (1 + np.exp(-(threshold2 - beta * x)))
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Scatter(x=x, y=cum1, mode="lines", name="P(Y ≤ 1)"))
+
+        fig.add_trace(go.Scatter(x=x, y=cum2, mode="lines", name="P(Y ≤ 2)"))
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=500,
+            yaxis=dict(range=[0, 1]),
+            xaxis_title="Predictor",
+            yaxis_title="Cumulative Probability",
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "Poisson Regression":
+        st.subheader("Interactive Poisson Regression")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        beta0 = st.slider("β₀", -3.0, 3.0, 0.5, 0.1)
+
+        beta1 = st.slider("β₁", -1.0, 1.0, 0.2, 0.05)
+
+        # =========================
+        # DATA
+        # =========================
+
+        x = np.linspace(0, 20, 500)
+
+        lam = np.exp(beta0 + beta1 * x)
+
+        # =========================
+        # EQUATION
+        # =========================
+
+        st.latex(rf"\lambda = e^{{{beta0:.2f} + ({beta1:.2f})x}}")
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Scatter(
+                x=x,
+                y=lam,
+                mode="lines",
+                name="Expected Count",
+            )
+        )
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=500,
+            xaxis_title="Predictor",
+            yaxis_title="Expected Count (λ)",
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
 
     else:
         st.info("Interactive widget coming soon for this test.")
