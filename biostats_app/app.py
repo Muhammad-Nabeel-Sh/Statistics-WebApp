@@ -1,308 +1,338 @@
 import streamlit as st
 
-RULES = [
+rules = [
     # Comparison Tests
     {
         "name": "One-sample t-test",
-        "objective": "Comparison",
-        "dep_var": "Continuous",
-        "ind_var": "None",
-        "groups": "1",
-        "relation_type": "any",
-        "distribution": "Normal",
+        "Objective": "Comparison",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": "None",
+        "Groups": "1",
+        "Relation": "any",
+        "Distribution": "Normal",
     },
     {
         "name": "One-sample z-test",
-        "objective": "Comparison",
-        "dep_var": "Continuous",
-        "ind_var": "None",
-        "groups": "1",
-        "relation_type": "any",
-        "distribution": "Normal",
+        "Objective": "Comparison",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": "None",
+        "Groups": "1",
+        "Relation": "any",
+        "Distribution": "Normal",
     },
     {
         "name": "One-sample Proportion Test",
-        "objective": "Comparison",
-        "dep_var": "Binary/Dichotomous" or "Categorical",
-        "ind_var": "None",
-        "groups": "1",
-        "relation_type": "any",
-        "distribution": "Normal" or "Non-normal" or "any",
+        "Objective": "Comparison",
+        "Dependent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Independent_Variable": "None",
+        "Groups": "1",
+        "Relation": "any",
+        "Distribution": ["Normal", "Non-normal", "any"],
     },
     {
-        "name": "Student's t-test (InDependent)",
-        "objective": "Comparison",
-        "dep_var": "Continuous",
-        "ind_var": "Categorical",
-        "groups": "2",
-        "relation_type": "InDependent",
-        "distribution": "Normal",
+        "name": "Student's t-test (Independent)",
+        "Objective": "Comparison",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "2",
+        "Relation": "Independent",
+        "Distribution": "Normal",
     },
     {
         "name": "Paired t-test",
-        "objective": "Comparison",
-        "dep_var": "Continuous",
-        "ind_var": "Categorical",
-        "groups": "2",
-        "relation_type": "Dependent",
-        "distribution": "Normal",
+        "Objective": "Comparison",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "2",
+        "Relation": "Dependent",
+        "Distribution": "Normal",
     },
     {
         "name": "One-way ANOVA",
-        "objective": "Comparison",
-        "dep_var": "Continuous",
-        "ind_var": "Categorical",
-        "groups": ">2",
-        "relation_type": "InDependent",
-        "distribution": "Normal",
+        "Objective": "Comparison",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "More than 2",
+        "Relation": "Independent",
+        "Distribution": "Normal",
     },
     {
         "name": "Wilcoxon Signed-Rank Test",
-        "objective": "Comparison",
-        "dep_var": "ordinal",
-        "ind_var": "Categorical",
-        "groups": "2",
-        "relation_type": "Dependent",
-        "distribution": "Non-normal",
+        "Objective": "Comparison",
+        "Dependent_Variable": ["Ordinal", "Continuous"],
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "2",
+        "Relation": "Dependent",
+        "Distribution": "Non-normal",
     },
     {
         "name": "Mann-Whitney U Test",
-        "objective": "Comparison",
-        "dep_var": "ordinal",
-        "ind_var": "Categorical",
-        "groups": "2",
-        "relation_type": "InDependent",
-        "distribution": "Non-normal",
+        "Objective": "Comparison",
+        "Dependent_Variable": ["Ordinal", "Continuous"],
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "2",
+        "Relation": "Independent",
+        "Distribution": "Non-normal",
     },
     {
         "name": "Kruskal-Wallis Test",
-        "objective": "Comparison",
-        "dep_var": "ordinal",
-        "ind_var": "Categorical",
-        "groups": ">2",
-        "relation_type": "InDependent",
-        "distribution": "Non-normal",
+        "Objective": "Comparison",
+        "Dependent_Variable": ["Ordinal", "Continuous"],
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "More than 2",
+        "Relation": "Independent",
+        "Distribution": "Non-normal",
     },
     {
         "name": "Repeated Measures ANOVA",
-        "objective": "Comparison",
-        "dep_var": "Continuous",
-        "ind_var": "Categorical",
-        "groups": ">2",
-        "relation_type": "Dependent",
-        "distribution": "Normal",
+        "Objective": "Comparison",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "More than 2",
+        "Relation": "Dependent",
+        "Distribution": "Normal",
     },
     {
         "name": "MANOVA",
-        "objective": "Comparison",
-        "dep_var": "Multiple Continuous",
-        "ind_var": "Categorical",
-        "groups": ">2",
-        "relation_type": "InDependent",
-        "distribution": "Normal",
+        "Objective": "Comparison",
+        "Dependent_Variable": "Multiple Continuous",
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "More than 2",
+        "Relation": "Independent",
+        "Distribution": "Normal",
     },
     {
         "name": "Friedman Test",
-        "objective": "Comparison",
-        "dep_var": "ordinal",
-        "ind_var": "Categorical",
-        "groups": ">2",
-        "relation_type": "Dependent",
-        "distribution": "Non-normal",
+        "Objective": "Comparison",
+        "Dependent_Variable": ["Ordinal", "Continuous"],
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "More than 2",
+        "Relation": "Dependent",
+        "Distribution": "Non-normal",
     },
     {
         "name": "Permutation MANOVA or Non-Parametric MANOVA",
-        "objective": "Comparison",
-        "dep_var": "Multiple Continuous",
-        "ind_var": "Categorical",
-        "groups": ">2",
-        "relation_type": "InDependent",
-        "distribution": "Non-normal",
+        "Objective": "Comparison",
+        "Dependent_Variable": "Multiple Continuous",
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "More than 2",
+        "Relation": "Independent",
+        "Distribution": "Non-normal",
     },
     {
         "name": "Chi-Square Goodness-of-Fit Test",
-        "objective": "Comparison",
-        "dep_var": "Categorical",
-        "ind_var": "None",
-        "groups": "1",
-        "relation_type": "any",
-        "distribution": "Non-normal",
+        "Objective": "Comparison",
+        "Dependent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Independent_Variable": "None",
+        "Groups": "1",
+        "Relation": ["Independent", "Dependent", "any"],
+        "Distribution": "Non-normal",
     },
     {
         "name": "Chi-Square Test",
-        "objective": "Comparison",
-        "dep_var": "Categorical",
-        "ind_var": "Categorical",
-        "groups": "any",
-        "relation_type": "InDependent",
-        "distribution": "Non-normal",
+        "Objective": "Comparison",
+        "Dependent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": ["any", "2", "More than 2"],
+        "Relation": "Independent",
+        "Distribution": ["Non-normal", "Normal", "any"],
     },
     {
         "name": "McNemar's Test",
-        "objective": "Comparison",
-        "dep_var": "Categorical",
-        "ind_var": "Categorical",
-        "groups": "2",
-        "relation_type": "Dependent",
-        "distribution": "Non-normal",
+        "Objective": "Comparison",
+        "Dependent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "2",
+        "Relation": "Dependent",
+        "Distribution": ["Non-normal", "Normal", "any"],
     },
     {
-        "name": "Cochen's Q Test",
-        "objective": "Comparison",
-        "dep_var": "Categorical",
-        "ind_var": "Categorical",
-        "groups": ">2",
-        "relation_type": "Dependent",
-        "distribution": "Non-normal",
+        "name": "Cochran's Q Test",
+        "Objective": "Comparison",
+        "Dependent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "More than 2",
+        "Relation": "Dependent",
+        "Distribution": ["Non-normal", "Normal", "any"],
     },
     {
         "name": "Fisher's Exact Test",
-        "objective": "Comparison",
-        "dep_var": "Categorical",
-        "ind_var": "Categorical",
-        "groups": "2",
-        "relation_type": "InDependent",
-        "distribution": "Non-normal",
+        "Objective": "Comparison",
+        "Dependent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "2",
+        "Relation": "Independent",
+        "Distribution": ["Non-normal", "Normal", "any"],
     },
     # Association/Correlation Tests
     {
         "name": "Pearson Correlation",
-        "objective": "Association/Correlation",
-        "dep_var": "Continuous",
-        "ind_var": "Continuous",
-        "groups": "any",
-        "relation_type": "any",
-        "distribution": "Normal",
+        "Objective": "Association/Correlation",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": "Continuous",
+        "Groups": ["any", "2", "More than 2"],
+        "Relation": ["Independent", "Dependent", "any"],
+        "Distribution": "Normal",
     },
     {
         "name": "Spearman Rank Correlation",
-        "objective": "Association/Correlation",
-        "dep_var": "ordinal",
-        "ind_var": "ordinal",
-        "groups": "any",
-        "relation_type": "any",
-        "distribution": "Non-normal",
+        "Objective": "Association/Correlation",
+        "Dependent_Variable": ["Ordinal", "Continuous"],
+        "Independent_Variable": ["Ordinal", "Continuous"],
+        "Groups": ["any", "2", "More than 2"],
+        "Relation": ["Independent", "Dependent", "any"],
+        "Distribution": "Non-normal",
     },
     {
         "name": "Chi-Square Test of Independence",
-        "objective": "Association/Correlation",
-        "dep_var": "Categorical",
-        "ind_var": "Categorical",
-        "groups": "any",
-        "relation_type": "any",
-        "distribution": "Non-normal",
+        "Objective": "Association/Correlation",
+        "Dependent_Variable": "Categorical",
+        "Independent_Variable": "Categorical",
+        "Groups": ["any", "2", "More than 2"],
+        "Relation": ["Independent", "Dependent", "any"],
+        "Distribution": ["Non-normal", "Normal", "any"],
     },
     {
         "name": "Point-Biserial Correlation",
-        "objective": "Association/Correlation",
-        "dep_var": "Continuous",
-        "ind_var": "Binary/Dichotomous",
-        "groups": "2",
-        "relation_type": "any",
-        "distribution": "Normal",
+        "Objective": "Association/Correlation",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": "Binary/Dichotomous",
+        "Groups": ["any", "2", "More than 2"],
+        "Relation": ["Independent", "Dependent", "any"],
+        "Distribution": ["Non-normal", "Normal", "any"],
     },
     # Prediction Tests
     {
         "name": "Simple Linear Regression",
-        "objective": "Prediction",
-        "dep_var": "Continuous",
-        "ind_var": "Continuous",
-        "groups": "any",
-        "relation_type": "any",
-        "distribution": "Normal",
+        "Objective": "Prediction",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": "Continuous",
+        "Groups": ["any", "2", "More than 2"],
+        "Relation": ["Independent", "Dependent", "any"],
+        "Distribution": ["Normal", "Non-normal", "any"],
     },
     {
         "name": "Multiple Linear Regression",
-        "objective": "Prediction",
-        "dep_var": "Continuous",
-        "ind_var": "Multiple Continuous",
-        "groups": "any",
-        "relation_type": "any",
-        "distribution": "Normal",
+        "Objective": "Prediction",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": "Multiple Continuous",
+        "Groups": ["any", "2", "More than 2"],
+        "Relation": ["Independent", "Dependent", "any"],
+        "Distribution": ["Normal", "Non-normal", "any"],
     },
     {
         "name": "Logistic Regression",
-        "objective": "Prediction",
-        "dep_var": "Binary/Dichotomous" or "Categorical",
-        "ind_var": "Continuous",
-        "groups": "any",
-        "relation_type": "any",
-        "distribution": "any",
+        "Objective": "Prediction",
+        "Dependent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Independent_Variable": "Continuous",
+        "Groups": ["any", "2", "More than 2"],
+        "Relation": ["Independent", "Dependent", "any"],
+        "Distribution": ["Normal", "Non-normal", "any"],
     },
     {
         "name": "Multinomial Logistic Regression",
-        "objective": "Prediction",
-        "dep_var": "Categorical",
-        "ind_var": "Continuous",
-        "groups": "any",
-        "relation_type": "any",
-        "distribution": "any",
+        "Objective": "Prediction",
+        "Dependent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Independent_Variable": "Continuous",
+        "Groups": ["any", "2", "More than 2"],
+        "Relation": ["Independent", "Dependent", "any"],
+        "Distribution": ["Normal", "Non-normal", "any"],
     },
     {
         "name": "Ordinal Logistic Regression",
-        "objective": "Prediction",
-        "dep_var": "Ordinal",
-        "ind_var": "Continuous",
-        "groups": "any",
-        "relation_type": "any",
-        "distribution": "any",
+        "Objective": "Prediction",
+        "Dependent_Variable": "Ordinal",
+        "Independent_Variable": "Continuous",
+        "Groups": ["any", "2", "More than 2"],
+        "Relation": ["Independent", "Dependent", "any"],
+        "Distribution": ["Normal", "Non-normal", "any"],
     },
     {
         "name": "Poisson Regression",
-        "objective": "Prediction",
-        "dep_var": "Discrete",
-        "ind_var": "Continuous",
-        "groups": "any",
-        "relation_type": "any",
-        "distribution": "any",
+        "Objective": "Prediction",
+        "Dependent_Variable": "Discrete",
+        "Independent_Variable": "Continuous",
+        "Groups": ["any", "2", "More than 2"],
+        "Relation": ["Independent", "Dependent", "any"],
+        "Distribution": ["Normal", "Non-normal", "any"],
     },
 ]
 
 
-def find_best_test(user_params):
-    """
-    Compares user input against the RULES database.
-    The 'score' is how many criteria the rule matches.
-    """
+# =========================
+# MATCHING ENGINE
+# =========================
+def matches_rule(user_input, rule):
+
+    for key, rule_val in rule.items():
+
+        # Skip test name
+        if key == "name":
+            continue
+
+        user_val = user_input.get(key)
+
+        # Rule accepts anything
+        if rule_val == "any":
+            continue
+
+        # Handle LISTS in rules
+        if isinstance(rule_val, list):
+            if user_val not in rule_val:
+                return False
+
+        # Handle normal strings
+        else:
+            if user_val != rule_val:
+                return False
+
+    return True
+
+
+def find_matching_tests(user_input):
+
     matches = []
 
-    for rule in RULES:
-        score = 0
-        # Check each criterion in the rule
-        for key, value in rule.items():
-            if key in user_params:
-                if value == "any" or value == user_params[key]:
-                    score += 1
-                else:
-                    score = 0  # Mismatch found, invalidate this rule
-                    break
-            else:
-                # If rule requires a parameter the user didn't provide, it's a partial match
-                pass
+    for rule in rules:
+        if matches_rule(user_input, rule):
+            matches.append(rule["name"])
 
-        if score > 0:
-            matches.append((rule["name"], score))
-
-    # Sort matches by highest score (most specific match first)
-    matches.sort(key=lambda x: x[1], reverse=True)
     return matches
 
 
+# =========================
+# STREAMLIT UI
+# =========================
 def main():
-    import streamlit as st  # Assuming you use streamlit for the UI
+
+    st.set_page_config(page_title="Statistical Test Finder")
 
     st.title("🔬 Statistical Test Finder")
+
     st.write(
-        "Select your variables below to find the most appropriate statistical test."
+        "Select your study characteristics to identify the appropriate statistical test."
     )
 
+    # =========================
+    # RESEARCH Objective
+    # =========================
     st.subheader("1. Research Objective")
-    objective = st.selectbox(
-        "What is your goal?", ["Comparison", "Association/Correlation", "Predicition"]
+
+    Objective = st.selectbox(
+        "What is your goal?",
+        [
+            "Comparison",
+            "Association/Correlation",
+            "Prediction",
+        ],
     )
 
+    # =========================
+    # VARIABLES
+    # =========================
     st.subheader("2. Variables")
-    dep_var = st.selectbox(
+
+    Dependent_Variable = st.selectbox(
         "Dependent Variable Type",
         [
             "Binary/Dichotomous",
@@ -313,8 +343,9 @@ def main():
             "Multiple Continuous",
         ],
     )
-    ind_var = st.selectbox(
-        "InDependent Variable Type",
+
+    Independent_Variable = st.selectbox(
+        "Independent Variable Type",
         [
             "Binary/Dichotomous",
             "Categorical",
@@ -326,36 +357,148 @@ def main():
         ],
     )
 
-    st.subheader("3. Experimental Design and Distribution")
-    groups = st.selectbox("Number of Groups / Levels", ["1", "2", "More than 2", "any"])
-    relation_type = st.selectbox(
-        "Relationship Type", ["InDependent", "Dependent", "any"]
-    )
-    Distribution = st.selectbox("Distribution", ["Normal", "Non-normal", "any"])
+    # =========================
+    # DESIGN
+    # =========================
+    st.subheader("3. Experimental Design")
 
-    # User's input packaged for the engine
+    Groups = st.selectbox(
+        "Number of Groups",
+        [
+            "1",
+            "2",
+            "More than 2",
+            "any",
+        ],
+    )
+
+    Relation = st.selectbox(
+        "Relationship Type",
+        [
+            "Independent",
+            "Dependent",
+            "any",
+        ],
+    )
+
+    Distribution = st.selectbox(
+        "Distribution",
+        [
+            "Normal",
+            "Non-normal",
+            "any",
+        ],
+    )
+
+    # =========================
+    # USER INPUT OBJECT
+    # =========================
     user_input = {
-        "objective": objective,
-        "dep_var": dep_var,
-        "ind_var": ind_var,
-        "groups": groups,
-        "relation_type": relation_type,
-        "distribution": Distribution,
+        "Objective": Objective,
+        "Dependent_Variable": Dependent_Variable,
+        "Independent_Variable": Independent_Variable,
+        "Groups": Groups,
+        "Relation": Relation,
+        "Distribution": Distribution,
     }
 
+    # =========================
+    # FIND TEST
+    # =========================
     if st.button("Find My Test"):
-        results = find_best_test(user_input)
+
+        results = find_matching_tests(user_input)
 
         if results:
-            st.success(f"Found {len(results)} possible match(es)!")
-            for name, score in results:
-                st.markdown(f"### 🎯 {name}")
-                st.caption(f"Match confidence score: {score}")
+
+            st.success("Recommended Statistical Test(s):")
+
+            for test in results:
+                st.write(f"✅ {test}")
+
         else:
+
             st.error(
-                "No exact match found. Try broadening your criteria (e.g., set a value to 'any')."
+                "No matching statistical test found. Try adjusting your selections."
             )
+    # =========================
+    # FLOWCHART MODE
+    # =========================
+
+    st.divider()
+
+    st.header("🌳 Interactive Statistical Flowchart")
+
+    st.write(
+        "Expand the branches below to navigate statistical test selection visually."
+    )
+
+    build_tree(rules, FIELDS)
 
 
+# =========================
+# FLOWCHART VIEW
+# =========================
+
+FIELDS = [
+    "Objective",
+    "Dependent_Variable",
+    "Independent_Variable",
+    "Groups",
+    "Relation",
+    "Distribution",
+]
+
+
+def build_tree(rule_subset, fields, level=0):
+
+    # No more fields → show tests
+    if not fields:
+
+        for rule in rule_subset:
+            st.success(f"✅ {rule['name']}")
+
+        return
+
+    current_field = fields[0]
+    # Skip meaningless all-any branches
+    all_any = all(rule[current_field] == "any" for rule in rule_subset)
+
+    if all_any:
+        build_tree(rule_subset, fields[1:], level + 1)
+        return
+
+    # Group rules by current field
+    grouped = {}
+
+    for rule in rule_subset:
+
+        value = rule[current_field]
+
+        if isinstance(value, list):
+
+            for item in value:
+                grouped.setdefault(item, []).append(rule)
+
+        else:
+            grouped.setdefault(value, []).append(rule)
+
+    # Render Groups
+    for value, subrules in grouped.items():
+
+        # Pretty label
+        if isinstance(value, tuple):
+            label = " OR ".join(value)
+        else:
+            label = str(value)
+
+        with st.expander(f"{current_field}: {label}"):
+
+            build_tree(subrules, fields[1:], level + 1)
+
+
+# =========================
+# RUN APP
+# =========================
 if __name__ == "__main__":
     main()
