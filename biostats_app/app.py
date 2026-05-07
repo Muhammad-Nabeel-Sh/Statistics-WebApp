@@ -10,6 +10,9 @@ rules = [
         "Groups": "1",
         "Relation": "any",
         "Distribution": "Normal",
+        "Explanation": "One-Sample t-test This test is used to determine whether the mean of a single sample is significantly different from a known or hypothesized population mean. It assumes that the data is continuous and follows a normal distribution. It is typically used when comparing a clinical measurement (like blood pressure) against a standard clinical threshold. ",
+        "Example": "Example: A researcher wants to test if the average systolic blood pressure of a group of patients is significantly different from the standard threshold of 120 mmHg. The researcher collects blood pressure readings from 30 patients and performs a one-sample t-test to compare the sample mean against the known population mean of 120 mmHg.",
+        "Formula": "$$ t = \frac{\bar{x} - \mu_0}{\frac{s}{\sqrt{n}}}$$ where X̄ is the sample mean, μ is the population mean, s is the sample standard deviation, n is the sample size and $\frac{s}{\sqrt{n}}$ is the standard error of the mean.",
     },
     {
         "name": "One-sample z-test",
@@ -30,7 +33,25 @@ rules = [
         "Distribution": ["Normal", "Non-normal", "any"],
     },
     {
+        "name": "One-sample Wilcoxon Signed-Rank Test",
+        "Objective": "Comparison",
+        "Dependent_Variable": ["Ordinal", "Continuous"],
+        "Independent_Variable": "None",
+        "Groups": "1",
+        "Relation": "any",
+        "Distribution": "Non-normal",
+    },
+    {
         "name": "Student's t-test (Independent)",
+        "Objective": "Comparison",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "2",
+        "Relation": "Independent",
+        "Distribution": "Normal",
+    },
+    {
+        "name": "Welch's t-test (Independent, Unequal Variances)",
         "Objective": "Comparison",
         "Dependent_Variable": "Continuous",
         "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
@@ -415,7 +436,6 @@ def main():
 
             for test in results:
                 st.write(f"✅ {test}")
-                st.markdown("### Explanation") 
 
         else:
 
