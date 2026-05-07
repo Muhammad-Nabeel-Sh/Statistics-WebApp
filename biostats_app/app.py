@@ -852,60 +852,282 @@ def render_latex(formula_text):
 def render_test_widget(test_name):
     """Render interactive widget for specific statistical test."""
     if test_name == "One-sample t-test":
-        st.markdown("**Interactive Calculator:**")
-        with st.form(key="t_test_form"):
-            col1, col2 = st.columns(2)
-            with col1:
-                sample_mean = st.number_input(
-                    "Sample Mean (x̄)", value=125.0, key="t_sample_mean"
-                )
-                pop_mean = st.number_input(
-                    "Population Mean (μ₀)", value=120.0, key="t_pop_mean"
-                )
-            with col2:
-                sample_std = st.number_input(
-                    "Sample Std Dev (s)", value=10.0, min_value=0.01, key="t_sample_std"
-                )
-                sample_size = st.number_input(
-                    "Sample Size (n)", value=30, min_value=2, key="t_sample_size"
-                )
-            submit = st.form_submit_button("Calculate")
+        import plotly.graph_objects as go
+        from scipy.stats import ttest_1samp
 
-        if submit or (sample_size > 0 and sample_std > 0):
-            std_error = sample_std / (sample_size**0.5)
-            t_stat = (sample_mean - pop_mean) / std_error
-            st.markdown(f"**Standard Error:** {std_error:.4f}")
-            st.markdown(f"**t-statistic:** {t_stat:.4f}")
-            st.markdown(f"**Degrees of Freedom:** {sample_size - 1}")
+        st.subheader("Interactive One-sample t-test")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        population_mean = st.slider(
+            "Reference Mean",
+            -10.0,
+            10.0,
+            0.0,
+            0.1,
+        )
+
+        sample_mean_shift = st.slider(
+            "Sample Mean Shift",
+            -5.0,
+            5.0,
+            1.0,
+            0.1,
+        )
+
+        sd = st.slider(
+            "Standard Deviation",
+            0.1,
+            5.0,
+            1.0,
+            0.1,
+        )
+
+        # =========================
+        # DATA
+        # =========================
+
+        np.random.seed(42)
+
+        sample = np.random.normal(
+            population_mean + sample_mean_shift,
+            sd,
+            80,
+        )
+
+        t, p = ttest_1samp(sample, population_mean)
+
+        # =========================
+        # STATS
+        # =========================
+
+        st.latex(rf"t = {t:.3f}")
+
+        st.write(f"p-value = {p:.5f}")
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Histogram(
+                x=sample,
+                nbinsx=20,
+            )
+        )
+
+        fig.add_vline(
+            x=population_mean,
+            line_dash="dash",
+        )
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=550,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
 
     elif test_name == "One-sample z-test":
-        st.markdown("**Interactive Calculator:**")
-        with st.form(key="z_test_form"):
-            col1, col2 = st.columns(2)
-            with col1:
-                sample_mean = st.number_input(
-                    "Sample Mean (x̄)", value=125.0, key="z_sample_mean"
-                )
-                pop_mean = st.number_input(
-                    "Population Mean (μ₀)", value=120.0, key="z_pop_mean"
-                )
-            with col2:
-                pop_std = st.number_input(
-                    "Population Std Dev (σ)",
-                    value=10.0,
-                    min_value=0.01,
-                    key="z_pop_std",
-                )
-                sample_size = st.number_input(
-                    "Sample Size (n)", value=30, min_value=2, key="z_sample_size"
-                )
-            submit = st.form_submit_button("Calculate")
+        import plotly.graph_objects as go
+        from statsmodels.stats.weightstats import ztest
 
-        if submit or (sample_size > 0 and pop_std > 0):
-            std_error = pop_std / (sample_size**0.5)
-            z_stat = (sample_mean - pop_mean) / std_error
-            st.markdown(f"**Standard Error:** {std_error:.4f}")
-            st.markdown(f"**z-statistic:** {z_stat:.4f}")
+        st.subheader("Interactive One-sample z-test")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        population_mean = st.slider(
+            "Population Mean",
+            -10.0,
+            10.0,
+            0.0,
+            0.1,
+        )
+
+        shift = st.slider(
+            "Sample Mean Shift",
+            -5.0,
+            5.0,
+            1.0,
+            0.1,
+        )
+
+        # =========================
+        # DATA
+        # =========================
+
+        np.random.seed(42)
+
+        sample = np.random.normal(
+            population_mean + shift,
+            1,
+            300,
+        )
+
+        z, p = ztest(sample, value=population_mean)
+
+        # =========================
+        # STATS
+        # =========================
+
+        st.latex(rf"z = {z:.3f}")
+
+        st.write(f"p-value = {p:.5f}")
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Histogram(x=sample))
+
+        fig.add_vline(
+            x=population_mean,
+            line_dash="dash",
+        )
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=550,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "One-sample Proportion Test (Binomial Test)":
+        import plotly.graph_objects as go
+        from scipy.stats import binomtest
+
+        st.subheader("Interactive One-sample Proportion Test")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        expected_p = st.slider(
+            "Expected Proportion",
+            0.0,
+            1.0,
+            0.5,
+            0.01,
+        )
+
+        observed_p = st.slider(
+            "Observed Proportion",
+            0.0,
+            1.0,
+            0.7,
+            0.01,
+        )
+
+        n = st.slider(
+            "Sample Size",
+            10,
+            500,
+            100,
+        )
+
+        # =========================
+        # TEST
+        # =========================
+
+        successes = int(observed_p * n)
+
+        result = binomtest(
+            successes,
+            n,
+            expected_p,
+        )
+
+        # =========================
+        # STATS
+        # =========================
+
+        st.latex(rf"\hat{{p}} = {observed_p:.2f}")
+
+        st.write(f"p-value = {result.pvalue:.5f}")
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Bar(
+                x=["Expected", "Observed"],
+                y=[expected_p, observed_p],
+            )
+        )
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=500,
+            yaxis=dict(range=[0, 1]),
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "One-sample Wilcoxon Signed-Rank Test":
+        import plotly.graph_objects as go
+        from scipy.stats import wilcoxon
+
+        st.subheader("Interactive One-sample Wilcoxon Signed-Rank Test")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        median_shift = st.slider(
+            "Median Shift",
+            -5.0,
+            5.0,
+            1.0,
+            0.1,
+        )
+
+        # =========================
+        # DATA
+        # =========================
+
+        np.random.seed(42)
+
+        sample = np.random.exponential(1, 80)
+
+        sample = sample + median_shift
+
+        stat, p = wilcoxon(sample)
+
+        # =========================
+        # STATS
+        # =========================
+
+        st.latex(rf"W = {stat:.3f}")
+
+        st.write(f"p-value = {p:.5f}")
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Box(y=sample))
+
+        fig.add_hline(y=0)
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=500,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
 
     elif test_name == "Student's t-test (Independent)":
         import plotly.graph_objects as go
@@ -1311,6 +1533,296 @@ def render_test_widget(test_name):
         fig.update_layout(
             template="plotly_dark",
             height=700,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "Wilcoxon Signed-Rank Test":
+        import plotly.graph_objects as go
+        from scipy.stats import wilcoxon
+
+        st.subheader("Interactive Wilcoxon Signed-Rank Test")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        median_shift = st.slider(
+            "Median Shift",
+            -5.0,
+            5.0,
+            1.0,
+            0.1,
+        )
+
+        noise = st.slider(
+            "Noise",
+            0.1,
+            5.0,
+            1.0,
+            0.1,
+        )
+
+        n = st.slider(
+            "Sample Size",
+            10,
+            200,
+            40,
+        )
+
+        # =========================
+        # DATA
+        # =========================
+
+        np.random.seed(42)
+
+        before = np.random.exponential(1, n)
+
+        after = before + median_shift + np.random.normal(0, noise, n)
+
+        stat, p = wilcoxon(before, after)
+
+        # =========================
+        # STATS
+        # =========================
+
+        st.latex(rf"W = {stat:.3f}")
+
+        st.write(f"p-value = {p:.5f}")
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        for i in range(n):
+
+            fig.add_trace(
+                go.Scatter(
+                    x=["Before", "After"],
+                    y=[before[i], after[i]],
+                    mode="lines+markers",
+                    showlegend=False,
+                )
+            )
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=600,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "Mann-Whitney U Test":
+        import plotly.graph_objects as go
+        from scipy.stats import mannwhitneyu
+
+        st.subheader("Interactive Mann-Whitney U Test")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        location_shift = st.slider(
+            "Distribution Shift",
+            0.0,
+            10.0,
+            2.0,
+            0.1,
+        )
+
+        spread = st.slider(
+            "Distribution Spread",
+            0.1,
+            5.0,
+            1.0,
+            0.1,
+        )
+
+        n = st.slider(
+            "Sample Size",
+            10,
+            300,
+            60,
+        )
+
+        # =========================
+        # DATA
+        # =========================
+
+        np.random.seed(42)
+
+        g1 = np.random.exponential(spread, n)
+
+        g2 = np.random.exponential(spread, n) + location_shift
+
+        u, p = mannwhitneyu(g1, g2)
+
+        # =========================
+        # STATS
+        # =========================
+
+        st.latex(rf"U = {u:.3f}")
+
+        st.write(f"p-value = {p:.5f}")
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Violin(y=g1, name="Group 1"))
+        fig.add_trace(go.Violin(y=g2, name="Group 2"))
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=550,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "Kruskal-Wallis Test":
+        import plotly.graph_objects as go
+        from scipy.stats import kruskal
+
+        st.subheader("Interactive Kruskal-Wallis Test")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        shift = st.slider(
+            "Group Separation",
+            0.0,
+            10.0,
+            2.0,
+            0.1,
+        )
+
+        spread = st.slider(
+            "Distribution Spread",
+            0.1,
+            5.0,
+            1.0,
+            0.1,
+        )
+
+        # =========================
+        # DATA
+        # =========================
+
+        np.random.seed(42)
+
+        g1 = np.random.gamma(2, spread, 60)
+
+        g2 = np.random.gamma(2, spread, 60) + shift
+
+        g3 = np.random.gamma(2, spread, 60) + shift * 2
+
+        H, p = kruskal(g1, g2, g3)
+
+        # =========================
+        # STATS
+        # =========================
+
+        st.latex(rf"H = {H:.3f}")
+
+        st.write(f"p-value = {p:.5f}")
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Box(y=g1, name="Group 1"))
+        fig.add_trace(go.Box(y=g2, name="Group 2"))
+        fig.add_trace(go.Box(y=g3, name="Group 3"))
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=550,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "Friedman Test":
+        import plotly.graph_objects as go
+        from scipy.stats import friedmanchisquare
+
+        st.subheader("Interactive Friedman Test")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        trend = st.slider(
+            "Repeated Trend",
+            -5.0,
+            5.0,
+            1.0,
+            0.1,
+        )
+
+        noise = st.slider(
+            "Noise",
+            0.1,
+            5.0,
+            1.0,
+            0.1,
+        )
+
+        subjects = st.slider(
+            "Subjects",
+            5,
+            100,
+            20,
+        )
+
+        # =========================
+        # DATA
+        # =========================
+
+        np.random.seed(42)
+
+        t1 = np.random.exponential(1, subjects)
+
+        t2 = t1 + trend + np.random.normal(0, noise, subjects)
+
+        t3 = t2 + trend + np.random.normal(0, noise, subjects)
+
+        stat, p = friedmanchisquare(t1, t2, t3)
+
+        # =========================
+        # STATS
+        # =========================
+
+        st.latex(rf"\chi^2 = {stat:.3f}")
+
+        st.write(f"p-value = {p:.5f}")
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        for i in range(subjects):
+
+            fig.add_trace(
+                go.Scatter(
+                    x=["T1", "T2", "T3"],
+                    y=[t1[i], t2[i], t3[i]],
+                    mode="lines+markers",
+                    showlegend=False,
+                )
+            )
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=600,
         )
 
         st.plotly_chart(fig, use_container_width=True)
