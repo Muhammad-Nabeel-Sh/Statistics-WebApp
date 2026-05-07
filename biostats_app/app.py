@@ -907,6 +907,249 @@ def render_test_widget(test_name):
             st.markdown(f"**Standard Error:** {std_error:.4f}")
             st.markdown(f"**z-statistic:** {z_stat:.4f}")
 
+    elif test_name == "Pearson Correlation":
+        st.subheader("Interactive Pearson Correlation")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            r = st.slider("Correlation Coefficient (r)", -1.0, 1.0, 0.5, 0.01)
+
+        with col2:
+            n = st.slider("Sample Size (n)", 3, 100, 30)
+
+        # =========================
+        # LATEX
+        # =========================
+
+        st.latex(rf"""
+            r = {r:.2f}
+            """)
+
+        # =========================
+        # PLOTLY FIGURE
+        # =========================
+
+        x = np.random.normal(size=n)
+        y = r * x + np.sqrt(1 - r**2) * np.random.normal(size=n)
+
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Scatter(
+                x=x,
+                y=y,
+                mode="markers",
+                name="Data Points",
+            )
+        )
+
+        fig.update_layout(
+            height=500,
+            template="plotly_dark",
+            margin=dict(l=20, r=20, t=40, b=20),
+            xaxis_title="X",
+            yaxis_title="Y",
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "Spearman Rank Correlation":
+        import plotly.graph_objects as go
+        from scipy.stats import spearmanr
+
+        st.subheader("Interactive Spearman Rank Correlation")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        curve_strength = st.slider(
+            "Monotonic Strength",
+            0.1,
+            3.0,
+            1.0,
+            0.1,
+        )
+
+        noise = st.slider(
+            "Noise",
+            0.1,
+            5.0,
+            1.0,
+            0.1,
+        )
+
+        # =========================
+        # DATA
+        # =========================
+
+        np.random.seed(42)
+
+        x = np.linspace(0, 10, 300)
+
+        y = x**curve_strength + np.random.normal(0, noise, 300)
+
+        rho, _ = spearmanr(x, y)
+
+        # =========================
+        # EQUATION
+        # =========================
+
+        st.latex(rf"\rho = {rho:.3f}")
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Scatter(
+                x=x,
+                y=y,
+                mode="markers",
+                name="Ranked Data",
+            )
+        )
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=550,
+            xaxis_title="Ranked X",
+            yaxis_title="Ranked Y",
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "Chi-Square Test of Independence":
+        import plotly.graph_objects as go
+        from scipy.stats import chi2_contingency
+
+        st.subheader("Interactive Chi-Square Test of Independence")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        a = st.slider("Cell A", 1, 100, 30)
+        b = st.slider("Cell B", 1, 100, 20)
+        c = st.slider("Cell C", 1, 100, 10)
+        d = st.slider("Cell D", 1, 100, 40)
+
+        # =========================
+        # TABLE
+        # =========================
+
+        table = np.array([[a, b], [c, d]])
+
+        chi2, p, dof, expected = chi2_contingency(table)
+
+        # =========================
+        # STATISTICS
+        # =========================
+
+        st.latex(rf"\chi^2 = {chi2:.3f}")
+
+        st.write(f"p-value = {p:.5f}")
+
+        # =========================
+        # HEATMAP
+        # =========================
+
+        fig = go.Figure(
+            data=go.Heatmap(
+                z=table,
+                text=table,
+                texttemplate="%{text}",
+            )
+        )
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=500,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "Point-Biserial Correlation":
+        import plotly.graph_objects as go
+        from scipy.stats import pointbiserialr
+
+        st.subheader("Interactive Point-Biserial Correlation")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        group_difference = st.slider(
+            "Group Mean Difference",
+            0.0,
+            10.0,
+            3.0,
+            0.1,
+        )
+
+        noise = st.slider(
+            "Noise",
+            0.1,
+            5.0,
+            1.0,
+            0.1,
+        )
+
+        # =========================
+        # DATA
+        # =========================
+
+        np.random.seed(42)
+
+        group = np.random.binomial(1, 0.5, 300)
+
+        y = group * group_difference + np.random.normal(0, noise, 300)
+
+        r, p = pointbiserialr(group, y)
+
+        # =========================
+        # EQUATION
+        # =========================
+
+        st.latex(rf"r_{{pb}} = {r:.3f}")
+
+        st.write(f"p-value = {p:.5f}")
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Box(
+                y=y[group == 0],
+                name="Group 0",
+            )
+        )
+
+        fig.add_trace(
+            go.Box(
+                y=y[group == 1],
+                name="Group 1",
+            )
+        )
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=550,
+            yaxis_title="Continuous Variable",
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
     elif test_name == "Logistic Regression":
 
         st.subheader("Interactive Logistic Regression")
