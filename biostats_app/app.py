@@ -12,7 +12,7 @@ rules = [
         "Distribution": "Normal",
         "Explanation": "One-Sample t-test This test is used to determine whether the mean of a single sample is significantly different from a known or hypothesized population mean. It assumes that the data is continuous and follows a normal distribution. It is typically used when comparing a clinical measurement (like blood pressure) against a standard clinical threshold. ",
         "Example": "Example: A researcher wants to test if the average systolic blood pressure of a group of patients is significantly different from the standard threshold of 120 mmHg. The researcher collects blood pressure readings from 30 patients and performs a one-sample t-test to compare the sample mean against the known population mean of 120 mmHg.",
-        "Formula": "$$ t = \frac{\bar{x} - \mu_0}{\frac{s}{\sqrt{n}}}$$ where X̄ is the sample mean, μ is the population mean, s is the sample standard deviation, n is the sample size and $\frac{s}{\sqrt{n}}$ is the standard error of the mean.",
+        "Formula": r"$$ t = \frac{\bar{x} - \mu_0}{\frac{s}{\sqrt{n}}}$$ where X̄ is the sample mean, μ is the population mean, s is the sample standard deviation, n is the sample size and $\frac{s}{\sqrt{n}}$ is the standard error of the mean.",
     },
     {
         "name": "One-sample z-test",
@@ -283,12 +283,23 @@ rules = [
 # =========================
 # MATCHING ENGINE
 # =========================
+
+CRITERIA_FIELDS = [
+    "Objective",
+    "Dependent_Variable",
+    "Independent_Variable",
+    "Groups",
+    "Relation",
+    "Distribution",
+]
+
+
 def matches_rule(user_input, rule):
 
-    for key, rule_val in rule.items():
+    for key in CRITERIA_FIELDS:
 
-        # Skip test name
-        if key == "name":
+        rule_val = rule.get(key)
+        if rule_val is None:
             continue
 
         user_val = user_input.get(key)
@@ -435,7 +446,19 @@ def main():
             st.success("Recommended Statistical Test(s):")
 
             for test in results:
-                st.write(f"✅ {test}")
+                rule = next((r for r in rules if r["name"] == test), None)
+                if rule:
+                    with st.expander(f"✅ {test}"):
+                        if "Explanation" in rule:
+                            st.markdown("## Explanation:")
+                            st.markdown(rule["Explanation"])
+                        if "Example" in rule:
+                            st.markdown("## Example:")
+                            st.markdown(rule["Example"])
+                        if "Formula" in rule:
+                            st.markdown("## Formula:")
+                            render_latex(rule["Formula"])
+                        render_test_widget(test)
 
         else:
 
@@ -455,6 +478,87 @@ def main():
     )
 
     build_tree(rules, FIELDS)
+
+
+# =========================
+# INTERACTIVE WIDGETS
+# =========================
+
+
+def render_latex(formula_text):
+    """Render LaTeX formulas from text with $$ delimiters."""
+    import re
+
+    last_end = 0
+    for match in re.finditer(r'\$\$(.*?)\$\$', formula_text, re.DOTALL):
+        # Text before this match
+        text_before = formula_text[last_end:match.start()]
+        if text_before.strip():
+            st.markdown(text_before)
+
+        # The LaTeX block (without $$ delimiters)
+        latex_code = match.group(1).strip()
+        st.latex(latex_code)
+
+        last_end = match.end()
+
+    # Text after the last match
+    text_after = formula_text[last_end:]
+    if text_after.strip():
+        st.markdown(text_after)
+
+
+def render_test_widget(test_name):
+    """Render interactive widget for specific statistical test."""
+    if test_name == "One-sample t-test":
+        st.markdown("**Interactive Calculator:**")
+        col1, col2 = st.columns(2)
+        with col1:
+            sample_mean = st.number_input(
+                "Sample Mean (x̄)", value=125.0, key="t_sample_mean"
+            )
+            pop_mean = st.number_input(
+                "Population Mean (μ₀)", value=120.0, key="t_pop_mean"
+            )
+        with col2:
+            sample_std = st.number_input(
+                "Sample Std Dev (s)", value=10.0, min_value=0.01, key="t_sample_std"
+            )
+            sample_size = st.number_input(
+                "Sample Size (n)", value=30, min_value=2, key="t_sample_size"
+            )
+        if sample_size > 0 and sample_std > 0:
+            std_error = sample_std / (sample_size**0.5)
+            t_stat = (sample_mean - pop_mean) / std_error
+            st.markdown(f"**Standard Error:** {std_error:.4f}")
+            st.markdown(f"**t-statistic:** {t_stat:.4f}")
+            st.markdown(f"**Degrees of Freedom:** {sample_size - 1}")
+
+    elif test_name == "One-sample z-test":
+        st.markdown("**Interactive Calculator:**")
+        col1, col2 = st.columns(2)
+        with col1:
+            sample_mean = st.number_input(
+                "Sample Mean (x̄)", value=125.0, key="z_sample_mean"
+            )
+            pop_mean = st.number_input(
+                "Population Mean (μ₀)", value=120.0, key="z_pop_mean"
+            )
+        with col2:
+            pop_std = st.number_input(
+                "Population Std Dev (σ)", value=10.0, min_value=0.01, key="z_pop_std"
+            )
+            sample_size = st.number_input(
+                "Sample Size (n)", value=30, min_value=2, key="z_sample_size"
+            )
+        if sample_size > 0 and pop_std > 0:
+            std_error = pop_std / (sample_size**0.5)
+            z_stat = (sample_mean - pop_mean) / std_error
+            st.markdown(f"**Standard Error:** {std_error:.4f}")
+            st.markdown(f"**z-statistic:** {z_stat:.4f}")
+
+    else:
+        st.info("Interactive widget coming soon for this test.")
 
 
 # =========================
