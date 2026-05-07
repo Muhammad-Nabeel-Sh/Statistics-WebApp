@@ -907,6 +907,492 @@ def render_test_widget(test_name):
             st.markdown(f"**Standard Error:** {std_error:.4f}")
             st.markdown(f"**z-statistic:** {z_stat:.4f}")
 
+    elif test_name == "Student's t-test (Independent)":
+        import plotly.graph_objects as go
+        from scipy.stats import ttest_ind
+
+        st.subheader("Interactive Independent t-test")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        mean_diff = st.slider(
+            "Mean Difference",
+            0.0,
+            10.0,
+            2.0,
+            0.1,
+        )
+
+        sd = st.slider(
+            "Shared Standard Deviation",
+            0.5,
+            5.0,
+            1.5,
+            0.1,
+        )
+
+        n = st.slider(
+            "Sample Size per Group",
+            10,
+            300,
+            50,
+        )
+
+        # =========================
+        # DATA
+        # =========================
+
+        np.random.seed(42)
+
+        group1 = np.random.normal(0, sd, n)
+
+        group2 = np.random.normal(mean_diff, sd, n)
+
+        t, p = ttest_ind(group1, group2)
+
+        # =========================
+        # STATS
+        # =========================
+
+        st.latex(rf"t = {t:.3f}")
+
+        st.write(f"p-value = {p:.5f}")
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Box(y=group1, name="Group 1"))
+        fig.add_trace(go.Box(y=group2, name="Group 2"))
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=550,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "Welch's t-test (Independent, Unequal Variances)":
+        import plotly.graph_objects as go
+        from scipy.stats import ttest_ind
+
+        st.subheader("Interactive Welch's t-test")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        mean_diff = st.slider("Mean Difference", 0.0, 10.0, 2.0, 0.1)
+
+        sd1 = st.slider("Group 1 SD", 0.5, 8.0, 1.0, 0.1)
+
+        sd2 = st.slider("Group 2 SD", 0.5, 8.0, 3.0, 0.1)
+
+        n = st.slider("Sample Size", 10, 300, 50)
+
+        # =========================
+        # DATA
+        # =========================
+
+        np.random.seed(42)
+
+        g1 = np.random.normal(0, sd1, n)
+
+        g2 = np.random.normal(mean_diff, sd2, n)
+
+        t, p = ttest_ind(g1, g2, equal_var=False)
+
+        # =========================
+        # STATS
+        # =========================
+
+        st.latex(rf"t = {t:.3f}")
+
+        st.write(f"p-value = {p:.5f}")
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Violin(y=g1, name="Group 1"))
+
+        fig.add_trace(go.Violin(y=g2, name="Group 2"))
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=550,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "Paired t-test":
+        import plotly.graph_objects as go
+        from scipy.stats import ttest_rel
+
+        st.subheader("Interactive Paired t-test")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        effect = st.slider(
+            "Treatment Effect",
+            -5.0,
+            5.0,
+            1.0,
+            0.1,
+        )
+
+        noise = st.slider(
+            "Noise",
+            0.1,
+            5.0,
+            1.0,
+            0.1,
+        )
+
+        n = st.slider("Number of Subjects", 10, 200, 40)
+
+        # =========================
+        # DATA
+        # =========================
+
+        np.random.seed(42)
+
+        before = np.random.normal(10, noise, n)
+
+        after = before + effect + np.random.normal(0, noise, n)
+
+        t, p = ttest_rel(before, after)
+
+        # =========================
+        # STATS
+        # =========================
+
+        st.latex(rf"t = {t:.3f}")
+
+        st.write(f"p-value = {p:.5f}")
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        for i in range(n):
+
+            fig.add_trace(
+                go.Scatter(
+                    x=["Before", "After"],
+                    y=[before[i], after[i]],
+                    mode="lines+markers",
+                    showlegend=False,
+                )
+            )
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=600,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "One-way ANOVA":
+        import plotly.graph_objects as go
+        from scipy.stats import f_oneway
+
+        st.subheader("Interactive One-way ANOVA")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        mean_shift = st.slider(
+            "Group Separation",
+            0.0,
+            10.0,
+            2.0,
+            0.1,
+        )
+
+        noise = st.slider(
+            "Within-group Variability",
+            0.1,
+            5.0,
+            1.0,
+            0.1,
+        )
+
+        # =========================
+        # DATA
+        # =========================
+
+        np.random.seed(42)
+
+        g1 = np.random.normal(0, noise, 60)
+        g2 = np.random.normal(mean_shift, noise, 60)
+        g3 = np.random.normal(mean_shift * 2, noise, 60)
+
+        F, p = f_oneway(g1, g2, g3)
+
+        # =========================
+        # STATS
+        # =========================
+
+        st.latex(rf"F = {F:.3f}")
+
+        st.write(f"p-value = {p:.5f}")
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Box(y=g1, name="Group 1"))
+        fig.add_trace(go.Box(y=g2, name="Group 2"))
+        fig.add_trace(go.Box(y=g3, name="Group 3"))
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=550,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "Repeated Measures ANOVA":
+        import plotly.graph_objects as go
+
+        st.subheader("Interactive Repeated Measures ANOVA")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        trend = st.slider(
+            "Time Trend",
+            -5.0,
+            5.0,
+            1.0,
+            0.1,
+        )
+
+        noise = st.slider(
+            "Noise",
+            0.1,
+            5.0,
+            1.0,
+            0.1,
+        )
+
+        subjects = st.slider(
+            "Subjects",
+            5,
+            100,
+            20,
+        )
+
+        # =========================
+        # DATA
+        # =========================
+
+        np.random.seed(42)
+
+        timepoints = 4
+
+        data = []
+
+        for s in range(subjects):
+
+            baseline = np.random.normal(10, noise)
+
+            vals = [
+                baseline + trend * t + np.random.normal(0, noise)
+                for t in range(timepoints)
+            ]
+
+            data.append(vals)
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        for vals in data:
+
+            fig.add_trace(
+                go.Scatter(
+                    x=[1, 2, 3, 4],
+                    y=vals,
+                    mode="lines+markers",
+                    showlegend=False,
+                )
+            )
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=600,
+            xaxis_title="Time",
+            yaxis_title="Measurement",
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "MANOVA":
+        import plotly.graph_objects as go
+
+        st.subheader("Interactive MANOVA")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        separation = st.slider(
+            "Group Separation",
+            0.0,
+            10.0,
+            3.0,
+            0.1,
+        )
+
+        # =========================
+        # DATA
+        # =========================
+
+        np.random.seed(42)
+
+        n = 100
+
+        g1 = np.random.multivariate_normal(
+            [0, 0, 0],
+            np.eye(3),
+            n,
+        )
+
+        g2 = np.random.multivariate_normal(
+            [separation, separation, separation],
+            np.eye(3),
+            n,
+        )
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Scatter3d(
+                x=g1[:, 0],
+                y=g1[:, 1],
+                z=g1[:, 2],
+                mode="markers",
+                name="Group 1",
+            )
+        )
+
+        fig.add_trace(
+            go.Scatter3d(
+                x=g2[:, 0],
+                y=g2[:, 1],
+                z=g2[:, 2],
+                mode="markers",
+                name="Group 2",
+            )
+        )
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=700,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "Permutation MANOVA or Non-Parametric MANOVA":
+        import plotly.graph_objects as go
+
+        st.subheader("Interactive Permutation MANOVA")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        separation = st.slider(
+            "Cluster Separation",
+            0.0,
+            10.0,
+            2.0,
+            0.1,
+        )
+
+        dispersion = st.slider(
+            "Cluster Dispersion",
+            0.1,
+            5.0,
+            1.0,
+            0.1,
+        )
+
+        # =========================
+        # DATA
+        # =========================
+
+        np.random.seed(42)
+
+        n = 150
+
+        g1 = np.random.multivariate_normal(
+            [0, 0],
+            np.eye(2) * dispersion,
+            n,
+        )
+
+        g2 = np.random.multivariate_normal(
+            [separation, separation],
+            np.eye(2) * dispersion,
+            n,
+        )
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Scatter(
+                x=g1[:, 0],
+                y=g1[:, 1],
+                mode="markers",
+                name="Group 1",
+            )
+        )
+
+        fig.add_trace(
+            go.Scatter(
+                x=g2[:, 0],
+                y=g2[:, 1],
+                mode="markers",
+                name="Group 2",
+            )
+        )
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=600,
+            xaxis_title="Dimension 1",
+            yaxis_title="Dimension 2",
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
     elif test_name == "Pearson Correlation":
         st.subheader("Interactive Pearson Correlation")
 
@@ -967,6 +1453,13 @@ def render_test_widget(test_name):
         # =========================
         # CONTROLS
         # =========================
+        direction = st.selectbox(
+            "Correlation Direction",
+            [
+                "Positive",
+                "Negative",
+            ],
+        )
 
         curve_strength = st.slider(
             "Monotonic Strength",
@@ -992,7 +1485,9 @@ def render_test_widget(test_name):
 
         x = np.linspace(0, 10, 300)
 
-        y = x**curve_strength + np.random.normal(0, noise, 300)
+        direction_multiplier = 1 if direction == "Positive" else -1
+
+        y = direction_multiplier * (x**curve_strength) + np.random.normal(0, noise, 300)
 
         rho, _ = spearmanr(x, y)
 
