@@ -307,7 +307,7 @@ rules = [
         "Independent_Variable": "None",
         "Groups": "1",
         "Relation": ["Independent", "Dependent", "any"],
-        "Distribution": "Non-normal",
+        "Distribution": ["Non-normal", "Normal", "any"],
         "Explanation": "Chi-Square Goodness-of-Fit Test This test is used to determine if a sample data fits a particular distribution. It compares the observed frequencies with the expected frequencies under the null hypothesis.",
         "Example": "A researcher wants to test if the distribution of blood types in a sample of 100 people matches the expected distribution in the general population. The researcher performs a Chi-Square Goodness-of-Fit Test to determine if there is a significant difference between the observed and expected distributions.",
         "Formula": r"""
@@ -1125,6 +1125,68 @@ def render_test_widget(test_name):
         fig.update_layout(
             template="plotly_dark",
             height=500,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "Chi-Square Goodness-of-Fit Test":
+        import plotly.graph_objects as go
+        from scipy.stats import chisquare
+
+        st.subheader("Interactive Chi-Square Goodness-of-Fit Test")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        obs1 = st.slider("Observed Category A", 1, 100, 40)
+        obs2 = st.slider("Observed Category B", 1, 100, 30)
+        obs3 = st.slider("Observed Category C", 1, 100, 20)
+
+        # =========================
+        # DATA
+        # =========================
+
+        observed = np.array([obs1, obs2, obs3])
+
+        expected = np.mean(observed)
+
+        chi2, p = chisquare(observed)
+
+        # =========================
+        # STATS
+        # =========================
+
+        st.latex(rf"\chi^2 = {chi2:.3f}")
+
+        st.write(f"p-value = {p:.5f}")
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Bar(
+                x=["A", "B", "C"],
+                y=observed,
+                name="Observed",
+            )
+        )
+
+        fig.add_trace(
+            go.Scatter(
+                x=["A", "B", "C"],
+                y=[expected] * 3,
+                mode="lines",
+                name="Expected",
+            )
+        )
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=550,
         )
 
         st.plotly_chart(fig, use_container_width=True)
