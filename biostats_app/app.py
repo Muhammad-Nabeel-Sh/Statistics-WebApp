@@ -1,4 +1,6 @@
 import streamlit as st
+import numpy as np
+import matplotlib.pyplot as plt
 
 rules = [
     # Comparison Tests
@@ -888,6 +890,35 @@ def render_test_widget(test_name):
             z_stat = (sample_mean - pop_mean) / std_error
             st.markdown(f"**Standard Error:** {std_error:.4f}")
             st.markdown(f"**z-statistic:** {z_stat:.4f}")
+
+    elif test_name == "Simple Linear Regression":
+        import numpy as np
+        import matplotlib.pyplot as plt
+        import streamlit as st
+
+        st.header("Interactive Simple Linear Regression")
+
+        # Controllers
+        beta0 = st.slider("Intercept (β₀)", -10.0, 10.0, 0.0)
+        beta1 = st.slider("Slope (β₁)", -5.0, 5.0, 1.0)
+
+        # Generate data
+        x = np.linspace(-10, 10, 200)
+        y = beta0 + beta1 * x
+
+        # Formula
+        st.latex(rf"y = {beta0:.2f} + ({beta1:.2f})x")
+
+        # Plot
+        fig, ax = plt.subplots()
+
+        ax.plot(x, y)
+
+        ax.set_xlabel("x")
+        ax.set_ylabel("y")
+        ax.set_title("Simple Linear Regression")
+
+        st.pyplot(fig)
 
     else:
         st.info("Interactive widget coming soon for this test.")
