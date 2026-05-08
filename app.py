@@ -755,181 +755,201 @@ def main():
 
         with st.expander("Variable Types"):
             st.markdown("""
-            :orange[**Binary / Dichotomous**]: Two exclusive categories (e.g., Male/Female, Pass/Fail).
-            
-            :orange[**Categorical / Nominal**]: Categories without inherent order (e.g., Eye color, Department).
-            
-            :orange[**Ordinal**]: Categories with a natural rank/order, but unequal distances between them (e.g., Likert scales, Education level).
-            
-            :orange[**Discrete (Count)**]: Numerical values that must be whole numbers (e.g., Number of teeth, Number of children).
-            
-            :orange[**Continuous (Scale)**]: Numerical values that can be measured with infinite precision (e.g., Height, Lab values, Temperature).
-            
-            :orange[**Dependent (Outcome)**]: The variable being measured/tested (the "effect").
-            
-            :orange[**Independent (Predictor)**]: The variable being manipulated or used to group data (the "cause").
+            :orange[**Binary / Dichotomous**]: Two mutually exclusive and exhaustive categories with no order or magnitude (e.g., Male/Female, Pass/Fail, Alive/Dead). Only frequencies, proportions, and mode are meaningful.
+
+            :orange[**Categorical / Nominal**]: Categories without any inherent order or numerical meaning. Arithmetic operations are invalid; only frequency counts, proportions, and mode are appropriate (e.g., Eye color, Blood type, Department).
+
+            :orange[**Ordinal**]: Categories with a meaningful order but unequal or unknown intervals between them. The median and percentiles are appropriate; the mean is not (e.g., Likert scales, Pain severity, Education level).
+
+            :orange[**Discrete (Count)**]: Whole-number values representing countable quantities, often with a true zero. May follow a Poisson or negative binomial distribution (e.g., Number of teeth, Number of hospital visits).
+
+            :orange[**Continuous (Scale)**]: Values that can theoretically take any magnitude within a range, measured on a continuum. Parametric tests are appropriate when normally distributed (e.g., Height, Blood pressure, Serum cholesterol, Temperature).
+
+            :orange[**Dependent (Outcome)**]: The variable being measured, tested, or predicted — the "effect" or "response" in a research question (Y variable in regression).
+
+            :orange[**Independent (Predictor)**]: The variable being manipulated, exposed, or used to predict — the "cause" or "exposure" (X variable in regression).
             """)
 
         with st.expander("Descriptive Statistics"):
             st.markdown("""
-            :orange[**Mean**]: The mathematical average (sum divided by count). Sensitive to outliers.
-            
-            :orange[**Median**]: The middle value when data is ordered. Better for skewed data.
-            
-            :orange[**Mode**]: The most frequently occurring value.
-            
-            :orange[**Standard Deviation (SD)**]: Measures the spread of data around the mean.
-            
-            :orange[**Variance**]: The square of the Standard Deviation; measures variability.
-            
-            :orange[**Interquartile Range (IQR)**]: The range of the middle 50% of values (Q3 - Q1).
+            :orange[**Mean**]: The arithmetic average (sum divided by n). Sensitive to outliers and skewness. Best used for symmetric, normally distributed data. In a normal distribution, mean ≈ median.
+
+            :orange[**Median**]: The 50th percentile — the middle value when data are sorted. Robust to outliers and skewness. Preferred measure of central tendency for ordinal or non-normal data.
+
+            :orange[**Mode**]: The most frequently occurring value(s). The only measure of central tendency applicable to nominal/categorical data. A dataset may have multiple modes (bimodal, multimodal).
+
+            :orange[**Standard Deviation (SD)**]: The average distance of individual values from the mean, in the original units. In a normal distribution, ~68% of data falls within ±1 SD, ~95% within ±2 SD.
+
+            :orange[**Variance**]: The average of squared deviations from the mean (SD²). Used in ANOVA and other methods because variances are additive, though the squared units make direct interpretation less intuitive.
+
+            :orange[**Interquartile Range (IQR)**]: The range covering the middle 50% of values (Q3 − Q1). Robust to outliers. Typically paired with the median for non-normal data; visualized as the box in box plots.
+
+            :orange[**Standard Error (SE)**]: The standard deviation of a sampling distribution (e.g., the SD of sample means). It measures the precision of an estimate and decreases as sample size increases (SE = SD/√n). Distinct from standard deviation, which measures dispersion in the sample itself.
             """)
 
         with st.expander("Sampling & Research Design"):
             st.markdown("""
-            :orange[**Random Sampling**]: Every member of the population has an equal chance of being selected.
-            
-            :orange[**Stratified Sampling**]: Dividing the population into subgroups (strata) and sampling from each.
-            
-            :orange[**Blinding**]: Preventing participants (Single-blind) or both (Double-blind) from knowing the treatment to reduce bias.
-            
-            :orange[**Randomization**]: Assigning participants to groups by chance to ensure groups are comparable.
-            
-            :orange[**Randomized Controlled Trial (RCT)**]: The gold standard for clinical trials where participants are randomly assigned to a treatment or control group.
-            
-            :orange[**Cohort Study**]: A longitudinal study that follows a group of people over time to see how exposures affect outcomes.
-            
-            :orange[**Case-Control Study**]: A study that compares people with a condition (cases) to those without (controls) to find retrospective causes.
-            
-            :orange[**Cross-sectional Study**]: A "snapshot" study that analyzes data from a population at a single point in time.
-            
-            :orange[**Placebo Effect**]: Improvement due to the belief in a treatment rather than the treatment itself.
+            :orange[**Random Sampling**]: Every member of the population has an equal and independent chance of selection. Minimizes selection bias and enables generalization to the target population.
+
+            :orange[**Stratified Sampling**]: Dividing the population into relevant subgroups (strata), then sampling from each. Ensures adequate representation of all subgroups, especially small ones.
+
+            :orange[**Blinding**]: Concealing group allocation to reduce bias. Single-blind: participants are unaware. Double-blind: both participants and investigators are unaware. Essential for minimizing performance and detection bias.
+
+            :orange[**Randomization**]: Assigning participants to groups by a chance mechanism (e.g., random number generator). Balances known and unknown confounders between groups, enabling causal inference.
+
+            :orange[**Randomized Controlled Trial (RCT)**]: The gold standard for intervention studies, where participants are randomly allocated to treatment or control. Minimizes confounding and allows strong causal conclusions.
+
+            :orange[**Cohort Study**]: A longitudinal design that follows a group over time, comparing outcomes between exposed and unexposed individuals. Can establish temporality (cause precedes effect) but susceptible to loss to follow-up.
+
+            :orange[**Case-Control Study**]: A retrospective design comparing individuals with a condition (cases) to those without (controls), looking back at past exposures. Efficient for rare diseases but prone to recall bias.
+
+            :orange[**Cross-sectional Study**]: A "snapshot" measuring exposure and outcome simultaneously at one time point. Useful for estimating prevalence but cannot establish causality due to lack of temporality.
+
+            :orange[**Placebo Effect**]: Improvement in symptoms due to the belief in receiving treatment rather than the treatment's pharmacological action. Controlled for by using a placebo arm in RCTs.
+
+            :orange[**Intention-to-Treat (ITT)**]: Analyzing participants according to the group they were originally randomized to, regardless of whether they completed the treatment or crossed over. ITT preserves the benefits of randomization and estimates real-world treatment effectiveness.
+
+            :orange[**Selection Bias / Information Bias / Publication Bias**]: Three major sources of systematic error in medical research. Selection bias occurs when study groups differ systematically (e.g., non-random allocation). Information bias occurs when measurement errors differ between groups. Publication bias occurs when studies with positive results are more likely to be published than null findings.
+
+            :orange[**Confounding by Indication**]: A specific confounding in observational studies where the reason a treatment was prescribed (indication) is itself associated with the outcome. For example, sicker patients receive more aggressive treatment, making it appear harmful if disease severity is unmeasured.
             """)
 
         with st.expander("Hypothesis Testing"):
             st.markdown("""
-            :orange[**Null Hypothesis (H₀)**]: Suggests no effect or no difference exists.
-            
-            :orange[**Alternative Hypothesis (H₁)**]: Suggests a significant effect or difference exists.
-            
-            :orange[**P-value**]: Probability of observing results as extreme or more extreme than what was obtained, assuming the null hypothesis is true. A low p-value (<0.05) suggests the observed data are unlikely under the null, providing evidence against it.
-            
-            :orange[**Alpha (α)**]: The threshold for significance (usually 0.05).
-            
-            :orange[**Type I Error (α)**]: Falsely rejecting a true null hypothesis (a "false positive").
-            
-            :orange[**Type II Error (β)**]: Failing to reject a false null hypothesis (a "false negative").
+            :orange[**Null Hypothesis (H₀)**]: The default assumption of no effect, no difference, or no association. It is the hypothesis directly tested; rejecting H₀ provides evidence for the alternative.
+
+            :orange[**Alternative Hypothesis (H₁)**]: The hypothesis that a real effect, difference, or association exists. It is supported only if sufficient evidence against H₀ is found.
+
+            :orange[**Alpha (α)**]: The pre-specified significance threshold (conventionally 0.05). The maximum acceptable probability of a Type I error. If p < α, the result is declared statistically significant.
+
+            :orange[**Type I Error (α)**]: Falsely rejecting a true null hypothesis — concluding an effect exists when it does not (a "false positive"). The risk is set by alpha.
+
+            :orange[**Type II Error (β)**]: Failing to reject a false null hypothesis — concluding no effect when one exists (a "false negative"). Power (1 − β) is the probability of avoiding this error.
             
             :orange[**Confidence Interval (CI)**]: A range of values computed from the sample such that if the study were repeated many times, a given percentage (usually 95%) of such intervals would contain the true population parameter.
+
+            :orange[**Degrees of Freedom (df)**]: The number of independent values in a calculation that are free to vary. In statistical tests, df determines which reference distribution (t, F, χ²) is used to compute the p-value.
+
+            :orange[**One-tailed vs Two-tailed Test**]: A one-tailed test specifies the direction of the effect (e.g., treatment increases outcome), allocating the entire alpha to one tail. A two-tailed test tests for any difference (increase or decrease), splitting alpha across both tails. Two-tailed tests are standard in medical research.
+
+            :orange[**Multiple Comparison Correction**]: Adjustments to significance thresholds when testing multiple hypotheses to control inflated Type I error risk. Bonferroni divides α by the number of tests (most conservative). False Discovery Rate (FDR) controls the expected proportion of false positives among rejected hypotheses (less conservative, more powerful).
             """)
 
         with st.expander("Distribution & Assumptions"):
             st.markdown("""
-            :orange[**Parametric Tests**]: Assume data follows a specific distribution (usually Normal). More powerful but strict.
-            
-            :orange[**Non-parametric Tests**]: "Distribution-free" tests. Used for ordinal or non-normal data.
-            
-            :orange[**Normality**]: When data follows a bell-shaped curve (symmetrical around the mean).
-            
-            :orange[**Skewness**]: Measures the lack of symmetry in a distribution (Left/Right skew).
-            
-            :orange[**Kurtosis**]: Measures the "tailedness" or extremity of a distribution — higher kurtosis indicates heavier tails and more outliers relative to a normal distribution.
-            
-            :orange[**Homogeneity of Variance**]: The assumption that different groups have approximately the same spread/variance.
-            
-            :orange[**Outlier**]: An extreme value that deviates significantly from the rest of the dataset.
+            :orange[**Parametric Tests**]: Tests that assume data follow a specific distribution (usually normal). Generally higher statistical power when assumptions are met, but require normality, independence, and often equal variances.
+
+            :orange[**Non-parametric Tests**]: Distribution-free tests that rank data rather than using raw values. Do not assume normality. Less powerful when parametric assumptions hold, but more robust when they are violated. Appropriate for ordinal data.
+
+            :orange[**Normality**]: The condition where data follows a symmetrical, bell-shaped distribution around the mean. Assessed via Q-Q plots, histograms, or tests (Shapiro-Wilk, Kolmogorov-Smirnov).
+
+            :orange[**Skewness**]: A measure of asymmetry. Positive (right) skew has a long tail on the right; negative (left) skew has a long tail on the left. Skewed data may require transformation or non-parametric tests.
+
+            :orange[**Homogeneity of Variance**]: The assumption that compared groups have equal variances. Assessed using Levene's test. Violations inflate Type I error; Welch's correction or non-parametric alternatives may be needed.
+
+            :orange[**Outlier**]: An extreme observation lying far from the main body of data (typically > 1.5 × IQR beyond Q1/Q3 or > 3 SD from the mean). Should be investigated rather than automatically removed.
+
+            :orange[**Central Limit Theorem (CLT)**]: The sampling distribution of the mean approaches a normal distribution as sample size increases, regardless of the population distribution's shape. This justifies parametric tests (t-tests, ANOVA) even with non-normal raw data when the sample is sufficiently large (typically n > 30).
+
+            :orange[**Sphericity**]: The assumption that the variances of the differences between all pairs of repeated measures are equal. Critical for repeated measures ANOVA; violation inflates the F-statistic. Corrected using Greenhouse-Geisser or Huynh-Feldt adjustments.
             """)
 
         with st.expander("Effect Size & Power"):
             st.markdown("""
-            :orange[**Effect Size**]: Quantitative measure of the magnitude of a phenomenon.
-            
-            :orange[**Statistical Power (1-β)**]: The probability that a test will correctly reject a false null hypothesis.
-            
-            :orange[**Cohen's d**]: Measures the distance between two means in SD units.
-            
-            :orange[**Eta-squared (η²)**]: Proportion of variance in the outcome explained by a predictor in ANOVA.
-            
-            :orange[**Cramer's V**]: Measure of association between two nominal variables.
+            :orange[**Effect Size**]: A standardized measure of the magnitude of a finding, independent of sample size. Essential for interpreting practical significance and for conducting power analyses. Unlike p-values, effect sizes are not inflated by large samples.
+
+            :orange[**Statistical Power (1 − β)**]: The probability that a test will correctly reject a false null hypothesis (detect a true effect). Depends on effect size, sample size, alpha, and test type. Conventional target: 80% power.
+
+            :orange[**Cohen's d**]: Standardized difference between two group means in pooled SD units. Benchmarks: 0.2 (small), 0.5 (medium), 0.8 (large). Commonly used for t-tests and meta-analysis.
+
+            :orange[**Eta-squared (η²)**]: The proportion of total variance in the outcome attributable to a factor in ANOVA. Ranges from 0 to 1. Partial η² is used when multiple factors are present.
+
+            :orange[**Cramer's V**]: An association measure for two nominal variables, derived from the chi-square statistic. Ranges from 0 (no association) to 1 (perfect association), adjusted for table dimensions.
             """)
 
         with st.expander("Correlation & Regression"):
             st.markdown("""
-            :orange[**Correlation**]: Measures the strength and direction of a relationship.
-            
-            :orange[**Pearson's r**]: Linear relationship between continuous variables (-1 to +1).
-            
-            :orange[**Spearman's ρ**]: Monotonic relationship (Rank-based).
-            
-            :orange[**Regression**]: Predicting a dependent variable based on one or more predictors.
-            
-            :orange[**R-squared (R²)**]: Percentage of variance explained by the model.
-            
-            :orange[**Adjusted R²**]: R² adjusted for the number of predictors in the model.
-            
-            :orange[**Residuals**]: The difference between observed and predicted values.
+            :orange[**Correlation**]: Quantifies the strength and direction of association between two variables, ranging from −1 to +1. Does not imply causation.
+
+            :orange[**Pearson's r**]: Measures the linear relationship between two continuous variables. Assumes normality and linearity. Benchmarks: ±0.1 (small), ±0.3 (medium), ±0.5 (large).
+
+            :orange[**Spearman's ρ**]: A rank-based measure of monotonic association. Does not assume linearity or normality. Appropriate for ordinal data or when Pearson assumptions are violated.
+
+            :orange[**Regression**]: Models the relationship between a dependent variable and one or more predictors to estimate effects or make predictions. Includes linear, logistic, Poisson, and other generalized linear models.
+
+            :orange[**R-squared (R²)**]: The coefficient of determination — the proportion of variance in the outcome explained by the predictors (0 to 1 or 0% to 100%).
+
+            :orange[**Adjusted R²**]: R² penalized for the number of predictors, allowing fair comparison between models with different numbers of variables. Prevents overfitting by adding a penalty for each additional predictor.
+
+            :orange[**Residuals**]: The differences between observed and model-predicted values. Analyzing residuals (vs. fitted plots, Q-Q plots) is essential for checking regression assumptions.
             """)
 
         with st.expander("Reliability & Validity"):
             st.markdown("""
-            :orange[**Reliability**]: Consistency or stability of a measurement.
-            
-            :orange[**Validity**]: Accuracy; whether a tool measures what it's supposed to.
-            
-            :orange[**Face Validity**]: Whether a test "looks like" it measures what it's supposed to.
-            
-            :orange[**Content Validity**]: Whether a test covers all aspects of the concept being measured.
-            
-            :orange[**Construct Validity**]: Whether a test truly measures the theoretical construct it claims to.
-            
-            :orange[**Criterion Validity**]: How well one measure predicts an outcome based on another measure.
-            
-            :orange[**Cronbach's Alpha**]: Measures internal consistency (0 to 1).
-            
-            :orange[**Intraclass Correlation (ICC)**]: Used to measure reliability of ratings for grouped data.
-            
-            :orange[**Inter-rater Reliability**]: Agreement between different observers (e.g., Cohen's Kappa).
+            :orange[**Reliability**]: The consistency or reproducibility of a measurement under consistent conditions. A necessary but not sufficient condition for validity — a measure can be reliable without being valid.
+
+            :orange[**Validity**]: The degree to which a tool accurately measures what it claims to measure. A valid measurement must first be reliable.
+
+            :orange[**Face Validity**]: The subjective judgment that a test "looks like" it measures the intended construct. The weakest form of validity but important for participant and stakeholder acceptance.
+
+            :orange[**Content Validity**]: The extent to which a measurement covers all relevant facets of the construct. Assessed by expert judgment (e.g., a depression scale covering all DSM criteria).
+
+            :orange[**Construct Validity**]: Whether a test truly measures the theoretical construct it claims to. Established through convergent validity (agreement with related measures) and discriminant validity (distinction from unrelated measures).
+
+            :orange[**Criterion Validity**]: How well a measure predicts an outcome based on an established gold standard. Concurrent validity compares with an existing measure simultaneously; predictive validity forecasts future outcomes.
+
+            :orange[**Cronbach's Alpha**]: A measure of internal consistency (0 to 1). Values ≥ 0.7 are generally acceptable for research instruments. Reflects the average inter-item correlation among scale items.
+
+            :orange[**Intraclass Correlation (ICC)**]: A reliability coefficient for quantitative ratings, assessing how strongly measurements from the same group resemble each other. Used for test-retest, inter-rater, and intra-rater reliability.
+
+            :orange[**Inter-rater Reliability**]: The degree of agreement between different raters or observers assessing the same phenomenon. Quantified using Cohen's Kappa (categorical data) or ICC (continuous data).
             """)
 
         with st.expander("Clinical/Biostatistics"):
             st.markdown("""
-            :orange[**Sensitivity**]: Ability to correctly identify those *with* a condition (True Positive Rate).
-            
-            :orange[**Specificity**]: Ability to correctly identify those *without* a condition (True Negative Rate).
-            
-            :orange[**Positive Predictive Value (PPV)**]: Probability that a person with a positive test actually has the disease.
-            
-            :orange[**Negative Predictive Value (NPV)**]: Probability that a person with a negative test result truly does not have the condition.
-            
-            :orange[**Likelihood Ratio (LR+/LR-)**]: How much a test result changes the odds of having a condition.
-            
-            :orange[**Odds Ratio (OR)**]: Odds of an event occurring in one group vs. another.
-            
-            :orange[**Relative Risk (RR)**]: Risk of an event in an exposed group vs. unexposed group.
-            
-            :orange[**Number Needed to Treat (NNT)**]: Number of patients who need to be treated to prevent one additional bad outcome.
-            
-            :orange[**Number Needed to Harm (NNH)**]: Number of patients who need to be treated for one additional patient to experience a harmful adverse outcome.
-            
-            :orange[**Forest Plot**]: Visual representation of the results of multiple studies in a meta-analysis.
+            :orange[**Sensitivity (True Positive Rate)**]: The proportion of individuals with the condition who correctly test positive. A highly sensitive test rules out disease when negative (mnemonic: SNout).
+
+            :orange[**Specificity (True Negative Rate)**]: The proportion of individuals without the condition who correctly test negative. A highly specific test rules in disease when positive (mnemonic: SPin).
+
+            :orange[**Positive Predictive Value (PPV)**]: The probability that a positive test truly indicates the condition. Depends on disease prevalence — the same test has lower PPV in low-prevalence populations.
+
+            :orange[**Negative Predictive Value (NPV)**]: The probability that a negative test result correctly rules out the condition. Higher in low-prevalence populations.
+
+            :orange[**Likelihood Ratio (LR+/LR−)**]: The ratio of the probability of a given test result in a person with the condition to the probability in a person without. LR+ > 10 provides strong evidence to rule in disease; LR− < 0.1 provides strong evidence to rule out disease. Used with Bayes' theorem to update pre-test to post-test probability.
+
+            :orange[**Odds Ratio (OR)**]: The ratio of the odds of an event in one group to the odds in another. Commonly used in case-control studies and logistic regression. OR > 1 indicates increased odds; OR < 1 indicates decreased odds.
+
+            :orange[**Relative Risk (RR)**]: The ratio of the risk (cumulative incidence) in the exposed group to the risk in the unexposed group. Used in cohort studies and RCTs. RR > 1 indicates increased risk.
+
+            :orange[**Number Needed to Treat (NNT)**]: The number of patients who must receive a treatment for one additional patient to benefit (avoid one adverse outcome). Calculated as 1/ARR. Lower NNT means more effective treatment.
+
+            :orange[**Number Needed to Harm (NNH)**]: The number of patients who need to be treated for one additional patient to experience a harmful adverse outcome. Calculated as 1/ARI. Higher NNH means safer treatment.
+
+            :orange[**Forest Plot**]: A graphical display in meta-analysis showing individual study effect sizes (squares) and confidence intervals (horizontal lines), along with a pooled summary estimate (diamond). The size of each square reflects the study's weight in the analysis.
+
+            :orange[**Absolute Risk Reduction (ARR)**]: The absolute difference in event rates between control and treatment groups (CER − TER). Unlike RRR, ARR reflects the actual clinical benefit and is not inflated by low baseline risk.
+
+            :orange[**Relative Risk Reduction (RRR)**]: The proportional reduction in risk between treatment and control (ARR/CER). RRR can be misleadingly large when the baseline risk is very low (e.g., reducing 0.01% to 0.005% is a 50% RRR but only 0.005% ARR).
+
+            :orange[**Standardized Mean Difference (SMD)**]: An effect size expressing the difference between two group means in standard deviation units. Used in meta-analyses when studies measure the same outcome using different scales. Cohen's d and Hedges' g are common variants.
             """)
 
         with st.expander("Survival Analysis"):
             st.markdown("""
-            :orange[**Censoring**]: Occurs when we have incomplete information about the survival time of an individual.
-            
-            :orange[**Kaplan-Meier Curve**]: A non-parametric estimator of the survival function that estimates the probability of surviving past a given time point, accounting for censored data.
-            
-            :orange[**Hazard Ratio (HR)**]: The ratio of the hazard rates corresponding to the conditions described by two levels of an explanatory variable.
+            :orange[**Censoring**]: Occurs when the exact survival time is unknown — typically because the event (e.g., death) has not occurred by study end (right-censoring), the subject withdrew, or was lost to follow-up. A defining feature of survival analysis.
+
+            :orange[**Kaplan-Meier Curve**]: A non-parametric estimator of the survival function, plotting the probability of surviving past successive time points. Accounts for censored data. The curve steps down at each event time.
+
+            :orange[**Hazard Ratio (HR)**]: The ratio of the instantaneous risk (hazard) of the event in one group to another at any given time. Under the Cox proportional hazards model, HR is assumed constant over time. HR = 2 means the event rate is twice as high.
             """)
 
         with st.expander("Advanced Modeling"):
             st.markdown("""
-            :orange[**Multicollinearity**]: When independent variables in a regression model are highly correlated.
-            
-            :orange[**Interaction Effect**]: When the effect of one independent variable on the outcome depends on the level of another independent variable.
-            
-            :orange[**Confounding Variable**]: A variable that distorts the association between an exposure and an outcome because it is associated with both. If not controlled for, it can bias the estimated effect.
+            :orange[**Multicollinearity**]: A condition in regression where independent variables are highly correlated, making it difficult to isolate their individual effects. Inflates standard errors and destabilizes coefficient estimates. Detected using Variance Inflation Factor (VIF > 5–10 signals concern).
+
+            :orange[**Interaction Effect (Effect Modification)**]: Occurs when the effect of one variable on the outcome differs across levels of another variable (e.g., a drug works differently in men vs. women). Tested by including a product term in the model.
+
+            :orange[**Confounding Variable**]: A variable that distorts the association between an exposure and outcome because it is associated with both. If unmeasured or uncontrolled, it can bias the estimated effect — either exaggerating or masking the true relationship.
             """)
 
     st.title("🔬 Statistical Test Finder")
