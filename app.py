@@ -651,6 +651,40 @@ rules = [
                     - :orange[AUC = 1.0]: Perfect diagnostic accuracy
                     """,
     },
+    {
+        "name": "Likelihood Ratio Analysis",
+        "Objective": "Diagnostic Accuracy",
+        "Dependent_Variable": "Binary/Dichotomous",
+        "Independent_Variable": "Binary/Dichotomous",
+        "Groups": "any",
+        "Relation": "any",
+        "Distribution": "any",
+        "Explanation": "Likelihood Ratios (LR) are used to assess the value of performing a diagnostic test. LR+ indicates how much more likely a positive test is to be found in a person with the disease than in a person without. LR- indicates how much more likely a negative test is to be found in a person with the disease than in a person without.",
+        "Example": "A clinician uses the LR+ of a physical exam finding to update their post-test probability of a patient having appendicitis.",
+        "Formula": r"""
+                    $$ LR+ = \frac{\text{Sensitivity}}{1 - \text{Specificity}} $$
+                    $$ LR- = \frac{1 - \text{Sensitivity}}{\text{Specificity}} $$
+                    - :orange[LR+ > 10]: Large increase in disease probability
+                    - :orange[LR- < 0.1]: Large decrease in disease probability
+                    """,
+    },
+    {
+        "name": "Cohen's Kappa (Agreement Analysis)",
+        "Objective": "Diagnostic Accuracy",
+        "Dependent_Variable": "Categorical",
+        "Independent_Variable": "Categorical",
+        "Groups": "2",
+        "Relation": "Dependent",
+        "Distribution": "any",
+        "Explanation": "Cohen's Kappa is used to measure inter-rater or intra-rater agreement for categorical variables. It accounts for the agreement occurring by chance.",
+        "Example": "Two radiologists evaluate the same set of X-rays to diagnose a fracture. Cohen's Kappa measures how consistently they agree on the presence or absence of a fracture.",
+        "Formula": r"""
+                    $$ \kappa = \frac{p_o - p_e}{1 - p_e} $$
+                    Where:
+                    - :orange[$p_o$]: Observed proportionate agreement
+                    - :orange[$p_e$]: Probability of random agreement
+                    """,
+    },
 ]
 
 
@@ -3251,6 +3285,84 @@ def render_test_widget(test_name):
             height=500,
         )
         st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "Likelihood Ratio Analysis":
+        st.subheader("Interactive Likelihood Ratio Analysis")
+
+        # =========================
+        # CONTROLS
+        # =========================
+        col1, col2 = st.columns(2)
+        with col1:
+            sens = st.slider("Sensitivity", 0.0, 1.0, 0.8)
+        with col2:
+            spec = st.slider("Specificity", 0.0, 1.0, 0.9)
+
+        # =========================
+        # CALCULATIONS
+        # =========================
+        lr_pos = sens / (1 - spec) if spec < 1 else float("inf")
+        lr_neg = (1 - sens) / spec if spec > 0 else float("inf")
+
+        # =========================
+        # STATS
+        # =========================
+        c1, c2 = st.columns(2)
+        c1.metric("LR+", f"{lr_pos:.2f}")
+        c2.metric("LR-", f"{lr_neg:.2f}")
+
+        st.info("""
+        - **LR+ > 10**: Strong evidence to rule in disease.
+        - **LR- < 0.1**: Strong evidence to rule out disease.
+        """)
+
+    elif test_name == "Cohen's Kappa (Agreement Analysis)":
+        st.subheader("Interactive Agreement Analysis (Cohen's Kappa)")
+
+        # =========================
+        # CONTROLS
+        # =========================
+        st.write("Enter agreement counts between two raters:")
+        c1, c2 = st.columns(2)
+        with c1:
+            yy = st.number_input("Both say YES", min_value=0, value=40)
+            yn = st.number_input(
+                "Rater 1 says YES, Rater 2 says NO", min_value=0, value=10
+            )
+        with c2:
+            ny = st.number_input(
+                "Rater 1 says NO, Rater 2 says YES", min_value=0, value=5
+            )
+            nn = st.number_input("Both say NO", min_value=0, value=45)
+
+        # =========================
+        # CALCULATIONS
+        # =========================
+        total = yy + yn + ny + nn
+        if total > 0:
+            po = (yy + nn) / total
+            pe = ((yy + yn) * (yy + ny) + (ny + nn) * (yn + nn)) / (total * total)
+            kappa = (po - pe) / (1 - pe) if pe < 1 else 1.0
+        else:
+            kappa = 0
+
+        # =========================
+        # STATS
+        # =========================
+        st.metric("Cohen's Kappa (κ)", f"{kappa:.3f}")
+
+        if kappa > 0.8:
+            interpretation = "Almost Perfect Agreement"
+        elif kappa > 0.6:
+            interpretation = "Substantial Agreement"
+        elif kappa > 0.4:
+            interpretation = "Moderate Agreement"
+        elif kappa > 0.2:
+            interpretation = "Fair Agreement"
+        else:
+            interpretation = "Slight/Poor Agreement"
+
+        st.success(f"Interpretation: {interpretation}")
 
     else:
         st.info("Interactive widget coming soon for this test.")
