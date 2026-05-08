@@ -684,9 +684,217 @@ rules = [
                     - :orange[$p_e$]: Probability of random agreement
                     """,
     },
+    # ========================================================================
+    # TWO-WAY ANOVA
+    # ========================================================================
+    {
+        "name": "Two-way ANOVA",
+        "Objective": "Comparison",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": "Categorical",
+        "Groups": "More than 2",
+        "Relation": "Independent",
+        "Distribution": "Normal",
+        "Explanation": "Two-way ANOVA This test evaluates the effect of two categorical independent variables (factors) on a continuous dependent variable, as well as their interaction. For example, it can test the effect of treatment (drug vs. placebo) and sex (male vs. female) on blood pressure, and whether the treatment effect differs by sex. It assumes normality, homogeneity of variances, and independence of observations.",
+        "Example": "A researcher wants to test the effects of a new drug and sex on blood pressure. 60 patients are divided into drug and placebo groups, each containing equal numbers of males and females. Two-way ANOVA is used to test for main effects of drug and sex, and their interaction.",
+        "Formula": r"""
+                    $$ SS_{total} = SS_A + SS_B + SS_{AB} + SS_{error} $$
+                    $$ F_A = \frac{MS_A}{MS_{error}}, \quad F_B = \frac{MS_B}{MS_{error}}, \quad F_{AB} = \frac{MS_{AB}}{MS_{error}} $$
+                    Where:
+                    - :orange[$SS_A$] and :orange[$SS_B$] are sums of squares for factors A and B,
+                    - :orange[$SS_{AB}$] is the sum of squares for the interaction,
+                    - :orange[$MS$] values are mean squares (SS/df),
+                    - :orange[$F$]-statistics test the main effects and interaction separately,
+                    - Significance is determined by comparing each :orange[$F$] to the F-distribution with appropriate df.
+                    """,
+    },
+    # ========================================================================
+    # ANCOVA
+    # ========================================================================
+    {
+        "name": "ANCOVA",
+        "Objective": "Comparison",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": "Categorical",
+        "Groups": "More than 2",
+        "Relation": "Independent",
+        "Distribution": "Normal",
+        "Explanation": "Analysis of Covariance (ANCOVA) combines ANOVA and linear regression. It compares group means on a continuous dependent variable while statistically controlling for the effect of one or more continuous covariates. This increases statistical power by reducing within-group error variance and adjusts for baseline differences. It assumes normality, homogeneity of variances, homogeneity of regression slopes, and linearity between covariate and outcome.",
+        "Example": "A researcher wants to compare post-treatment blood pressure between three drug groups while controlling for baseline blood pressure. ANCOVA adjusts the post-treatment means for baseline differences, providing a more precise estimate of treatment effects.",
+        "Formula": r"""
+                    $$ F = \frac{MS_{between}}{MS_{error}} $$
+                    Where:
+                    - The dependent variable :orange[$Y$] is modeled as: $$ Y_{ij} = \mu + \tau_j + \beta(X_{ij} - \bar{X}) + \epsilon_{ij} $$
+                    - :orange[$\tau_j$] is the effect of the :orange[$j$]-th group,
+                    - :orange[$\beta$] is the regression coefficient for the covariate :orange[$X$],
+                    - :orange[$MS_{error}$] is reduced by the variance explained by the covariate, increasing power.
+                    """,
+    },
+    # ========================================================================
+    # COX PROPORTIONAL HAZARDS REGRESSION
+    # ========================================================================
+    {
+        "name": "Cox Proportional Hazards Regression",
+        "Objective": "Survival Analysis",
+        "Dependent_Variable": "Time-to-event",
+        "Independent_Variable": "Continuous",
+        "Groups": "any",
+        "Relation": "any",
+        "Distribution": "any",
+        "Explanation": "Cox Proportional Hazards Regression is the most widely used model for survival analysis. It estimates the hazard ratio (HR) for time-to-event outcomes while adjusting for multiple covariates simultaneously. It is a semi-parametric model that makes no assumption about the shape of the baseline hazard function, but assumes proportional hazards (the effect of each predictor is constant over time).",
+        "Example": "A researcher wants to identify predictors of survival time after a cancer diagnosis. They collect data on age, tumor stage, and treatment type from 200 patients and perform Cox regression to estimate the hazard ratios for each predictor, indicating which factors significantly increase or decrease mortality risk.",
+        "Formula": r"""
+                    $$ h(t) = h_0(t) \exp(\beta_1 X_1 + \beta_2 X_2 + \ldots + \beta_k X_k) $$
+                    Where:
+                    - :orange[$h(t)$] is the hazard at time :orange[$t$],
+                    - :orange[$h_0(t)$] is the baseline hazard (when all predictors are zero),
+                    - :orange[$\beta_1, \beta_2, \ldots$] are the log-hazard ratios for predictors :orange[$X_1, X_2, \ldots$],
+                    - :orange[$\exp(\beta_i)$] is the hazard ratio for predictor :orange[$X_i$],
+                    - The proportional hazards assumption means :orange[$h_0(t)$] cancels out when comparing two individuals.
+                    """,
+    },
+    # ========================================================================
+    # LOG-RANK TEST
+    # ========================================================================
+    {
+        "name": "Log-Rank Test",
+        "Objective": "Survival Analysis",
+        "Dependent_Variable": "Time-to-event",
+        "Independent_Variable": "Categorical",
+        "Groups": "2",
+        "Relation": "Independent",
+        "Distribution": "any",
+        "Explanation": "The Log-Rank Test is a non-parametric test that compares the survival distributions of two or more independent groups. It tests whether the time-to-event differs significantly between groups. It makes no assumption about the shape of the survival curves but assumes that the hazard rates are proportional over time. It is commonly used alongside Kaplan-Meier survival curves.",
+        "Example": "A researcher compares survival times between 50 patients receiving a new cancer drug and 50 receiving standard therapy. The Log-Rank Test determines if the survival difference between the two groups is statistically significant.",
+        "Formula": r"""
+                    $$ \chi^2 = \frac{(O_1 - E_1)^2}{E_1} + \frac{(O_2 - E_2)^2}{E_2} $$
+                    Where:
+                    - :orange[$O_1$] and :orange[$O_2$] are the observed number of events in each group,
+                    - :orange[$E_1$] and :orange[$E_2$] are the expected number of events under the null hypothesis of no difference,
+                    - The test statistic is compared to a chi-square distribution with 1 degree of freedom (for two groups).
+                    - For more than two groups, an extension with :orange[$k-1$] degrees of freedom is used.
+                    """,
+    },
+    # ========================================================================
+    # BLAND-ALTMAN ANALYSIS
+    # ========================================================================
+    {
+        "name": "Bland-Altman Analysis",
+        "Objective": "Diagnostic Accuracy",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": "Continuous",
+        "Groups": "2",
+        "Relation": "Dependent",
+        "Distribution": "any",
+        "Explanation": "Bland-Altman Analysis is the standard method for assessing agreement between two quantitative measurement techniques. It plots the difference between paired measurements against their mean, calculates the mean difference (bias), and defines limits of agreement (mean difference ± 1.96 SD of differences). Unlike correlation, which measures association, Bland-Altman directly assesses interchangeability. It assumes the differences are approximately normally distributed.",
+        "Example": "A researcher develops a new digital caliper for measuring tooth dimensions and wants to know if it agrees with the traditional mechanical caliper. 50 teeth are measured with both instruments. Bland-Altman Analysis shows a mean difference of 0.02 mm (negligible bias) with limits of agreement from −0.15 to +0.19 mm, confirming the new caliper can replace the old one for clinical purposes.",
+        "Formula": r"""
+                    $$ \bar{d} = \frac{1}{n} \sum_{i=1}^{n} (X_i - Y_i) $$
+                    $$ s_d = \sqrt{\frac{\sum_{i=1}^{n} (d_i - \bar{d})^2}{n-1}} $$
+                    $$ \text{Upper LoA} = \bar{d} + 1.96 \times s_d $$
+                    $$ \text{Lower LoA} = \bar{d} - 1.96 \times s_d $$
+                    Where:
+                    - :orange[$X_i$] and :orange[$Y_i$] are paired measurements from two methods,
+                    - :orange[$\bar{d}$] is the mean difference (bias),
+                    - :orange[$s_d$] is the standard deviation of the differences,
+                    - :orange[LoA] are the limits of agreement (95% tolerance limits).
+                    """,
+    },
+    # ========================================================================
+    # KENDALL'S TAU-B
+    # ========================================================================
+    {
+        "name": "Kendall's Tau-b",
+        "Objective": "Association/Correlation",
+        "Dependent_Variable": ["Ordinal", "Continuous"],
+        "Independent_Variable": ["Ordinal", "Continuous"],
+        "Groups": "any",
+        "Relation": "any",
+        "Distribution": "Non-normal",
+        "Explanation": "Kendall's Tau-b is a non-parametric rank correlation coefficient that measures the strength and direction of monotonic association between two variables. It is more robust than Spearman's ρ when there are many tied ranks and provides a more conservative estimate. Its interpretation is more intuitive: it represents the difference between the probability of concordance and discordance.",
+        "Example": "A researcher wants to assess the association between two ordinal ratings of periodontal disease severity (none, mild, moderate, severe) given by two different examiners on 100 patients. Kendall's Tau-b is preferred over Spearman's ρ due to the high number of expected ties.",
+        "Formula": r"""
+                    $$ \tau_b = \frac{C - D}{\sqrt{(C + D + T_X)(C + D + T_Y)}} $$
+                    Where:
+                    - :orange[$C$] is the number of concordant pairs,
+                    - :orange[$D$] is the number of discordant pairs,
+                    - :orange[$T_X$] is the number of pairs tied only on variable :orange[$X$],
+                    - :orange[$T_Y$] is the number of pairs tied only on variable :orange[$Y$],
+                    - :orange[$\tau_b$] ranges from −1 (perfect disagreement) to +1 (perfect agreement).
+                    """,
+    },
+    # ========================================================================
+    # NEGATIVE BINOMIAL REGRESSION
+    # ========================================================================
+    {
+        "name": "Negative Binomial Regression",
+        "Objective": "Prediction",
+        "Dependent_Variable": "Discrete",
+        "Independent_Variable": "Continuous",
+        "Groups": "any",
+        "Relation": "any",
+        "Distribution": "any",
+        "Explanation": "Negative Binomial Regression is used for modeling count data when the variance exceeds the mean (overdispersion), which violates the Poisson Regression assumption of equal mean and variance. It adds an extra dispersion parameter to account for unobserved heterogeneity. It is commonly used in medical research for counts with many zeros or high variability, such as hospital readmissions, number of seizures, or dental caries counts.",
+        "Example": "A researcher wants to model the number of dental caries (cavities) in children based on sugar consumption, fluoride exposure, and brushing frequency. The count data shows variance much larger than the mean, so Negative Binomial Regression is chosen over Poisson Regression to account for overdispersion.",
+        "Formula": r"""
+                    $$ \log(\lambda_i) = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \ldots + \beta_k X_{ki} $$
+                    $$ \text{Var}(Y_i) = \lambda_i + \alpha \lambda_i^2 $$
+                    Where:
+                    - :orange[$\lambda_i$] is the expected count for observation :orange[$i$],
+                    - :orange[$\alpha$] is the dispersion parameter (:orange[$\alpha = 0$] reduces to Poisson),
+                    - :orange[$\alpha > 0$] indicates overdispersion,
+                    - Coefficients are estimated using maximum likelihood.
+                    """,
+    },
+    # ========================================================================
+    # WEIGHTED KAPPA
+    # ========================================================================
+    {
+        "name": "Weighted Kappa",
+        "Objective": "Diagnostic Accuracy",
+        "Dependent_Variable": "Ordinal",
+        "Independent_Variable": "Ordinal",
+        "Groups": "2",
+        "Relation": "Dependent",
+        "Distribution": "any",
+        "Explanation": "Weighted Kappa extends Cohen's Kappa to ordinal categorical ratings by incorporating partial credit for disagreements that are close (e.g., 'mild' vs. 'moderate' disagreement is penalized less than 'mild' vs. 'severe'). Linear weights penalize disagreements proportionally to their distance; quadratic weights penalize more severely. It is the standard agreement measure for ordinal scales in medical research.",
+        "Example": "Two radiologists independently classify 100 mammograms into four categories: normal, benign, suspicious, and malignant. Weighted Kappa is used to measure their agreement, where a disagreement between 'normal' and 'benign' is penalized less than between 'normal' and 'malignant'.",
+        "Formula": r"""
+                    $$ \kappa_w = 1 - \frac{\sum_{i=1}^{k} \sum_{j=1}^{k} w_{ij} O_{ij}}{\sum_{i=1}^{k} \sum_{j=1}^{k} w_{ij} E_{ij}} $$
+                    Where:
+                    - :orange[$O_{ij}$] and :orange[$E_{ij}$] are observed and expected frequencies for cell :orange[$(i,j)$],
+                    - :orange[$w_{ij}$] is the weight (0 for perfect agreement, 1 for maximum disagreement),
+                    - Linear weights: :orange[$w_{ij} = \frac{|i-j|}{k-1}$],
+                    - Quadratic weights: :orange[$w_{ij} = \frac{(i-j)^2}{(k-1)^2}$].
+                    """,
+    },
+    # ========================================================================
+    # FLEISS' KAPPA
+    # ========================================================================
+    {
+        "name": "Fleiss' Kappa",
+        "Objective": "Diagnostic Accuracy",
+        "Dependent_Variable": "Categorical",
+        "Independent_Variable": "Categorical",
+        "Groups": "More than 2",
+        "Relation": "Dependent",
+        "Distribution": "any",
+        "Explanation": "Fleiss' Kappa is an extension of Cohen's Kappa that measures inter-rater agreement for three or more raters evaluating categorical (nominal) ratings. Unlike Cohen's Kappa, which handles only two raters, Fleiss' Kappa simultaneously assesses agreement among multiple raters while correcting for chance agreement. It ranges from −1 to +1, with +1 indicating perfect agreement.",
+        "Example": "Three oral pathologists independently classify 50 biopsy slides into diagnostic categories (benign, dysplastic, malignant). Fleiss' Kappa measures the overall agreement among all three pathologists simultaneously, correcting for chance.",
+        "Formula": r"""
+                    $$ \kappa = \frac{\bar{P} - \bar{P_e}}{1 - \bar{P_e}} $$
+                    Where:
+                    - :orange[$\bar{P}$] is the mean proportion of observed agreement across all raters,
+                    - :orange[$\bar{P_e}$] is the mean proportion of expected agreement by chance,
+                    - :orange[$\kappa = 1$]: perfect agreement,
+                    - :orange[$\kappa = 0$]: agreement equivalent to chance,
+                    - :orange[$\kappa < 0$]: less than chance agreement.
+                    """,
+    },
 ]
 
-
+# =========================
+# MATCHING ENGINE
 # =========================
 # MATCHING ENGINE
 # =========================
@@ -979,6 +1187,7 @@ def main():
                 "Association/Correlation",
                 "Prediction",
                 "Diagnostic Accuracy",
+                "Survival Analysis",
             ],
         )
 
@@ -996,6 +1205,7 @@ def main():
                 "Discrete",
                 "Continuous",
                 "Multiple Continuous",
+                "Time-to-event",
             ],
         )
         st.markdown("##### :red[Independent Variable]")
@@ -2080,6 +2290,132 @@ def render_test_widget(test_name):
 
         st.plotly_chart(fig, use_container_width=True)
 
+    elif test_name == "Two-way ANOVA":
+
+        from scipy.stats import f_oneway
+        from scipy.stats import f as f_dist
+
+        st.subheader("Interactive Two-way ANOVA")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        effect_A = st.slider("Effect of Factor A (Group)", 0.0, 10.0, 2.0, 0.1)
+
+        effect_B = st.slider("Effect of Factor B (Sex)", 0.0, 10.0, 1.0, 0.1)
+
+        interaction = st.slider("Interaction (A × B)", -5.0, 5.0, 0.0, 0.1)
+
+        noise = st.slider("Within-group Variability", 0.1, 5.0, 1.0, 0.1)
+
+        # =========================
+        # DATA
+        # =========================
+
+        np.random.seed(42)
+        n_per_cell = 30
+
+        A1B1 = np.random.normal(0, noise, n_per_cell)
+        A1B2 = np.random.normal(effect_B, noise, n_per_cell)
+        A2B1 = np.random.normal(effect_A, noise, n_per_cell)
+        A2B2 = np.random.normal(effect_A + effect_B + interaction, noise, n_per_cell)
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Box(y=A1B1, name="A1 (Control), B1 (Male)"))
+        fig.add_trace(go.Box(y=A1B2, name="A1 (Control), B2 (Female)"))
+        fig.add_trace(go.Box(y=A2B1, name="A2 (Drug), B1 (Male)"))
+        fig.add_trace(go.Box(y=A2B2, name="A2 (Drug), B2 (Female)"))
+
+        fig.update_layout(template="plotly_dark", height=550)
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "ANCOVA":
+
+        from scipy.stats import linregress
+
+        st.subheader("Interactive ANCOVA")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        treatment_effect = st.slider("Treatment Effect", 0.0, 10.0, 3.0, 0.1)
+
+        covariate_strength = st.slider("Covariate Strength (β)", 0.0, 3.0, 1.0, 0.1)
+
+        noise = st.slider("Noise", 0.1, 5.0, 1.0, 0.1)
+
+        # =========================
+        # DATA
+        # =========================
+
+        np.random.seed(42)
+        n = 40
+
+        covariate = np.random.normal(50, 10, n)
+
+        control = covariate * covariate_strength + np.random.normal(0, noise, n)
+
+        treatment = (
+            covariate * covariate_strength + treatment_effect + np.random.normal(0, noise, n)
+        )
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Scatter(
+                x=covariate, y=control, mode="markers", name="Control",
+            )
+        )
+
+        fig.add_trace(
+            go.Scatter(
+                x=covariate, y=treatment, mode="markers", name="Treatment",
+            )
+        )
+
+        # Regression lines
+        slope_c, intercept_c, _, _, _ = linregress(covariate, control)
+        slope_t, intercept_t, _, _, _ = linregress(covariate, treatment)
+
+        x_line = np.linspace(covariate.min(), covariate.max(), 100)
+        fig.add_trace(
+            go.Scatter(
+                x=x_line,
+                y=intercept_c + slope_c * x_line,
+                mode="lines",
+                name="Control (adjusted)",
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=x_line,
+                y=intercept_t + slope_t * x_line,
+                mode="lines",
+                name="Treatment (adjusted)",
+            )
+        )
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=550,
+            xaxis_title="Covariate (Baseline)",
+            yaxis_title="Outcome",
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
     elif test_name == "Repeated Measures ANOVA":
 
         st.subheader("Interactive Repeated Measures ANOVA")
@@ -2728,6 +3064,57 @@ def render_test_widget(test_name):
 
         st.plotly_chart(fig, use_container_width=True)
 
+    elif test_name == "Kendall's Tau-b":
+
+        from scipy.stats import kendalltau
+
+        st.subheader("Interactive Kendall's Tau-b")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        strength = st.slider("Association Strength", 0.0, 1.0, 0.5, 0.05)
+
+        n = st.slider("Sample Size", 10, 200, 60)
+
+        noise = st.slider("Noise", 0.1, 5.0, 1.0, 0.1)
+
+        # =========================
+        # DATA
+        # =========================
+
+        np.random.seed(42)
+
+        x = np.random.normal(0, 1, n)
+        y = strength * x + np.random.normal(0, noise, n)
+
+        tau, p = kendalltau(x, y)
+
+        # =========================
+        # STATS
+        # =========================
+
+        st.latex(rf"\tau_b = {tau:.3f}")
+        st.latex(rf"\text{{p-value}} = {p:.5f}")
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        fig.add_trace(go.Scatter(x=x, y=y, mode="markers"))
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=500,
+            xaxis_title="X",
+            yaxis_title="Y",
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
     elif test_name == "Chi-Square Test of Independence":
 
         from scipy.stats import chi2_contingency
@@ -3161,6 +3548,115 @@ def render_test_widget(test_name):
 
         st.plotly_chart(fig, use_container_width=True)
 
+    elif test_name == "Cox Proportional Hazards Regression":
+
+        st.subheader("Interactive Cox Regression")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        hazard_ratio = st.slider("True Hazard Ratio (exp(β))", 0.5, 4.0, 2.0, 0.1)
+
+        n_subjects = st.slider("Number of Subjects", 20, 500, 100)
+
+        # =========================
+        # DATA
+        # =========================
+
+        np.random.seed(42)
+
+        group = np.random.binomial(1, 0.5, n_subjects)
+
+        log_hr = np.log(hazard_ratio)
+        baseline_hazard = 0.05
+
+        survival_times = -np.log(np.random.uniform(size=n_subjects)) / (
+            baseline_hazard * np.exp(log_hr * group)
+        )
+
+        censor_times = np.random.uniform(5, 20, n_subjects)
+
+        observed = (survival_times <= censor_times).astype(int)
+        times = np.minimum(survival_times, censor_times)
+
+        # =========================
+        # SURVIVAL CURVES (theoretical exponential)
+        # =========================
+
+        fig = go.Figure()
+        t_grid = np.linspace(0, max(times) * 1.1, 200)
+
+        for grp, label, color in [(0, "Control", "blue"), (1, "Treatment", "red")]:
+            hr = 1 if grp == 0 else hazard_ratio
+            # Exponential survival: S(t) = exp(-h0 * t * exp(beta * X))
+            surv = np.exp(-baseline_hazard * hr * t_grid)
+            fig.add_trace(
+                go.Scatter(
+                    x=t_grid, y=surv, mode="lines", name=label, line=dict(color=color),
+                )
+            )
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=500,
+            xaxis_title="Time",
+            yaxis_title="Survival Probability",
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "Log-Rank Test":
+
+        st.subheader("Interactive Log-Rank Test")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        sep = st.slider("Survival Separation", 0.0, 5.0, 1.5, 0.1)
+
+        n = st.slider("Subjects per Group", 10, 200, 50)
+
+        # =========================
+        # DATA
+        # =========================
+
+        np.random.seed(42)
+
+        t1 = np.random.exponential(10, n)
+        t2 = np.random.exponential(10, n) / (1 + sep * 0.3)
+
+        censor = np.random.exponential(15, n)
+        censor2 = np.random.exponential(15, n)
+
+        obs1 = (t1 <= censor).astype(int)
+        obs2 = (t2 <= censor2).astype(int)
+        t1_obs = np.minimum(t1, censor)
+        t2_obs = np.minimum(t2, censor2)
+
+        fig = go.Figure()
+        t_grid = np.linspace(0, max(max(t1_obs), max(t2_obs)) * 1.1, 200)
+
+        # Exponential fit approximations
+        rate1 = 1 / np.mean(t1_obs[obs1 == 1]) if obs1.sum() > 0 else 0.1
+        rate2 = 1 / np.mean(t2_obs[obs2 == 1]) if obs2.sum() > 0 else 0.1
+
+        surv1 = np.exp(-rate1 * t_grid)
+        surv2 = np.exp(-rate2 * t_grid)
+
+        fig.add_trace(go.Scatter(x=t_grid, y=surv1, mode="lines", name="Group 1"))
+        fig.add_trace(go.Scatter(x=t_grid, y=surv2, mode="lines", name="Group 2"))
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=500,
+            xaxis_title="Time",
+            yaxis_title="Survival Probability",
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
     elif test_name == "Sensitivity & Specificity Analysis":
         st.subheader("Interactive Diagnostic Accuracy Calculator")
 
@@ -3381,6 +3877,82 @@ def render_test_widget(test_name):
             interpretation = "Slight/Poor Agreement"
 
         st.success(f"Interpretation: {interpretation}")
+
+    elif test_name == "Bland-Altman Analysis":
+
+        st.subheader("Interactive Bland-Altman Analysis")
+
+        # =========================
+        # CONTROLS
+        # =========================
+
+        bias = st.slider("Bias (Mean Difference)", -5.0, 5.0, 0.2, 0.1)
+
+        agreement_sd = st.slider("SD of Differences", 0.1, 5.0, 1.0, 0.1)
+
+        n = st.slider("Sample Size", 10, 200, 50)
+
+        # =========================
+        # DATA
+        # =========================
+
+        np.random.seed(42)
+
+        true_val = np.random.uniform(10, 50, n)
+        diff = np.random.normal(bias, agreement_sd, n)
+        method1 = true_val - diff / 2
+        method2 = true_val + diff / 2
+
+        mean_pair = (method1 + method2) / 2
+        diff_pair = method1 - method2
+
+        mean_diff = np.mean(diff_pair)
+        sd_diff = np.std(diff_pair, ddof=1)
+        upper_loa = mean_diff + 1.96 * sd_diff
+        lower_loa = mean_diff - 1.96 * sd_diff
+
+        # =========================
+        # STATS
+        # =========================
+
+        cols = st.columns(3)
+        cols[0].metric("Mean Difference (Bias)", f"{mean_diff:.3f}")
+        cols[1].metric("Upper LoA (+1.96 SD)", f"{upper_loa:.3f}")
+        cols[2].metric("Lower LoA (−1.96 SD)", f"{lower_loa:.3f}")
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Scatter(
+                x=mean_pair,
+                y=diff_pair,
+                mode="markers",
+                name="Differences",
+            )
+        )
+
+        fig.add_hline(y=mean_diff, line_dash="solid", annotation_text="Bias")
+
+        fig.add_hline(
+            y=upper_loa, line_dash="dash", annotation_text="+1.96 SD"
+        )
+
+        fig.add_hline(
+            y=lower_loa, line_dash="dash", annotation_text="−1.96 SD"
+        )
+
+        fig.update_layout(
+            template="plotly_dark",
+            height=550,
+            xaxis_title="Mean of Two Measurements",
+            yaxis_title="Difference (Method 1 − Method 2)",
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
 
     else:
         st.info("Interactive widget coming soon for this test.")
