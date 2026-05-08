@@ -669,6 +669,99 @@ def main():
 
     st.set_page_config(page_title="Statistical Test Finder", layout="wide")
 
+    # =========================
+    # SIDEBAR GLOSSARY
+    # =========================
+    with st.sidebar:
+        st.header("📖 Statistical Glossary")
+        st.write("Comprehensive reference for statistical concepts.")
+
+        with st.expander("Variable Types"):
+            st.markdown("""
+            **Binary / Dichotomous**: Two exclusive categories (e.g., Male/Female, Pass/Fail).
+            
+            **Categorical / Nominal**: Categories without inherent order (e.g., Eye color, Department).
+            
+            **Ordinal**: Categories with a natural rank/order, but unequal distances between them (e.g., Likert scales, Education level).
+            
+            **Discrete (Count)**: Numerical values that must be whole numbers (e.g., Number of teeth, Number of children).
+            
+            **Continuous (Scale)**: Numerical values that can be measured with infinite precision (e.g., Height, Lab values, Temperature).
+            
+            **Dependent (Outcome)**: The variable being measured/tested (the "effect").
+            
+            **Independent (Predictor)**: The variable being manipulated or used to group data (the "cause").
+            """)
+
+        with st.expander("Descriptive Statistics"):
+            st.markdown("""
+            **Mean**: The mathematical average (sum divided by count). Sensitive to outliers.
+            
+            **Median**: The middle value when data is ordered. Better for skewed data.
+            
+            **Mode**: The most frequently occurring value.
+            
+            **Standard Deviation (SD)**: Measures the spread of data around the mean.
+            
+            **Variance**: The square of the Standard Deviation; measures variability.
+            
+            **Interquartile Range (IQR)**: The range of the middle 50% of values (Q3 - Q1).
+            """)
+
+        with st.expander("Hypothesis Testing"):
+            st.markdown("""
+            **Null Hypothesis (H₀)**: Suggests no effect or no difference exists.
+            
+            **Alternative Hypothesis (H₁)**: Suggests a significant effect or difference exists.
+            
+            **P-value**: Probability that the observed result happened by chance. Low p-values (<0.05) suggest rejecting the Null Hypothesis.
+            
+            **Type I Error (α)**: Falsely rejecting a true null hypothesis (a "false positive").
+            
+            **Type II Error (β)**: Failing to reject a false null hypothesis (a "false negative").
+            
+            **Confidence Interval (CI)**: A range of values likely to contain the true population parameter (usually 95%).
+            """)
+
+        with st.expander("Distribution & Assumptions"):
+            st.markdown("""
+            **Parametric Tests**: Assume data follows a specific distribution (usually Normal). More powerful but strict.
+            
+            **Non-parametric Tests**: "Distribution-free" tests. Used for ordinal or non-normal data.
+            
+            **Normality**: When data follows a bell-shaped curve (symmetrical around the mean).
+            
+            **Homogeneity of Variance**: The assumption that different groups have approximately the same spread/variance.
+            
+            **Outlier**: An extreme value that deviates significantly from the rest of the dataset.
+            """)
+
+        with st.expander("Correlation & Regression"):
+            st.markdown("""
+            **Correlation**: Measures the strength and direction of a relationship between two variables.
+            
+            **Pearson's r**: Measures linear relationship (Continuous variables).
+            
+            **Spearman's ρ**: Measures monotonic relationship (Ordinal/Non-normal variables).
+            
+            **Regression**: Used to predict the value of a dependent variable based on one or more predictors.
+            
+            **R-squared (R²)**: Proportion of variance in the outcome explained by the model.
+            
+            **Residuals**: The difference between observed values and values predicted by a model.
+            """)
+
+        with st.expander("Clinical/Biostatistics"):
+            st.markdown("""
+            **Sensitivity**: Ability of a test to correctly identify those *with* a condition.
+            
+            **Specificity**: Ability of a test to correctly identify those *without* a condition.
+            
+            **Odds Ratio (OR)**: Measures the association between an exposure and an outcome.
+            
+            **Relative Risk (RR)**: Ratio of the probability of an event occurring in an exposed group vs. unexposed group.
+            """)
+
     st.title("🔬 Statistical Test Finder")
 
     st.write(
@@ -703,10 +796,9 @@ def main():
         # VARIABLES
         # =========================
         st.subheader("2. Variables")
-
+        st.markdown("##### :green[Dependent Variable]")
         Dependent_Variable = st.selectbox(
-            """:green[Dependent Variable Type]  
-            Outcome / Target Variable / Y variable / Response Variable / Predicted Variable""",
+            """Outcome / Target Variable / Y variable / Response Variable / Predicted Variable / Disease / Event / Output / Measured Variable / Result / Effect / Endpoint""",
             [
                 "Binary/Dichotomous",
                 "Categorical",
@@ -716,10 +808,9 @@ def main():
                 "Multiple Continuous",
             ],
         )
-
+        st.markdown("##### :red[Independent Variable]")
         Independent_Variable = st.selectbox(
-            """:red[Independent Variable Type]  
-            Predictor / Explanatory Variable / X variable / Grouping variable / Exposure / Intervention""",
+            """Predictor / Explanatory Variable / X variable / Grouping variable / Exposure / Intervention / Treatment / Risk Factor / Input / Covariate / Control Variable""",
             [
                 "Binary/Dichotomous",
                 "Categorical",
@@ -839,8 +930,48 @@ def main():
         "Expand the branches below to navigate statistical test selection visually."
     )
 
-    build_tree(rules, FIELDS)
+    build_tree(rules, FIELDS, user_input)
 
+    # =========================
+    # FOOTER
+    # =========================
+    st.markdown("---")
+
+    footer_html = """
+    <div style="background-color: rgba(128, 128, 128, 0.1); padding: 20px; border-radius: 10px; border: 1px solid rgba(128, 128, 128, 0.2); margin-bottom: 20px; text-align: center;">
+    <h3 style="margin-top: 0; color: #4CAF50;">Developed By</h3>
+    <p style="font-size: 1.2em; margin-bottom: 5px;"><strong>Dr. Muhammad Nabeel Shaesha</strong></p>
+    <p style="margin: 0; color: #aaa;">Teaching Assistant at the Prosthodontics Department, PUA</p>
+    <p style="margin: 0; color: #aaa;">Currently enrolled in Masters of Prosthodontics and Implantology Program, PUA</p>
+    <div style="margin-top: 20px;">
+        <p style="font-size: 0.9em; color: #888; margin-bottom: 10px;">Built with the help of:</p>
+        <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;">
+            <div style="border: 2px solid #4285F4; padding: 5px 15px; border-radius: 5px; background-color: rgba(66, 133, 244, 0.15); font-weight: bold;">
+                Gemma 2
+            </div>
+            <div style="border: 2px solid #34A853; padding: 5px 15px; border-radius: 5px; background-color: rgba(52, 168, 83, 0.15); font-weight: bold;">
+                OpenCode
+            </div>
+            <div style="border: 2px solid #8E24AA; padding: 5px 15px; border-radius: 5px; background-color: rgba(142, 36, 170, 0.15); font-weight: bold;">
+                GeminiCLI
+            </div>
+            <div style="border: 2px solid #10a37f; padding: 5px 15px; border-radius: 5px; background-color: rgba(16, 163, 127, 0.15); font-weight: bold;">
+                ChatGPT
+            </div>
+        </div>
+    </div>
+    </div>
+    <div style="text-align: center; color: grey; font-size: 0.8em;">
+    <p><strong>⚠️ Disclaimer</strong></p>
+    <p>This tool is intended for <strong>educational and informational purposes only</strong>. 
+    While it follows standard statistical guidelines, it does not account for all possible 
+    complexities in study design (e.g., nesting, interaction effects, or specific data anomalies). 
+    Recommendations should be verified by a qualified biostatistician or through standard 
+    statistical literature before being used for clinical or formal research purposes.</p>
+    <p>© 2026 Statistical Test Finder. Built with Streamlit.</p>
+    </div>
+    """
+    st.markdown(footer_html, unsafe_allow_html=True)
 
 # =========================
 # INTERACTIVE WIDGETS
@@ -2839,7 +2970,7 @@ FIELDS = [
 ]
 
 
-def build_tree(rule_subset, fields, level=0):
+def build_tree(rule_subset, fields, user_input=None, level=0):
 
     # No more fields → show tests
     if not fields:
@@ -2854,7 +2985,7 @@ def build_tree(rule_subset, fields, level=0):
     all_any = all(rule[current_field] == "any" for rule in rule_subset)
 
     if all_any:
-        build_tree(rule_subset, fields[1:], level + 1)
+        build_tree(rule_subset, fields[1:], user_input, level + 1)
         return
 
     # Group rules by current field
@@ -2881,9 +3012,22 @@ def build_tree(rule_subset, fields, level=0):
         else:
             label = str(value)
 
-        with st.expander(f"{current_field}: {label}"):
+        # Highlighting logic
+        is_selected = False
+        if user_input and current_field in user_input:
+            user_val = user_input[current_field]
+            if user_val == value or (user_val == "any" and value == "any"):
+                is_selected = True
 
-            build_tree(subrules, fields[1:], level + 1)
+        display_label = (
+            f"🎯 **{current_field}: {label}** (Current Selection)"
+            if is_selected
+            else f"{current_field}: {label}"
+        )
+
+        with st.expander(display_label, expanded=is_selected):
+
+            build_tree(subrules, fields[1:], user_input, level + 1)
 
 
 # =========================
