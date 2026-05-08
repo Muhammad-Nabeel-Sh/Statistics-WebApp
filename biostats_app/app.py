@@ -692,7 +692,8 @@ def main():
     st.subheader("2. Variables")
 
     Dependent_Variable = st.selectbox(
-        "Dependent Variable Type",
+        """:green[Dependent Variable Type]  
+        Outcome / Target Variable / Y variable / Response Variable / Predicted Variable""",
         [
             "Binary/Dichotomous",
             "Categorical",
@@ -704,7 +705,8 @@ def main():
     )
 
     Independent_Variable = st.selectbox(
-        "Independent Variable Type",
+        """:red[Independent Variable Type]  
+        Predictor / Explanatory Variable / X variable / Grouping variable / Exposure / Intervention""",
         [
             "Binary/Dichotomous",
             "Categorical",
