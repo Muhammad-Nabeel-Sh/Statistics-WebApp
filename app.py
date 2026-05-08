@@ -23,7 +23,7 @@ rules = [
                     - :orange[$\mu_0$] is the population mean, 
                     - :orange[$s$] is the sample standard deviation, 
                     - :orange[$n$] is the sample size 
-                    - :orange[$\frac{s}{\sqrt{n}}$] is the standard error of the mean.
+                    - :orange[$\dfrac{s}{\sqrt{n}}$] is the standard error of the mean.
                     """,
     },
     {
@@ -62,7 +62,7 @@ rules = [
                     - :orange[$\hat{p}$] is the sample proportion,  
                     - :orange[$p_0$] is the population proportion, and   
                     - :orange[$n$] is the sample size.  
-                    - The denominator :orange[$\sqrt{\frac{p_0(1 - p_0)}{n}}$] is the standard error of the proportion.
+                    - The denominator :orange[$\sqrt{\dfrac{p_0(1 - p_0)}{n}}$] is the standard error of the proportion.
                     """,
     },
     {
@@ -149,7 +149,7 @@ rules = [
         "Groups": "More than 2",
         "Relation": "Independent",
         "Distribution": "Normal",
-        "Explanation": "One-way ANOVA This test is used to compare the means of three or more independent groups to determine if there is a statistically significant difference between them. It assumes that the data is continuous, follows a normal distribution, and that the groups are independent.",
+        "Explanation": "One-way ANOVA This test is used to compare the means of three or more independent groups to determine if there is a statistically significant difference between them. It assumes that the data is continuous, follows a normal distribution, that the variances are equal across groups (homogeneity of variance), and that the groups are independent.",
         "Example": "A researcher wants to compare the average blood pressure between three groups of patients: those who received a new drug, those who received a different drug, and those who received a placebo. The researcher collects blood pressure readings from 30 patients in each group and performs one-way ANOVA to determine if there is a significant difference in mean blood pressure between the three groups.",
         "Formula": r"""
                     $$ F = \dfrac{MS_{between}}{MS_{within}} $$ 
@@ -194,7 +194,7 @@ rules = [
         "Explanation": "Mann-Whitney U Test This test is used to compare the medians of two independent groups to determine if there is a statistically significant difference between them. It assumes that the data is ordinal or continuous but not normally distributed, and that the groups are independent.",
         "Example": "A researcher wants to compare the pain levels between two groups of patients: those who received a new drug and those who received a placebo. The researcher measures the pain levels of 30 patients in each group and performs a Mann-Whitney U test to determine if there is a significant difference in median pain levels between the two groups.",
         "Formula": r"""
-                    $$ U = \sum_{i=1}^{n_1} R_i - \frac{n_1(n_1+1)}{2} $$ 
+                    $$ U = \sum_{i=1}^{n_1} R_i - \dfrac{n_1(n_1+1)}{2} $$ 
                     Where: 
                     - :orange[$U$] is the test statistic, 
                     - :orange[$R_i$] is the rank of the :orange[$i$]-th observation in the combined dataset, 
@@ -214,7 +214,7 @@ rules = [
         "Explanation": "Kruskal-Wallis Test This test is used to compare the medians of more than two independent groups to determine if there is a statistically significant difference between them. It assumes that the data is ordinal or continuous but not normally distributed, and that the groups are independent.",
         "Example": "A researcher wants to compare the pain levels between three groups of patients: those who received a new drug, those who received a different drug, and those who received a placebo. The researcher measures the pain levels of 30 patients in each group and performs a Kruskal-Wallis test to determine if there is a significant difference in median pain levels between the three groups.",
         "Formula": r"""
-                    $$ H = \frac{12}{N(N+1)} \sum_{i=1}^{k} \frac{R_i^2}{n_i} - 3(N+1) $$ 
+                    $$ H = \dfrac{12}{N(N+1)} \sum_{i=1}^{k} \dfrac{R_i^2}{n_i} - 3(N+1) $$ 
                     Where: 
                     - :orange[$H$] is the test statistic, 
                     - :orange[$R_i$] is the sum of ranks for group :orange[$i$], 
@@ -232,10 +232,10 @@ rules = [
         "Groups": "More than 2",
         "Relation": "Dependent",
         "Distribution": "Normal",
-        "Explanation": "Repeated Measures ANOVA This test is used to compare the means of three or more related groups to determine if there is a statistically significant difference between them. It assumes that the data is continuous, follows a normal distribution, and that the groups are dependent (e.g., measurements taken from the same subjects at multiple time points).",
+        "Explanation": "Repeated Measures ANOVA This test is used to compare the means of three or more related groups to determine if there is a statistically significant difference between them. It assumes that the data is continuous, follows a normal distribution, that the variances of the differences between all pairs of repeated measures are equal (sphericity), and that the groups are dependent (e.g., measurements taken from the same subjects at multiple time points).",
         "Example": "A researcher wants to test the effect of a new drug on blood pressure over time. The researcher measures the blood pressure of 30 patients at three different time points: before treatment, after 1 month of treatment, and after 3 months of treatment. The researcher performs a repeated measures ANOVA to determine if there is a significant difference in mean blood pressure across the three time points.",
         "Formula": r"""
-                    $$ F = \frac{MS_{between}}{MS_{error}} $$ 
+                    $$ F = \dfrac{MS_{between}}{MS_{error}} $$ 
                     Where: 
                     - :orange[$F$] is the F-statistic, 
                     - :orange[$MS_{between}$] is the mean square between groups (calculated based on the variability of the group means), and 
@@ -290,7 +290,7 @@ rules = [
         "Groups": "More than 2",
         "Relation": "Independent",
         "Distribution": "Non-normal",
-        "Explanation": "Permutation MANOVA or Non-Parametric MANOVA These tests are used to compare the means of multiple dependent variables across two or more independent groups when the assumptions of traditional MANOVA are not met. They do not assume a specific distribution for the data.",
+        "Explanation": "Permutation MANOVA or Non-Parametric MANOVA These tests are used to compare multivariate distributions across two or more independent groups when the assumptions of traditional MANOVA are not met. They do not assume a specific distribution for the data.",
         "Example": "A researcher wants to compare the effects of three different diets on both weight loss and cholesterol levels, but the data does not follow a normal distribution. The researcher performs a Permutation MANOVA to determine if there are significant differences in the combined dependent variables (weight loss and cholesterol levels) across the three diet groups.",
         "Formula": r"""
                     $$ F = \dfrac{MS_{between}}{MS_{error}} $$
@@ -312,7 +312,7 @@ rules = [
         "Explanation": "Chi-Square Goodness-of-Fit Test This test is used to determine if a sample data fits a particular distribution. It compares the observed frequencies with the expected frequencies under the null hypothesis.",
         "Example": "A researcher wants to test if the distribution of blood types in a sample of 100 people matches the expected distribution in the general population. The researcher performs a Chi-Square Goodness-of-Fit Test to determine if there is a significant difference between the observed and expected distributions.",
         "Formula": r"""
-                    $$ \chi^2 = \sum_{i=1}^{k} \frac{(O_i - E_i)^2}{E_i} $$
+                    $$ \chi^2 = \sum_{i=1}^{k} \dfrac{(O_i - E_i)^2}{E_i} $$
                     Where:
                     - :orange[$\chi^2$] is the test statistic,
                     - :orange[$O_i$] is the observed frequency for category :orange[$i$],
@@ -332,7 +332,7 @@ rules = [
         "Explanation": "Chi-Square Test This test is used to determine if there is a significant association between two categorical variables. It compares the observed frequencies with the expected frequencies under the null hypothesis.",
         "Example": "A researcher wants to test if there is a significant association between gender and smoking status. The researcher collects data on gender and smoking status from 200 participants and performs a Chi-Square Test to determine if there is a significant relationship between these two variables.",
         "Formula": r"""
-                    $$ \chi^2 = \sum_{i=1}^{r} \sum_{j=1}^{c} \frac{(O_{ij} - E_{ij})^2}{E_{ij}} $$
+                    $$ \chi^2 = \sum_{i=1}^{r} \sum_{j=1}^{c} \dfrac{(O_{ij} - E_{ij})^2}{E_{ij}} $$
                     Where:
                     - :orange[$\chi^2$] is the test statistic,
                     - :orange[$O_{ij}$] is the observed frequency for cell :orange[$(i,j)$],
@@ -353,7 +353,7 @@ rules = [
         "Explanation": "McNemar's Test This test is used to determine if there is a significant change in proportions for paired nominal data. It is typically used when analyzing before-and-after data or matched pairs.",
         "Example": "A researcher wants to test if there is a significant change in smoking status before and after a intervention. The researcher collects data on smoking status from 100 participants before and after the intervention and performs a McNemar's Test to determine if there is a significant change.",
         "Formula": r"""
-                    $$ \chi^2 = \frac{(b - c)^2}{b + c} $$
+                    $$ \chi^2 = \dfrac{(b - c)^2}{b + c} $$
                     Where:
                     - :orange[$\chi^2$] is the test statistic,
                     - :orange[$b$] is the number of pairs where the first condition is positive and the second is negative, and
@@ -372,7 +372,7 @@ rules = [
         "Explanation": "Cochran's Q Test This test is used to determine if there is a significant difference in proportions for three or more related groups. It is an extension of McNemar's Test.",
         "Example": "A researcher wants to test if there is a significant difference in the proportion of participants who smoke at three different time points (before, during, and after an intervention). The researcher performs a Cochran's Q Test to determine if there is a significant difference.",
         "Formula": r"""
-                    $$ Q = \frac{(k-1) \left( k \sum_{j=1}^{k} G_j^2 - \left( \sum_{j=1}^{k} G_j \right)^2 \right)}{k \sum_{i=1}^{b} L_i - \sum_{i=1}^{b} L_i^2} $$
+                    $$ Q = \dfrac{(k-1) \left( k \sum_{j=1}^{k} G_j^2 - \left( \sum_{j=1}^{k} G_j \right)^2 \right)}{k \sum_{i=1}^{b} L_i - \sum_{i=1}^{b} L_i^2} $$
                     Where:
                     - :orange[$Q$] is the test statistic,
                     - :orange[$k$] is the number of conditions/treatments,
@@ -393,7 +393,8 @@ rules = [
         "Explanation": "Fisher's Exact Test This test is used to determine if there is a significant association between two categorical variables when sample sizes are small.",
         "Example": "A researcher wants to test if there is a significant association between gender and smoking status in a small sample of 20 participants. The researcher performs a Fisher's Exact Test to determine if there is a significant relationship between these two variables.",
         "Formula": r"""
-                    $$ p = \frac{(a+b)!\,(c+d)!\,(a+c)!\,(b+d)!}{a!\,b!\,c!\,d!\,n!} $$
+                    $$ p = \dfrac{(a+b)!\,(c+d)!\,(a+c)!\,(b+d)!}{a!\,b!\,c!\,d!\,n!} $$
+                    
                     Where:
                     - :orange[$a, b, c, d$] are the cell frequencies in the 2×2 contingency table,
                     - :orange[$n = a+b+c+d$] is the total sample size.
@@ -411,7 +412,7 @@ rules = [
         "Explanation": "Pearson Correlation This test is used to measure the strength and direction of the linear relationship between two continuous variables. It assumes that the data is continuous, follows a normal distribution, and that the relationship between the variables is linear.",
         "Example": "A researcher wants to test if there is a significant correlation between hours of study and exam scores among students. The researcher collects data on hours of study and exam scores from 100 students and performs a Pearson Correlation to determine if there is a significant relationship between these two variables.",
         "Formula": r"""
-                    $$ r = \frac{\sum_{i=1}^{n} (X_i - \bar{X})(Y_i - \bar{Y})}{\sqrt{\sum_{i=1}^{n} (X_i - \bar{X})^2} \sqrt{\sum_{i=1}^{n} (Y_i - \bar{Y})^2}} $$ 
+                    $$ r = \dfrac{\sum_{i=1}^{n} (X_i - \bar{X})(Y_i - \bar{Y})}{\sqrt{\sum_{i=1}^{n} (X_i - \bar{X})^2} \sqrt{\sum_{i=1}^{n} (Y_i - \bar{Y})^2}} $$ 
                     Where: 
                     - :orange[$r$] is the Pearson correlation coefficient, 
                     - :orange[$X_i$] and :orange[$Y_i$] are the individual data points for variables X and Y, 
@@ -431,7 +432,7 @@ rules = [
         "Explanation": "Spearman Rank Correlation This test is used to measure the strength and direction of the monotonic relationship between two ordinal or continuous variables. It does not assume a linear relationship or a normal distribution.",
         "Example": "A researcher wants to test if there is a significant correlation between rankings of students in two different subjects. The researcher collects data on the rankings and performs a Spearman Rank Correlation to determine if there is a significant relationship between these two variables.",
         "Formula": r"""
-                    $$ r_s = 1 - \frac{6 \sum d_i^2}{n(n^2 - 1)} $$ 
+                    $$ r_s = 1 - \dfrac{6 \sum d_i^2}{n(n^2 - 1)} $$ 
                     Where: 
                     - :orange[$r_s$] is the Spearman rank correlation coefficient, 
                     - :orange[$d_i$] is the difference in ranks for each pair of observations, 
@@ -451,7 +452,7 @@ rules = [
         "Explanation": "Chi-Square Test of Independence This test is used to determine if there is a significant association between two categorical variables. It compares the observed frequencies with the expected frequencies under the null hypothesis.",
         "Example": "A researcher wants to test if there is a significant association between gender and smoking status. The researcher collects data on gender and smoking status from 200 participants and performs a Chi-Square Test of Independence to determine if there is a significant relationship between these two variables.",
         "Formula": r"""
-                    $$ \chi^2 = \sum_{i=1}^{r} \sum_{j=1}^{c} \frac{(O_{ij} - E_{ij})^2}{E_{ij}} $$ 
+                    $$ \chi^2 = \sum_{i=1}^{r} \sum_{j=1}^{c} \dfrac{(O_{ij} - E_{ij})^2}{E_{ij}} $$ 
                     Where: 
                     - :orange[$\chi^2$] is the test statistic, 
                     - :orange[$O_{ij}$] is the observed frequency for cell :orange[$(i,j)$], and 
@@ -489,7 +490,7 @@ rules = [
         "Groups": ["any", "2", "More than 2"],
         "Relation": ["Independent", "Dependent", "any"],
         "Distribution": ["Normal", "Non-normal", "any"],
-        "Explanation": "Simple Linear Regression This test is used to model the relationship between a continuous dependent variable and a single continuous independent variable. It assumes that the data is continuous, follows a normal distribution, and that the relationship between the variables is linear.",
+        "Explanation": "Simple Linear Regression This test is used to model the relationship between a continuous dependent variable and a single continuous independent variable. It assumes that the dependent variable is continuous, that the residuals are normally distributed, and that the relationship between the variables is linear.",
         "Example": "A researcher wants to predict exam scores based on hours of study. The researcher collects data on hours of study and exam scores from 100 students and performs a Simple Linear Regression to determine if hours of study is a significant predictor of exam scores.",
         "Formula": r"""
                     $$ Y = \beta_0 + \beta_1 X + \epsilon $$ 
@@ -510,7 +511,7 @@ rules = [
         "Groups": ["any", "2", "More than 2"],
         "Relation": ["Independent", "Dependent", "any"],
         "Distribution": ["Normal", "Non-normal", "any"],
-        "Explanation": "Multiple Linear Regression This test is used to model the relationship between a continuous dependent variable and multiple continuous independent variables. It assumes that the data is continuous, follows a normal distribution, and that the relationship between the variables is linear.",
+        "Explanation": "Multiple Linear Regression This test is used to model the relationship between a continuous dependent variable and multiple continuous independent variables. It assumes that the dependent variable is continuous, that the residuals are normally distributed, and that the relationship between the variables is linear.",
         "Example": "A researcher wants to predict exam scores based on hours of study and attendance. The researcher collects data on hours of study, attendance, and exam scores from 100 students and performs a Multiple Linear Regression to determine if hours of study and attendance are significant predictors of exam scores.",
         "Formula": r"""
                     $$ Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \ldots + \beta_k X_k + \epsilon $$ 
@@ -534,7 +535,7 @@ rules = [
         "Explanation": "Logistic Regression This test is used to model the relationship between a binary dependent variable and one or more continuous independent variables. It assumes that the dependent variable is binary, and that the relationship between the independent variables and the log-odds of the dependent variable is linear.",
         "Example": "A researcher wants to predict the likelihood of a student passing an exam based on hours of study. The researcher collects data on hours of study and pass/fail status from 100 students and performs a Logistic Regression to determine if hours of study is a significant predictor of passing the exam.",
         "Formula": r"""
-                    $$ \log\left(\frac{p}{1-p}\right) = \beta_0 + \beta_1 X $$ 
+                    $$ \log\left(\dfrac{p}{1-p}\right) = \beta_0 + \beta_1 X $$ 
                     Where: 
                     - :orange[$p$] is the probability of the dependent variable being 1 (e.g., passing the exam), 
                     - :orange[$X$] is the independent variable, 
@@ -554,7 +555,7 @@ rules = [
         "Explanation": "Multinomial Logistic Regression This test is used to model the relationship between a categorical dependent variable with more than two categories and one or more continuous independent variables. It assumes that the dependent variable is categorical, and that the relationship between the independent variables and the log-odds of each category of the dependent variable is linear.",
         "Example": "A researcher wants to predict the choice of transportation (car, bus, bike) based on hours of commute. The researcher collects data on hours of commute and transportation choice from 100 participants and performs a Multinomial Logistic Regression to determine if hours of commute is a significant predictor of transportation choice.",
         "Formula": r"""
-                    $$ \log\left(\frac{p_j}{p_k}\right) = \beta_{0j} + \beta_{1j} X $$ 
+                    $$ \log\left(\dfrac{p_j}{p_k}\right) = \beta_{0j} + \beta_{1j} X $$ 
                     Where: 
                     - :orange[$p_j$] is the probability of the dependent variable being in category :orange[$j$], 
                     - :orange[$p_k$] is the probability of the dependent variable being in the reference category :orange[$k$], 
@@ -575,7 +576,7 @@ rules = [
         "Explanation": "Ordinal Logistic Regression This test is used to model the relationship between an ordinal dependent variable and one or more continuous independent variables. It assumes that the dependent variable is ordinal, and that the relationship between the independent variables and the log-odds of each category of the dependent variable is linear.",
         "Example": "A researcher wants to predict the level of satisfaction (very unsatisfied, unsatisfied, neutral, satisfied, very satisfied) based on income. The researcher collects data on income and satisfaction levels from 100 participants and performs an Ordinal Logistic Regression to determine if income is a significant predictor of satisfaction level.",
         "Formula": r"""
-                    $$ \log\left(\frac{P(Y \leq j)}{P(Y > j)}\right) = \beta_{0j} + \beta_{1j} X $$ 
+                    $$ \log\left(\dfrac{P(Y \leq j)}{P(Y > j)}\right) = \beta_{0j} + \beta_{1j} X $$ 
                     Where: 
                     - :orange[$P(Y \leq j)$] is the probability of the dependent variable being in category :orange[$j$] or lower, 
                     - :orange[$P(Y > j)$] is the probability of the dependent variable being in a category higher than :orange[$j$], 
@@ -617,15 +618,15 @@ rules = [
         "Explanation": "Sensitivity and Specificity measures the performance of a binary diagnostic test against a gold standard. Sensitivity (True Positive Rate) is the ability to correctly identify those with the disease, while Specificity (True Negative Rate) is the ability to correctly identify those without the disease.",
         "Example": "A new rapid antigen test is compared against PCR (gold standard) for COVID-19. 100 people known to have the virus and 100 known to be healthy are tested to calculate the accuracy metrics.",
         "Formula": r"""
-                    $$ \text{Sensitivity} = \frac{TP}{TP + FN} $$
-                    $$ \text{Specificity} = \frac{TN}{TN + FP} $$
-                    $$ \text{Positive Predictive Value (PPV)} = \frac{TP}{TP + FP} $$
-                    $$ \text{Negative Predictive Value (NPV)} = \frac{TN}{TN + FN} $$
-                    $$ \text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN} $$
-                    $$ \text{Likelihood ratio for a positive test (LR+)} = \frac{\text{Sensitivity}}{1 - \text{Specificity}} $$
-                    $$ \text{Likelihood ratio for a negative test (LR-)} = \frac{1 - \text{Sensitivity}}{\text{Specificity}} $$
-                    $$ \text{F1 Score} = 2 \times \frac{\text{PPV} \times \text{Sensitivity}}{\text{PPV} + \text{Sensitivity}} $$
-                    $$ \text{Diagnostic Odds Ratio (DOR)} = \frac{LR+}{LR-} $$
+                    $$ \text{Sensitivity} = \dfrac{TP}{TP + FN} $$
+                    $$ \text{Specificity} = \dfrac{TN}{TN + FP} $$
+                    $$ \text{Positive Predictive Value (PPV)} = \dfrac{TP}{TP + FP} $$
+                    $$ \text{Negative Predictive Value (NPV)} = \dfrac{TN}{TN + FN} $$
+                    $$ \text{Accuracy} = \dfrac{TP + TN}{TP + TN + FP + FN} $$
+                    $$ \text{Likelihood ratio for a positive test (LR+)} = \dfrac{\text{Sensitivity}}{1 - \text{Specificity}} $$
+                    $$ \text{Likelihood ratio for a negative test (LR-)} = \dfrac{1 - \text{Sensitivity}}{\text{Specificity}} $$
+                    $$ \text{F1 Score} = 2 \times \dfrac{\text{PPV} \times \text{Sensitivity}}{\text{PPV} + \text{Sensitivity}} $$
+                    $$ \text{Diagnostic Odds Ratio (DOR)} = \dfrac{LR+}{LR-} $$
                     Where:
                     - :orange[$TP$]: True Positives
                     - :orange[$TN$]: True Negatives
@@ -657,11 +658,11 @@ rules = [
         "Groups": "any",
         "Relation": "any",
         "Distribution": "any",
-        "Explanation": "Likelihood Ratios (LR) are used to assess the value of performing a diagnostic test. LR+ indicates how much more likely a positive test is to be found in a person with the disease than in a person without. LR- indicates how much more likely a negative test is to be found in a person with the disease than in a person without.",
+        "Explanation": "Likelihood Ratios (LR) are used to assess the value of performing a diagnostic test. LR+ indicates how much more likely a positive test is to be found in a person with the disease than in a person without. LR- indicates how much less likely a negative test is to be found in a person with the disease than in a person without.",
         "Example": "A clinician uses the LR+ of a physical exam finding to update their post-test probability of a patient having appendicitis.",
         "Formula": r"""
-                    $$ LR+ = \frac{\text{Sensitivity}}{1 - \text{Specificity}} $$
-                    $$ LR- = \frac{1 - \text{Sensitivity}}{\text{Specificity}} $$
+                    $$ LR+ = \dfrac{\text{Sensitivity}}{1 - \text{Specificity}} $$
+                    $$ LR- = \dfrac{1 - \text{Sensitivity}}{\text{Specificity}} $$
                     - :orange[LR+ > 10]: Large increase in disease probability
                     - :orange[LR- < 0.1]: Large decrease in disease probability
                     """,
@@ -677,7 +678,7 @@ rules = [
         "Explanation": "Cohen's Kappa is used to measure inter-rater or intra-rater agreement for categorical variables. It accounts for the agreement occurring by chance.",
         "Example": "Two radiologists evaluate the same set of X-rays to diagnose a fracture. Cohen's Kappa measures how consistently they agree on the presence or absence of a fracture.",
         "Formula": r"""
-                    $$ \kappa = \frac{p_o - p_e}{1 - p_e} $$
+                    $$ \kappa = \dfrac{p_o - p_e}{1 - p_e} $$
                     Where:
                     - :orange[$p_o$]: Observed proportionate agreement
                     - :orange[$p_e$]: Probability of random agreement
@@ -811,7 +812,7 @@ def main():
             
             :orange[**Alternative Hypothesis (H₁)**]: Suggests a significant effect or difference exists.
             
-            :orange[**P-value**]: Probability that the observed result happened by chance. Low p-values (<0.05) suggest rejecting the Null Hypothesis.
+            :orange[**P-value**]: Probability of observing results as extreme or more extreme than what was obtained, assuming the null hypothesis is true. A low p-value (<0.05) suggests the observed data are unlikely under the null, providing evidence against it.
             
             :orange[**Alpha (α)**]: The threshold for significance (usually 0.05).
             
@@ -819,7 +820,7 @@ def main():
             
             :orange[**Type II Error (β)**]: Failing to reject a false null hypothesis (a "false negative").
             
-            :orange[**Confidence Interval (CI)**]: A range of values likely to contain the true population parameter (usually 95%).
+            :orange[**Confidence Interval (CI)**]: A range of values computed from the sample such that if the study were repeated many times, a given percentage (usually 95%) of such intervals would contain the true population parameter.
             """)
 
         with st.expander("Distribution & Assumptions"):
@@ -832,7 +833,7 @@ def main():
             
             :orange[**Skewness**]: Measures the lack of symmetry in a distribution (Left/Right skew).
             
-            :orange[**Kurtosis**]: Measures the "tailedness" or peakedness of a distribution.
+            :orange[**Kurtosis**]: Measures the "tailedness" or extremity of a distribution — higher kurtosis indicates heavier tails and more outliers relative to a normal distribution.
             
             :orange[**Homogeneity of Variance**]: The assumption that different groups have approximately the same spread/variance.
             
@@ -898,7 +899,7 @@ def main():
             
             :orange[**Positive Predictive Value (PPV)**]: Probability that a person with a positive test actually has the disease.
             
-            :orange[**Negative Predictive Value (NPV)**]: Probability that a person with a negative test is actually healthy.
+            :orange[**Negative Predictive Value (NPV)**]: Probability that a person with a negative test result truly does not have the condition.
             
             :orange[**Likelihood Ratio (LR+/LR-)**]: How much a test result changes the odds of having a condition.
             
@@ -908,7 +909,7 @@ def main():
             
             :orange[**Number Needed to Treat (NNT)**]: Number of patients who need to be treated to prevent one additional bad outcome.
             
-            :orange[**Number Needed to Harm (NNH)**]: Number of patients who need to be exposed to a risk factor to cause one additional bad outcome.
+            :orange[**Number Needed to Harm (NNH)**]: Number of patients who need to be treated for one additional patient to experience a harmful adverse outcome.
             
             :orange[**Forest Plot**]: Visual representation of the results of multiple studies in a meta-analysis.
             """)
@@ -917,7 +918,7 @@ def main():
             st.markdown("""
             :orange[**Censoring**]: Occurs when we have incomplete information about the survival time of an individual.
             
-            :orange[**Kaplan-Meier Curve**]: A non-parametric statistic used to estimate the survival function from lifetime data.
+            :orange[**Kaplan-Meier Curve**]: A non-parametric estimator of the survival function that estimates the probability of surviving past a given time point, accounting for censored data.
             
             :orange[**Hazard Ratio (HR)**]: The ratio of the hazard rates corresponding to the conditions described by two levels of an explanatory variable.
             """)
@@ -928,7 +929,7 @@ def main():
             
             :orange[**Interaction Effect**]: When the effect of one independent variable on the outcome depends on the level of another independent variable.
             
-            :orange[**Confounding Variable**]: An outside influence that changes the effect of a dependent and independent variable.
+            :orange[**Confounding Variable**]: A variable that distorts the association between an exposure and an outcome because it is associated with both. If not controlled for, it can bias the estimated effect.
             """)
 
     st.title("🔬 Statistical Test Finder")
@@ -2865,7 +2866,7 @@ def render_test_widget(test_name):
         # =========================
 
         st.latex(rf"""
-            p = \frac{{1}}{{1 + e^{{-({beta0:.2f} + {beta1:.2f}x)}}}}
+            p = \dfrac{{1}}{{1 + e^{{-({beta0:.2f} + {beta1:.2f}x)}}}}
             """)
 
         # =========================
