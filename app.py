@@ -607,6 +607,50 @@ rules = [
                     - The coefficients :orange[$\beta_{0}$], :orange[$\beta_{1}$], and :orange[$\beta_{2}$] are estimated using maximum likelihood estimation, and the significance of the predictors is determined by testing if they are significantly different from zero.
                     """,
     },
+    # Diagnostic Accuracy Tests
+    {
+        "name": "Sensitivity & Specificity Analysis",
+        "Objective": "Diagnostic Accuracy",
+        "Dependent_Variable": "Binary/Dichotomous",
+        "Independent_Variable": "Binary/Dichotomous",
+        "Groups": "any",
+        "Relation": "any",
+        "Distribution": "any",
+        "Explanation": "Sensitivity and Specificity measures the performance of a binary diagnostic test against a gold standard. Sensitivity (True Positive Rate) is the ability to correctly identify those with the disease, while Specificity (True Negative Rate) is the ability to correctly identify those without the disease.",
+        "Example": "A new rapid antigen test is compared against PCR (gold standard) for COVID-19. 100 people known to have the virus and 100 known to be healthy are tested to calculate the accuracy metrics.",
+        "Formula": r"""
+                    $$ \text{Sensitivity} = \frac{TP}{TP + FN} $$
+                    $$ \text{Specificity} = \frac{TN}{TN + FP} $$
+                    $$ \text{Positive Predictive Value (PPV)} = \frac{TP}{TP + FP} $$
+                    $$ \text{Negative Predictive Value (NPV)} = \frac{TN}{TN + FN} $$
+                    $$ \text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN} $$
+                    $$ \text{Likelihood ratio for a positive test (LR+)} = \frac{\text{Sensitivity}}{1 - \text{Specificity}} $$
+                    $$ \text{Likelihood ratio for a negative test (LR-)} = \frac{1 - \text{Sensitivity}}{\text{Specificity}} $$
+                    $$ \text{F1 Score} = 2 \times \frac{\text{PPV} \times \text{Sensitivity}}{\text{PPV} + \text{Sensitivity}} $$
+                    $$ \text{Diagnostic Odds Ratio (DOR)} = \frac{LR+}{LR-} $$
+                    Where:
+                    - :orange[$TP$]: True Positives
+                    - :orange[$TN$]: True Negatives
+                    - :orange[$FP$]: False Positives
+                    - :orange[$FN$]: False Negatives
+                    """,
+    },
+    {
+        "name": "ROC Curve Analysis",
+        "Objective": "Diagnostic Accuracy",
+        "Dependent_Variable": "Binary/Dichotomous",
+        "Independent_Variable": "Continuous",
+        "Groups": "any",
+        "Relation": "any",
+        "Distribution": "any",
+        "Explanation": "Receiver Operating Characteristic (ROC) analysis is used to evaluate the performance of a continuous diagnostic test. It plots Sensitivity against 1-Specificity at various thresholds. The Area Under the Curve (AUC) represents the overall accuracy.",
+        "Example": "A researcher wants to determine if blood sugar levels can accurately diagnose diabetes. By plotting an ROC curve, they can find the optimal sugar level cut-off that maximizes both sensitivity and specificity.",
+        "Formula": r"""
+                    $$ \text{AUC} = \int_{0}^{1} \text{Sensitivity}(1-\text{Specificity}) d(1-\text{Specificity}) $$
+                    - :orange[AUC = 0.5]: Random guessing
+                    - :orange[AUC = 1.0]: Perfect diagnostic accuracy
+                    """,
+    },
 ]
 
 
@@ -714,11 +758,19 @@ def main():
             
             :orange[**Stratified Sampling**]: Dividing the population into subgroups (strata) and sampling from each.
             
-            :orange[**Blinding**]: Preventing participants (Single-blind) or both participants and researchers (Double-blind) from knowing which treatment is being administered to reduce bias.
+            :orange[**Blinding**]: Preventing participants (Single-blind) or both (Double-blind) from knowing the treatment to reduce bias.
             
             :orange[**Randomization**]: Assigning participants to groups by chance to ensure groups are comparable.
             
-            :orange[**Placebo Effect**]: Improvement in a patient's condition due to the belief in the treatment rather than the treatment itself.
+            :orange[**Randomized Controlled Trial (RCT)**]: The gold standard for clinical trials where participants are randomly assigned to a treatment or control group.
+            
+            :orange[**Cohort Study**]: A longitudinal study that follows a group of people over time to see how exposures affect outcomes.
+            
+            :orange[**Case-Control Study**]: A study that compares people with a condition (cases) to those without (controls) to find retrospective causes.
+            
+            :orange[**Cross-sectional Study**]: A "snapshot" study that analyzes data from a population at a single point in time.
+            
+            :orange[**Placebo Effect**]: Improvement due to the belief in a treatment rather than the treatment itself.
             """)
 
         with st.expander("Hypothesis Testing"):
@@ -728,6 +780,8 @@ def main():
             :orange[**Alternative Hypothesis (H₁)**]: Suggests a significant effect or difference exists.
             
             :orange[**P-value**]: Probability that the observed result happened by chance. Low p-values (<0.05) suggest rejecting the Null Hypothesis.
+            
+            :orange[**Alpha (α)**]: The threshold for significance (usually 0.05).
             
             :orange[**Type I Error (α)**]: Falsely rejecting a true null hypothesis (a "false positive").
             
@@ -744,6 +798,10 @@ def main():
             
             :orange[**Normality**]: When data follows a bell-shaped curve (symmetrical around the mean).
             
+            :orange[**Skewness**]: Measures the lack of symmetry in a distribution (Left/Right skew).
+            
+            :orange[**Kurtosis**]: Measures the "tailedness" or peakedness of a distribution.
+            
             :orange[**Homogeneity of Variance**]: The assumption that different groups have approximately the same spread/variance.
             
             :orange[**Outlier**]: An extreme value that deviates significantly from the rest of the dataset.
@@ -751,50 +809,76 @@ def main():
 
         with st.expander("Effect Size & Power"):
             st.markdown("""
-            :orange[**Effect Size**]: Quantitative measure of the magnitude of a phenomenon (e.g., how large the difference is between groups).
+            :orange[**Effect Size**]: Quantitative measure of the magnitude of a phenomenon.
             
-            :orange[**Statistical Power (1-β)**]: The probability that a test will correctly reject a false null hypothesis. Higher power reduces Type II errors.
+            :orange[**Statistical Power (1-β)**]: The probability that a test will correctly reject a false null hypothesis.
             
-            :orange[**Cohen's d**]: Measures the distance between two means in terms of standard deviation units.
+            :orange[**Cohen's d**]: Measures the distance between two means in SD units.
             
-            :orange[**Eta-squared (η²)**]: Measures the proportion of variance in a dependent variable explained by an independent variable.
+            :orange[**Eta-squared (η²)**]: Proportion of variance in the outcome explained by a predictor in ANOVA.
+            
+            :orange[**Cramer's V**]: Measure of association between two nominal variables.
             """)
 
         with st.expander("Correlation & Regression"):
             st.markdown("""
-            :orange[**Correlation**]: Measures the strength and direction of a relationship between two variables.
+            :orange[**Correlation**]: Measures the strength and direction of a relationship.
             
-            :orange[**Pearson's r**]: Measures linear relationship (Continuous variables).
+            :orange[**Pearson's r**]: Linear relationship between continuous variables (-1 to +1).
             
-            :orange[**Spearman's ρ**]: Measures monotonic relationship (Ordinal/Non-normal variables).
+            :orange[**Spearman's ρ**]: Monotonic relationship (Rank-based).
             
-            :orange[**Regression**]: Used to predict the value of a dependent variable based on one or more predictors.
+            :orange[**Regression**]: Predicting a dependent variable based on one or more predictors.
             
-            :orange[**R-squared (R²)**]: Proportion of variance in the outcome explained by the model.
+            :orange[**R-squared (R²)**]: Percentage of variance explained by the model.
             
-            :orange[**Residuals**]: The difference between observed values and values predicted by a model.
+            :orange[**Adjusted R²**]: R² adjusted for the number of predictors in the model.
+            
+            :orange[**Residuals**]: The difference between observed and predicted values.
             """)
 
         with st.expander("Reliability & Validity"):
             st.markdown("""
-            :orange[**Reliability**]: The consistency or stability of a measurement tool.
+            :orange[**Reliability**]: Consistency or stability of a measurement.
             
-            :orange[**Validity**]: The accuracy of a tool; whether it measures what it is supposed to measure.
+            :orange[**Validity**]: Accuracy; whether a tool measures what it's supposed to.
             
-            :orange[**Cronbach's Alpha**]: Measures internal consistency (how closely related a set of items are as a group).
+            :orange[**Face Validity**]: Whether a test "looks like" it measures what it's supposed to.
             
-            :orange[**Inter-rater Reliability**]: Degree of agreement among different raters (e.g., Cohen's Kappa).
+            :orange[**Content Validity**]: Whether a test covers all aspects of the concept being measured.
+            
+            :orange[**Construct Validity**]: Whether a test truly measures the theoretical construct it claims to.
+            
+            :orange[**Criterion Validity**]: How well one measure predicts an outcome based on another measure.
+            
+            :orange[**Cronbach's Alpha**]: Measures internal consistency (0 to 1).
+            
+            :orange[**Intraclass Correlation (ICC)**]: Used to measure reliability of ratings for grouped data.
+            
+            :orange[**Inter-rater Reliability**]: Agreement between different observers (e.g., Cohen's Kappa).
             """)
 
         with st.expander("Clinical/Biostatistics"):
             st.markdown("""
-            :orange[**Sensitivity**]: Ability of a test to correctly identify those *with* a condition.
+            :orange[**Sensitivity**]: Ability to correctly identify those *with* a condition (True Positive Rate).
             
-            :orange[**Specificity**]: Ability of a test to correctly identify those *without* a condition.
+            :orange[**Specificity**]: Ability to correctly identify those *without* a condition (True Negative Rate).
             
-            :orange[**Odds Ratio (OR)**]: Measures the association between an exposure and an outcome.
+            :orange[**Positive Predictive Value (PPV)**]: Probability that a person with a positive test actually has the disease.
             
-            :orange[**Relative Risk (RR)**]: Ratio of the probability of an event occurring in an exposed group vs. unexposed group.
+            :orange[**Negative Predictive Value (NPV)**]: Probability that a person with a negative test is actually healthy.
+            
+            :orange[**Likelihood Ratio (LR+/LR-)**]: How much a test result changes the odds of having a condition.
+            
+            :orange[**Odds Ratio (OR)**]: Odds of an event occurring in one group vs. another.
+            
+            :orange[**Relative Risk (RR)**]: Risk of an event in an exposed group vs. unexposed group.
+            
+            :orange[**Number Needed to Treat (NNT)**]: Number of patients who need to be treated to prevent one additional bad outcome.
+            
+            :orange[**Number Needed to Harm (NNH)**]: Number of patients who need to be exposed to a risk factor to cause one additional bad outcome.
+            
+            :orange[**Forest Plot**]: Visual representation of the results of multiple studies in a meta-analysis.
             """)
 
         with st.expander("Survival Analysis"):
@@ -842,6 +926,7 @@ def main():
                 "Comparison",
                 "Association/Correlation",
                 "Prediction",
+                "Diagnostic Accuracy",
             ],
         )
 
@@ -3022,6 +3107,149 @@ def render_test_widget(test_name):
             yaxis_title="Expected Count (λ)",
         )
 
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "Sensitivity & Specificity Analysis":
+        st.subheader("Interactive Diagnostic Accuracy Calculator")
+
+        # =========================
+        # CONTROLS
+        # =========================
+        col1, col2 = st.columns(2)
+        with col1:
+            tp = st.number_input("True Positives (TP)", min_value=0, value=80)
+            fn = st.number_input("False Negatives (FN)", min_value=0, value=20)
+        with col2:
+            fp = st.number_input("False Positives (FP)", min_value=0, value=10)
+            tn = st.number_input("True Negatives (TN)", min_value=0, value=90)
+
+        # =========================
+        # CALCULATIONS
+        # =========================
+        sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0
+        specificity = tn / (tn + fp) if (tn + fp) > 0 else 0
+        ppv = tp / (tp + fp) if (tp + fp) > 0 else 0
+        npv = tn / (tn + fn) if (tn + fn) > 0 else 0
+        accuracy = (tp + tn) / (tp + tn + fp + fn) if (tp + tn + fp + fn) > 0 else 0
+        LR_positive = (
+            sensitivity / (1 - specificity) if (1 - specificity) > 0 else float("inf")
+        )
+        LR_negative = (
+            (1 - sensitivity) / specificity if specificity > 0 else float("inf")
+        )
+        F1_score = (
+            2 * (ppv * sensitivity) / (ppv + sensitivity)
+            if (ppv + sensitivity) > 0
+            else 0
+        )
+        DOR = LR_positive / LR_negative if LR_negative > 0 else float("inf")
+
+        # =========================
+        # STATS
+        # =========================
+        cols = st.columns(3)
+        cols[0].metric("Sensitivity", f"{sensitivity:.1%}")
+        cols[1].metric("Specificity", f"{specificity:.1%}")
+        cols[2].metric("Accuracy", f"{accuracy:.1%}")
+
+        cols2 = st.columns(3)
+        cols2[0].metric("Pos. Pred. Value (PPV)", f"{ppv:.1%}")
+        cols2[1].metric("Neg. Pred. Value (NPV)", f"{npv:.1%}")
+        cols2[2].metric("F1 Score", f"{F1_score:.2f}")
+
+        cols3 = st.columns(3)
+        cols3[0].metric("LR+", f"{LR_positive:.2f}")
+        cols3[1].metric("LR-", f"{LR_negative:.2f}")
+        cols3[2].metric("Diagnostic Odds Ratio (DOR)", f"{DOR:.2f}")
+
+        matrix = np.array(
+            [
+                [tp, fp],
+                [fn, tn],
+            ]
+        )
+
+        fig = go.Figure(
+            data=go.Heatmap(
+                z=matrix,
+                x=["Negative", "Positive"],
+                y=["Negative", "Positive"],
+                text=matrix,
+                texttemplate="%{text}",
+            )
+        )
+
+        fig.update_layout(
+            template="plotly_dark",
+            title="Confusion Matrix",
+            xaxis_title="Predicted",
+            yaxis_title="Actual",
+            height=600,
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+    elif test_name == "ROC Curve Analysis":
+        st.subheader("Interactive ROC Curve Analysis")
+
+        # =========================
+        # CONTROLS
+        # =========================
+        separation = st.slider(
+            "Diagnostic Power (Group Separation)", 0.0, 5.0, 1.5, 0.1
+        )
+
+        # =========================
+        # DATA
+        # =========================
+        np.random.seed(42)
+        n = 500
+        scores_healthy = np.random.normal(0, 1, n)
+        scores_disease = np.random.normal(separation, 1, n)
+
+        y_true = np.concatenate([np.zeros(n), np.ones(n)])
+        y_scores = np.concatenate([scores_healthy, scores_disease])
+
+        from sklearn.metrics import roc_curve, auc
+
+        fpr, tpr, thresholds = roc_curve(y_true, y_scores)
+        roc_auc = auc(fpr, tpr)
+
+        # =========================
+        # STATS
+        # =========================
+        st.metric("Area Under Curve (AUC)", f"{roc_auc:.3f}")
+
+        # =========================
+        # PLOT
+        # =========================
+        fig = go.Figure()
+        fig.add_trace(
+            go.Scatter(
+                x=fpr,
+                y=tpr,
+                mode="lines",
+                name=f"ROC curve (AUC = {roc_auc:.2f})",
+                fill="tozeroy",
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=[0, 1],
+                y=[0, 1],
+                mode="lines",
+                line=dict(dash="dash"),
+                name="Random Guess",
+            )
+        )
+
+        fig.update_layout(
+            title="Receiver Operating Characteristic (ROC)",
+            xaxis_title="False Positive Rate (1 - Specificity)",
+            yaxis_title="True Positive Rate (Sensitivity)",
+            template="plotly_dark",
+            height=500,
+        )
         st.plotly_chart(fig, use_container_width=True)
 
     else:
