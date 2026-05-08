@@ -929,7 +929,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"t = {t:.3f}")
 
-        st.write(f"p-value = {p:.5f}")
+        st.latex(rf"\text{{p-value}} = {p:.5f}")
 
         # =========================
         # PLOT
@@ -1002,7 +1002,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"z = {z:.3f}")
 
-        st.write(f"p-value = {p:.5f}")
+        st.latex(rf"\text{{p-value}} = {p:.5f}")
 
         # =========================
         # PLOT
@@ -1075,7 +1075,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"\hat{{p}} = {observed_p:.2f}")
 
-        st.write(f"p-value = {result.pvalue:.5f}")
+        st.latex(rf"\text{{p-value}} = {result.pvalue:.5f}")
 
         # =========================
         # PLOT
@@ -1134,7 +1134,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"W = {stat:.3f}")
 
-        st.write(f"p-value = {p:.5f}")
+        st.latex(rf"\text{{p-value}} = {p:.5f}")
 
         # =========================
         # PLOT
@@ -1183,7 +1183,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"\chi^2 = {chi2:.3f}")
 
-        st.write(f"p-value = {p:.5f}")
+        st.latex(rf"\text{{p-value}} = {p:.5f}")
 
         # =========================
         # PLOT
@@ -1250,9 +1250,9 @@ def render_test_widget(test_name):
 
         st.latex(rf"\chi^2 = {chi2:.3f}")
 
-        st.write(f"Degrees of Freedom = {dof}")
+        st.latex(rf"\text{{Degrees of Freedom}} = {dof}")
 
-        st.write(f"p-value = {p:.5f}")
+        st.latex(rf"\text{{p-value}} = {p:.5f}")
 
         # =========================
         # HEATMAP
@@ -1310,7 +1310,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"\chi^2 = {result.statistic:.3f}")
 
-        st.write(f"p-value = {result.pvalue:.5f}")
+        st.latex(rf"\text{{p-value}} = {result.pvalue:.5f}")
 
         # =========================
         # HEATMAP
@@ -1394,7 +1394,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"Q = {result.statistic:.3f}")
 
-        st.write(f"p-value = {result.pvalue:.5f}")
+        st.latex(rf"\text{{p-value}} = {result.pvalue:.5f}")
 
         # =========================
         # PLOT
@@ -1456,7 +1456,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"OR = {odds_ratio:.3f}")
 
-        st.write(f"p-value = {p:.5f}")
+        st.latex(rf"\text{{p-value}} = {p:.5f}")
 
         # =========================
         # HEATMAP
@@ -1530,7 +1530,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"t = {t:.3f}")
 
-        st.write(f"p-value = {p:.5f}")
+        st.latex(rf"\text{{p-value}} = {p:.5f}")
 
         # =========================
         # PLOT
@@ -1584,7 +1584,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"t = {t:.3f}")
 
-        st.write(f"p-value = {p:.5f}")
+        st.latex(rf"\text{{p-value}} = {p:.5f}")
 
         # =========================
         # PLOT
@@ -1649,7 +1649,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"t = {t:.3f}")
 
-        st.write(f"p-value = {p:.5f}")
+        st.latex(rf"\text{{p-value}} = {p:.5f}")
 
         # =========================
         # PLOT
@@ -1721,7 +1721,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"F = {F:.3f}")
 
-        st.write(f"p-value = {p:.5f}")
+        st.latex(rf"\text{{p-value}} = {p:.5f}")
 
         # =========================
         # PLOT
@@ -1940,7 +1940,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"W = {stat:.3f}")
 
-        st.write(f"p-value = {p:.5f}")
+        st.latex(rf"\text{{p-value}} = {p:.5f}")
 
         # =========================
         # PLOT
@@ -2017,7 +2017,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"U = {u:.3f}")
 
-        st.write(f"p-value = {p:.5f}")
+        st.latex(rf"\text{{p-value}} = {p:.5f}")
 
         # =========================
         # PLOT
@@ -2083,7 +2083,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"H = {H:.3f}")
 
-        st.write(f"p-value = {p:.5f}")
+        st.latex(rf"\text{{p-value}} = {p:.5f}")
 
         # =========================
         # PLOT
@@ -2155,7 +2155,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"\chi^2 = {stat:.3f}")
 
-        st.write(f"p-value = {p:.5f}")
+        st.latex(rf"\text{{p-value}} = {p:.5f}")
 
         # =========================
         # PLOT
@@ -2482,7 +2482,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"r_{{pb}} = {r:.3f}")
 
-        st.write(f"p-value = {p:.5f}")
+        st.latex(rf"\text{{p-value}} = {p:.5f}")
 
         # =========================
         # PLOT
