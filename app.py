@@ -750,8 +750,7 @@ def main():
     # SIDEBAR GLOSSARY
     # =========================
     with st.sidebar:
-        st.header(":orange[🕮  Statistical Glossary]")
-        st.write("Comprehensive reference for statistical concepts.")
+        st.header(":orange[🕮 &ensp; Statistical Glossary]")
 
         with st.expander("Variable Types"):
             st.markdown("""
