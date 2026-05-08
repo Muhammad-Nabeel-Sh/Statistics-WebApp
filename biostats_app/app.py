@@ -1,5 +1,6 @@
 import streamlit as st
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
@@ -855,7 +856,7 @@ def render_test_widget(test_name):
     # One Sample Tests
 
     if test_name == "One-sample t-test":
-        import plotly.graph_objects as go
+
         from scipy.stats import ttest_1samp
 
         st.subheader("Interactive One-sample t-test")
@@ -936,7 +937,7 @@ def render_test_widget(test_name):
         st.plotly_chart(fig, use_container_width=True)
 
     elif test_name == "One-sample z-test":
-        import plotly.graph_objects as go
+
         from statsmodels.stats.weightstats import ztest
 
         st.subheader("Interactive One-sample z-test")
@@ -1004,7 +1005,7 @@ def render_test_widget(test_name):
         st.plotly_chart(fig, use_container_width=True)
 
     elif test_name == "One-sample Proportion Test (Binomial Test)":
-        import plotly.graph_objects as go
+
         from scipy.stats import binomtest
 
         st.subheader("Interactive One-sample Proportion Test")
@@ -1078,7 +1079,7 @@ def render_test_widget(test_name):
         st.plotly_chart(fig, use_container_width=True)
 
     elif test_name == "One-sample Wilcoxon Signed-Rank Test":
-        import plotly.graph_objects as go
+
         from scipy.stats import wilcoxon
 
         st.subheader("Interactive One-sample Wilcoxon Signed-Rank Test")
@@ -1133,7 +1134,7 @@ def render_test_widget(test_name):
         st.plotly_chart(fig, use_container_width=True)
 
     elif test_name == "Chi-Square Goodness-of-Fit Test":
-        import plotly.graph_objects as go
+
         from scipy.stats import chisquare
 
         st.subheader("Interactive Chi-Square Goodness-of-Fit Test")
@@ -1196,7 +1197,7 @@ def render_test_widget(test_name):
 
     # Categorial Tests
     elif test_name == "Chi-Square Test":
-        import plotly.graph_objects as go
+
         from scipy.stats import chi2_contingency
 
         st.subheader("Interactive Chi-Square Test of Independence")
@@ -1253,7 +1254,7 @@ def render_test_widget(test_name):
         st.plotly_chart(fig, use_container_width=True)
 
     elif test_name == "McNemar's Test":
-        import plotly.graph_objects as go
+
         from statsmodels.stats.contingency_tables import mcnemar
 
         st.subheader("Interactive McNemar's Test")
@@ -1311,8 +1312,7 @@ def render_test_widget(test_name):
         st.plotly_chart(fig, use_container_width=True)
 
     elif test_name == "Cochran's Q Test":
-        import pandas as pd
-        import plotly.graph_objects as go
+
         from statsmodels.stats.contingency_tables import cochrans_q
 
         st.subheader("Interactive Cochran's Q Test")
@@ -1400,7 +1400,7 @@ def render_test_widget(test_name):
         st.plotly_chart(fig, use_container_width=True)
 
     elif test_name == "Fisher's Exact Test":
-        import plotly.graph_objects as go
+
         from scipy.stats import fisher_exact
 
         st.subheader("Interactive Fisher's Exact Test")
@@ -1460,7 +1460,7 @@ def render_test_widget(test_name):
     # Parametric Two Sample Tests
 
     elif test_name == "Student's t-test (Independent)":
-        import plotly.graph_objects as go
+
         from scipy.stats import ttest_ind
 
         st.subheader("Interactive Independent t-test")
@@ -1529,7 +1529,7 @@ def render_test_widget(test_name):
         st.plotly_chart(fig, use_container_width=True)
 
     elif test_name == "Welch's t-test (Independent, Unequal Variances)":
-        import plotly.graph_objects as go
+
         from scipy.stats import ttest_ind
 
         st.subheader("Interactive Welch's t-test")
@@ -1584,7 +1584,7 @@ def render_test_widget(test_name):
         st.plotly_chart(fig, use_container_width=True)
 
     elif test_name == "Paired t-test":
-        import plotly.graph_objects as go
+
         from scipy.stats import ttest_rel
 
         st.subheader("Interactive Paired t-test")
@@ -1658,7 +1658,7 @@ def render_test_widget(test_name):
     # Parametric Multiple Group Tests
 
     elif test_name == "One-way ANOVA":
-        import plotly.graph_objects as go
+
         from scipy.stats import f_oneway
 
         st.subheader("Interactive One-way ANOVA")
@@ -1721,7 +1721,6 @@ def render_test_widget(test_name):
         st.plotly_chart(fig, use_container_width=True)
 
     elif test_name == "Repeated Measures ANOVA":
-        import plotly.graph_objects as go
 
         st.subheader("Interactive Repeated Measures ANOVA")
 
@@ -1800,7 +1799,6 @@ def render_test_widget(test_name):
         st.plotly_chart(fig, use_container_width=True)
 
     elif test_name == "MANOVA":
-        import plotly.graph_objects as go
 
         st.subheader("Interactive MANOVA")
 
@@ -1872,7 +1870,7 @@ def render_test_widget(test_name):
     # Non-parametric Two Sample Tests
 
     elif test_name == "Wilcoxon Signed-Rank Test":
-        import plotly.graph_objects as go
+
         from scipy.stats import wilcoxon
 
         st.subheader("Interactive Wilcoxon Signed-Rank Test")
@@ -1949,7 +1947,7 @@ def render_test_widget(test_name):
         st.plotly_chart(fig, use_container_width=True)
 
     elif test_name == "Mann-Whitney U Test":
-        import plotly.graph_objects as go
+
         from scipy.stats import mannwhitneyu
 
         st.subheader("Interactive Mann-Whitney U Test")
@@ -2020,7 +2018,7 @@ def render_test_widget(test_name):
     # Non-parametric Multiple Group Tests
 
     elif test_name == "Kruskal-Wallis Test":
-        import plotly.graph_objects as go
+
         from scipy.stats import kruskal
 
         st.subheader("Interactive Kruskal-Wallis Test")
@@ -2085,7 +2083,7 @@ def render_test_widget(test_name):
         st.plotly_chart(fig, use_container_width=True)
 
     elif test_name == "Friedman Test":
-        import plotly.graph_objects as go
+
         from scipy.stats import friedmanchisquare
 
         st.subheader("Interactive Friedman Test")
@@ -2164,7 +2162,6 @@ def render_test_widget(test_name):
         st.plotly_chart(fig, use_container_width=True)
 
     elif test_name == "Permutation MANOVA or Non-Parametric MANOVA":
-        import plotly.graph_objects as go
 
         st.subheader("Interactive Permutation MANOVA")
 
@@ -2295,7 +2292,7 @@ def render_test_widget(test_name):
         st.plotly_chart(fig, use_container_width=True)
 
     elif test_name == "Spearman Rank Correlation":
-        import plotly.graph_objects as go
+
         from scipy.stats import spearmanr
 
         st.subheader("Interactive Spearman Rank Correlation")
@@ -2372,7 +2369,7 @@ def render_test_widget(test_name):
         st.plotly_chart(fig, use_container_width=True)
 
     elif test_name == "Chi-Square Test of Independence":
-        import plotly.graph_objects as go
+
         from scipy.stats import chi2_contingency
 
         st.subheader("Interactive Chi-Square Test of Independence")
@@ -2422,7 +2419,7 @@ def render_test_widget(test_name):
         st.plotly_chart(fig, use_container_width=True)
 
     elif test_name == "Point-Biserial Correlation":
-        import plotly.graph_objects as go
+
         from scipy.stats import pointbiserialr
 
         st.subheader("Interactive Point-Biserial Correlation")
