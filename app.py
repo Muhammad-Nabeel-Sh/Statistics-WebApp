@@ -293,12 +293,12 @@ rules = [
         "Explanation": "Permutation MANOVA or Non-Parametric MANOVA These tests are used to compare the means of multiple dependent variables across two or more independent groups when the assumptions of traditional MANOVA are not met. They do not assume a specific distribution for the data.",
         "Example": "A researcher wants to compare the effects of three different diets on both weight loss and cholesterol levels, but the data does not follow a normal distribution. The researcher performs a Permutation MANOVA to determine if there are significant differences in the combined dependent variables (weight loss and cholesterol levels) across the three diet groups.",
         "Formula": r"""
-                    $$ F = \dfrac{MS_{between}}{MS_{error}} $$ 
-                    Where: 
-                    - :orange[$F$] is the F-statistic, 
-                    - :orange[$MS_{between}$] is the mean square between groups (calculated based on the variability of the group means), and 
-                    - :orange[$MS_{error}$] is the mean square error (calculated based on the variability of observations within groups). 
-                    - The test statistic :orange[$F$] is then compared to a critical value from the F-distribution with appropriate degrees of freedom to determine significance.
+                    $$ F = \dfrac{MS_{between}}{MS_{error}} $$
+                    Where:
+                    - :orange[$F$] is the pseudo-F-statistic,
+                    - :orange[$MS_{between}$] is the mean square between groups, and
+                    - :orange[$MS_{error}$] is the mean square error.
+                    - The test statistic :orange[$F$] is then evaluated using a permutation-based null distribution (data is randomly reshuffled many times) to compute the p-value, rather than comparing to a theoretical F-distribution.
                     """,
     },
     {
@@ -312,12 +312,12 @@ rules = [
         "Explanation": "Chi-Square Goodness-of-Fit Test This test is used to determine if a sample data fits a particular distribution. It compares the observed frequencies with the expected frequencies under the null hypothesis.",
         "Example": "A researcher wants to test if the distribution of blood types in a sample of 100 people matches the expected distribution in the general population. The researcher performs a Chi-Square Goodness-of-Fit Test to determine if there is a significant difference between the observed and expected distributions.",
         "Formula": r"""
-                    $$ \chi^2 = \dfrac{12}{N(N+1)} \sum_{j=1}^{k} R_j^2 - 3N(N+1) $$ 
-                    Where: 
-                    - :orange[$\chi^2$] is the test statistic, 
-                    - :orange[$N$] is the number of subjects, 
-                    - :orange[$k$] is the number of treatments, and 
-                    - :orange[$R_j$] is the sum of ranks for the :orange[$j$]-th treatment. 
+                    $$ \chi^2 = \sum_{i=1}^{k} \frac{(O_i - E_i)^2}{E_i} $$
+                    Where:
+                    - :orange[$\chi^2$] is the test statistic,
+                    - :orange[$O_i$] is the observed frequency for category :orange[$i$],
+                    - :orange[$E_i$] is the expected frequency for category :orange[$i$], and
+                    - :orange[$k$] is the number of categories.
                     - The test statistic :orange[$\chi^2$] is then compared to a critical value from the chi-square distribution with :orange[$k-1$] degrees of freedom to determine significance.
                     """,
     },
@@ -332,13 +332,14 @@ rules = [
         "Explanation": "Chi-Square Test This test is used to determine if there is a significant association between two categorical variables. It compares the observed frequencies with the expected frequencies under the null hypothesis.",
         "Example": "A researcher wants to test if there is a significant association between gender and smoking status. The researcher collects data on gender and smoking status from 200 participants and performs a Chi-Square Test to determine if there is a significant relationship between these two variables.",
         "Formula": r"""
-                    $$ \chi^2 = \dfrac{12}{N(N+1)} \sum_{j=1}^{k} R_j^2 - 3N(N+1) $$ 
-                    Where: 
-                    - :orange[$\chi^2$] is the test statistic, 
-                    - :orange[$N$] is the number of subjects, 
-                    - :orange[$k$] is the number of treatments, and 
-                    - :orange[$R_j$] is the sum of ranks for the :orange[$j$]-th treatment. 
-                    - The test statistic :orange[$\chi^2$] is then compared to a critical value from the chi-square distribution with :orange[$k-1$] degrees of freedom to determine significance.
+                    $$ \chi^2 = \sum_{i=1}^{r} \sum_{j=1}^{c} \frac{(O_{ij} - E_{ij})^2}{E_{ij}} $$
+                    Where:
+                    - :orange[$\chi^2$] is the test statistic,
+                    - :orange[$O_{ij}$] is the observed frequency for cell :orange[$(i,j)$],
+                    - :orange[$E_{ij}$] is the expected frequency for cell :orange[$(i,j)$],
+                    - :orange[$r$] is the number of rows, and
+                    - :orange[$c$] is the number of columns.
+                    - The test statistic :orange[$\chi^2$] is then compared to a critical value from the chi-square distribution with :orange[$(r-1)(c-1)$] degrees of freedom to determine significance.
                     """,
     },
     {
@@ -352,13 +353,12 @@ rules = [
         "Explanation": "McNemar's Test This test is used to determine if there is a significant change in proportions for paired nominal data. It is typically used when analyzing before-and-after data or matched pairs.",
         "Example": "A researcher wants to test if there is a significant change in smoking status before and after a intervention. The researcher collects data on smoking status from 100 participants before and after the intervention and performs a McNemar's Test to determine if there is a significant change.",
         "Formula": r"""
-                    $$ \chi^2 = \dfrac{12}{N(N+1)} \sum_{j=1}^{k} R_j^2 - 3N(N+1) $$ 
-                    Where: 
-                    - :orange[$\chi^2$] is the test statistic, 
-                    - :orange[$N$] is the number of subjects, 
-                    - :orange[$k$] is the number of treatments, and 
-                    - :orange[$R_j$] is the sum of ranks for the :orange[$j$]-th treatment. 
-                    - The test statistic :orange[$\chi^2$] is then compared to a critical value from the chi-square distribution with :orange[$k-1$] degrees of freedom to determine significance.
+                    $$ \chi^2 = \frac{(b - c)^2}{b + c} $$
+                    Where:
+                    - :orange[$\chi^2$] is the test statistic,
+                    - :orange[$b$] is the number of pairs where the first condition is positive and the second is negative, and
+                    - :orange[$c$] is the number of pairs where the first condition is negative and the second is positive.
+                    - The test statistic :orange[$\chi^2$] is then compared to a critical value from the chi-square distribution with 1 degree of freedom to determine significance.
                     """,
     },
     {
@@ -372,12 +372,13 @@ rules = [
         "Explanation": "Cochran's Q Test This test is used to determine if there is a significant difference in proportions for three or more related groups. It is an extension of McNemar's Test.",
         "Example": "A researcher wants to test if there is a significant difference in the proportion of participants who smoke at three different time points (before, during, and after an intervention). The researcher performs a Cochran's Q Test to determine if there is a significant difference.",
         "Formula": r"""
-                    $$ Q = \sum_{j=1}^{k} \left( \frac{(X_j - \bar{X})^2}{\sigma^2} \right) $$ 
-                    Where: 
-                    - :orange[$Q$] is the test statistic, 
-                    - :orange[$X_j$] is the observed frequency for group :orange[$j$], 
-                    - :orange[$\bar{X}$] is the mean frequency, and 
-                    - :orange[$\sigma^2$] is the variance. 
+                    $$ Q = \frac{(k-1) \left( k \sum_{j=1}^{k} G_j^2 - \left( \sum_{j=1}^{k} G_j \right)^2 \right)}{k \sum_{i=1}^{b} L_i - \sum_{i=1}^{b} L_i^2} $$
+                    Where:
+                    - :orange[$Q$] is the test statistic,
+                    - :orange[$k$] is the number of conditions/treatments,
+                    - :orange[$b$] is the number of subjects,
+                    - :orange[$G_j$] is the column total (successes) for condition :orange[$j$], and
+                    - :orange[$L_i$] is the row total (successes) for subject :orange[$i$].
                     - The test statistic :orange[$Q$] is then compared to a critical value from the chi-square distribution with :orange[$k-1$] degrees of freedom to determine significance.
                     """,
     },
@@ -392,16 +393,13 @@ rules = [
         "Explanation": "Fisher's Exact Test This test is used to determine if there is a significant association between two categorical variables when sample sizes are small.",
         "Example": "A researcher wants to test if there is a significant association between gender and smoking status in a small sample of 20 participants. The researcher performs a Fisher's Exact Test to determine if there is a significant relationship between these two variables.",
         "Formula": r"""
-                    $$ P = \sum_{\text{all tables with } \geq O_{ij}} \frac{(N!)}{\prod_{i,j} (n_{ij}!)} \prod_{i,j} (p_{ij})^{n_{ij}} $$ 
-                    Where: 
-                    - :orange[$P$] is the p-value, 
-                    - :orange[$O_{ij}$] is the observed frequency for cell :orange[$(i,j)$], 
-                    - :orange[$n_{ij}$] is the expected frequency for cell :orange[$(i,j)$], and 
-                    - :orange[$p_{ij}$] is the probability for cell :orange[$(i,j)$]. 
-                    - The p-value :orange[$P$] is then compared to a significance level to determine significance.
+                    $$ p = \frac{(a+b)!\,(c+d)!\,(a+c)!\,(b+d)!}{a!\,b!\,c!\,d!\,n!} $$
+                    Where:
+                    - :orange[$a, b, c, d$] are the cell frequencies in the 2×2 contingency table,
+                    - :orange[$n = a+b+c+d$] is the total sample size.
+                    - The p-value is calculated by summing the probabilities of all tables with the same marginal totals that are as extreme or more extreme than the observed table.
                     """,
     },
-    # Association/Correlation Tests
     {
         "name": "Pearson Correlation",
         "Objective": "Association/Correlation",
