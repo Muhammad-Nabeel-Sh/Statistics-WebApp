@@ -678,88 +678,141 @@ def main():
 
         with st.expander("Variable Types"):
             st.markdown("""
-            **Binary / Dichotomous**: Two exclusive categories (e.g., Male/Female, Pass/Fail).
+            :orange[**Binary / Dichotomous**]: Two exclusive categories (e.g., Male/Female, Pass/Fail).
             
-            **Categorical / Nominal**: Categories without inherent order (e.g., Eye color, Department).
+            :orange[**Categorical / Nominal**]: Categories without inherent order (e.g., Eye color, Department).
             
-            **Ordinal**: Categories with a natural rank/order, but unequal distances between them (e.g., Likert scales, Education level).
+            :orange[**Ordinal**]: Categories with a natural rank/order, but unequal distances between them (e.g., Likert scales, Education level).
             
-            **Discrete (Count)**: Numerical values that must be whole numbers (e.g., Number of teeth, Number of children).
+            :orange[**Discrete (Count)**]: Numerical values that must be whole numbers (e.g., Number of teeth, Number of children).
             
-            **Continuous (Scale)**: Numerical values that can be measured with infinite precision (e.g., Height, Lab values, Temperature).
+            :orange[**Continuous (Scale)**]: Numerical values that can be measured with infinite precision (e.g., Height, Lab values, Temperature).
             
-            **Dependent (Outcome)**: The variable being measured/tested (the "effect").
+            :orange[**Dependent (Outcome)**]: The variable being measured/tested (the "effect").
             
-            **Independent (Predictor)**: The variable being manipulated or used to group data (the "cause").
+            :orange[**Independent (Predictor)**]: The variable being manipulated or used to group data (the "cause").
             """)
 
         with st.expander("Descriptive Statistics"):
             st.markdown("""
-            **Mean**: The mathematical average (sum divided by count). Sensitive to outliers.
+            :orange[**Mean**]: The mathematical average (sum divided by count). Sensitive to outliers.
             
-            **Median**: The middle value when data is ordered. Better for skewed data.
+            :orange[**Median**]: The middle value when data is ordered. Better for skewed data.
             
-            **Mode**: The most frequently occurring value.
+            :orange[**Mode**]: The most frequently occurring value.
             
-            **Standard Deviation (SD)**: Measures the spread of data around the mean.
+            :orange[**Standard Deviation (SD)**]: Measures the spread of data around the mean.
             
-            **Variance**: The square of the Standard Deviation; measures variability.
+            :orange[**Variance**]: The square of the Standard Deviation; measures variability.
             
-            **Interquartile Range (IQR)**: The range of the middle 50% of values (Q3 - Q1).
+            :orange[**Interquartile Range (IQR)**]: The range of the middle 50% of values (Q3 - Q1).
+            """)
+
+        with st.expander("Sampling & Research Design"):
+            st.markdown("""
+            :orange[**Random Sampling**]: Every member of the population has an equal chance of being selected.
+            
+            :orange[**Stratified Sampling**]: Dividing the population into subgroups (strata) and sampling from each.
+            
+            :orange[**Blinding**]: Preventing participants (Single-blind) or both participants and researchers (Double-blind) from knowing which treatment is being administered to reduce bias.
+            
+            :orange[**Randomization**]: Assigning participants to groups by chance to ensure groups are comparable.
+            
+            :orange[**Placebo Effect**]: Improvement in a patient's condition due to the belief in the treatment rather than the treatment itself.
             """)
 
         with st.expander("Hypothesis Testing"):
             st.markdown("""
-            **Null Hypothesis (H₀)**: Suggests no effect or no difference exists.
+            :orange[**Null Hypothesis (H₀)**]: Suggests no effect or no difference exists.
             
-            **Alternative Hypothesis (H₁)**: Suggests a significant effect or difference exists.
+            :orange[**Alternative Hypothesis (H₁)**]: Suggests a significant effect or difference exists.
             
-            **P-value**: Probability that the observed result happened by chance. Low p-values (<0.05) suggest rejecting the Null Hypothesis.
+            :orange[**P-value**]: Probability that the observed result happened by chance. Low p-values (<0.05) suggest rejecting the Null Hypothesis.
             
-            **Type I Error (α)**: Falsely rejecting a true null hypothesis (a "false positive").
+            :orange[**Type I Error (α)**]: Falsely rejecting a true null hypothesis (a "false positive").
             
-            **Type II Error (β)**: Failing to reject a false null hypothesis (a "false negative").
+            :orange[**Type II Error (β)**]: Failing to reject a false null hypothesis (a "false negative").
             
-            **Confidence Interval (CI)**: A range of values likely to contain the true population parameter (usually 95%).
+            :orange[**Confidence Interval (CI)**]: A range of values likely to contain the true population parameter (usually 95%).
             """)
 
         with st.expander("Distribution & Assumptions"):
             st.markdown("""
-            **Parametric Tests**: Assume data follows a specific distribution (usually Normal). More powerful but strict.
+            :orange[**Parametric Tests**]: Assume data follows a specific distribution (usually Normal). More powerful but strict.
             
-            **Non-parametric Tests**: "Distribution-free" tests. Used for ordinal or non-normal data.
+            :orange[**Non-parametric Tests**]: "Distribution-free" tests. Used for ordinal or non-normal data.
             
-            **Normality**: When data follows a bell-shaped curve (symmetrical around the mean).
+            :orange[**Normality**]: When data follows a bell-shaped curve (symmetrical around the mean).
             
-            **Homogeneity of Variance**: The assumption that different groups have approximately the same spread/variance.
+            :orange[**Homogeneity of Variance**]: The assumption that different groups have approximately the same spread/variance.
             
-            **Outlier**: An extreme value that deviates significantly from the rest of the dataset.
+            :orange[**Outlier**]: An extreme value that deviates significantly from the rest of the dataset.
+            """)
+
+        with st.expander("Effect Size & Power"):
+            st.markdown("""
+            :orange[**Effect Size**]: Quantitative measure of the magnitude of a phenomenon (e.g., how large the difference is between groups).
+            
+            :orange[**Statistical Power (1-β)**]: The probability that a test will correctly reject a false null hypothesis. Higher power reduces Type II errors.
+            
+            :orange[**Cohen's d**]: Measures the distance between two means in terms of standard deviation units.
+            
+            :orange[**Eta-squared (η²)**]: Measures the proportion of variance in a dependent variable explained by an independent variable.
             """)
 
         with st.expander("Correlation & Regression"):
             st.markdown("""
-            **Correlation**: Measures the strength and direction of a relationship between two variables.
+            :orange[**Correlation**]: Measures the strength and direction of a relationship between two variables.
             
-            **Pearson's r**: Measures linear relationship (Continuous variables).
+            :orange[**Pearson's r**]: Measures linear relationship (Continuous variables).
             
-            **Spearman's ρ**: Measures monotonic relationship (Ordinal/Non-normal variables).
+            :orange[**Spearman's ρ**]: Measures monotonic relationship (Ordinal/Non-normal variables).
             
-            **Regression**: Used to predict the value of a dependent variable based on one or more predictors.
+            :orange[**Regression**]: Used to predict the value of a dependent variable based on one or more predictors.
             
-            **R-squared (R²)**: Proportion of variance in the outcome explained by the model.
+            :orange[**R-squared (R²)**]: Proportion of variance in the outcome explained by the model.
             
-            **Residuals**: The difference between observed values and values predicted by a model.
+            :orange[**Residuals**]: The difference between observed values and values predicted by a model.
+            """)
+
+        with st.expander("Reliability & Validity"):
+            st.markdown("""
+            :orange[**Reliability**]: The consistency or stability of a measurement tool.
+            
+            :orange[**Validity**]: The accuracy of a tool; whether it measures what it is supposed to measure.
+            
+            :orange[**Cronbach's Alpha**]: Measures internal consistency (how closely related a set of items are as a group).
+            
+            :orange[**Inter-rater Reliability**]: Degree of agreement among different raters (e.g., Cohen's Kappa).
             """)
 
         with st.expander("Clinical/Biostatistics"):
             st.markdown("""
-            **Sensitivity**: Ability of a test to correctly identify those *with* a condition.
+            :orange[**Sensitivity**]: Ability of a test to correctly identify those *with* a condition.
             
-            **Specificity**: Ability of a test to correctly identify those *without* a condition.
+            :orange[**Specificity**]: Ability of a test to correctly identify those *without* a condition.
             
-            **Odds Ratio (OR)**: Measures the association between an exposure and an outcome.
+            :orange[**Odds Ratio (OR)**]: Measures the association between an exposure and an outcome.
             
-            **Relative Risk (RR)**: Ratio of the probability of an event occurring in an exposed group vs. unexposed group.
+            :orange[**Relative Risk (RR)**]: Ratio of the probability of an event occurring in an exposed group vs. unexposed group.
+            """)
+
+        with st.expander("Survival Analysis"):
+            st.markdown("""
+            :orange[**Censoring**]: Occurs when we have incomplete information about the survival time of an individual.
+            
+            :orange[**Kaplan-Meier Curve**]: A non-parametric statistic used to estimate the survival function from lifetime data.
+            
+            :orange[**Hazard Ratio (HR)**]: The ratio of the hazard rates corresponding to the conditions described by two levels of an explanatory variable.
+            """)
+
+        with st.expander("Advanced Modeling"):
+            st.markdown("""
+            :orange[**Multicollinearity**]: When independent variables in a regression model are highly correlated.
+            
+            :orange[**Interaction Effect**]: When the effect of one independent variable on the outcome depends on the level of another independent variable.
+            
+            :orange[**Confounding Variable**]: An outside influence that changes the effect of a dependent and independent variable.
             """)
 
     st.title("🔬 Statistical Test Finder")
@@ -938,30 +991,48 @@ def main():
     st.markdown("---")
 
     footer_html = """
-    <div style="background-color: rgba(128, 128, 128, 0.1); padding: 20px; border-radius: 10px; border: 1px solid rgba(128, 128, 128, 0.2); margin-bottom: 20px; text-align: center;">
+<div style="padding: 20px; border-radius: 10px; border: 1px solid rgba(128, 128, 128, 0.3); margin-bottom: 20px; text-align: center;">
     <h3 style="margin-top: 0; color: #4CAF50;">Developed By</h3>
     <p style="font-size: 1.2em; margin-bottom: 5px;"><strong>Dr. Muhammad Nabeel Shaesha</strong></p>
-    <p style="margin: 0; color: #aaa;">Teaching Assistant at the Prosthodontics Department, PUA</p>
-    <p style="margin: 0; color: #aaa;">Currently enrolled in Masters of Prosthodontics and Implantology Program, PUA</p>
+    <p style="margin: 0; opacity: 0.8;">Teaching Assistant at the Prosthodontics Department, PUA</p>
+    <p style="margin: 0; opacity: 0.8;">Currently enrolled in Masters of Prosthodontics and Implantology Program, PUA</p>
     <div style="margin-top: 20px;">
-        <p style="font-size: 0.9em; color: #888; margin-bottom: 10px;">Built with the help of:</p>
+        <p style="font-size: 0.9em; opacity: 0.7; margin-bottom: 10px;">Built with the help of:</p>
         <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;">
-            <div style="border: 2px solid #4285F4; padding: 5px 15px; border-radius: 5px; background-color: rgba(66, 133, 244, 0.15); font-weight: bold;">
-                Gemma 2
+            <div style="border: 2px solid #CA6180; padding: 5px 15px; border-radius: 5px; font-weight: bold; color: #CA6180;">
+                Gemma 4
             </div>
-            <div style="border: 2px solid #34A853; padding: 5px 15px; border-radius: 5px; background-color: rgba(52, 168, 83, 0.15); font-weight: bold;">
+            <div style="border: 2px solid #4B9DA9; padding: 5px 15px; border-radius: 5px; font-weight: bold; color: #4B9DA9;">
                 OpenCode
             </div>
-            <div style="border: 2px solid #8E24AA; padding: 5px 15px; border-radius: 5px; background-color: rgba(142, 36, 170, 0.15); font-weight: bold;">
+            <div style="border: 2px solid #8E24AA; padding: 5px 15px; border-radius: 5px; font-weight: bold; color: #8E24AA;">
                 GeminiCLI
             </div>
-            <div style="border: 2px solid #10a37f; padding: 5px 15px; border-radius: 5px; background-color: rgba(16, 163, 127, 0.15); font-weight: bold;">
+            <div style="border: 2px solid #10a37f; padding: 5px 15px; border-radius: 5px; font-weight: bold; color: #10a37f;">
                 ChatGPT
             </div>
         </div>
+        <p style="font-size: 0.9em; opacity: 0.7; margin-bottom: 10px;"><br /> Acknowledgment to my professors who taught me biosatistics and research methodology</p>
+        <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;">
+            <div style="border: 2px solid #4285F4; padding: 2px 15px; border-radius: 5px; color: #4285F4;">
+                Dr Inas Karawia
+            </div>
+            <div style="border: 2px solid #4285F4; padding: 2px 15px; border-radius: 5px; color: #4285F4;">
+                Dr Maha Adel
+            </div>
+            <div style="border: 2px solid #4285F4; padding: 2px 15px; border-radius: 5px; color: #4285F4;">
+                Dr Hamida Abu Bakr
+            </div>
+            <div style="border: 2px solid #4285F4; padding: 2px 15px; border-radius: 5px; color: #4285F4;">
+                Dr Hadeya Abdel Hamid
+            </div>
+            <div style="border: 2px solid #4285F4; padding: 2px 15px; border-radius: 5px; color: #4285F4;">
+                Dr Nancy Bedwany
+            </div>
+        </div>
     </div>
-    </div>
-    <div style="text-align: center; color: grey; font-size: 0.8em;">
+</div>
+<div style="text-align: center; opacity: 0.6; font-size: 0.8em;">
     <p><strong>⚠️ Disclaimer</strong></p>
     <p>This tool is intended for <strong>educational and informational purposes only</strong>. 
     While it follows standard statistical guidelines, it does not account for all possible 
@@ -969,9 +1040,10 @@ def main():
     Recommendations should be verified by a qualified biostatistician or through standard 
     statistical literature before being used for clinical or formal research purposes.</p>
     <p>© 2026 Statistical Test Finder. Built with Streamlit.</p>
-    </div>
-    """
+</div>
+"""
     st.markdown(footer_html, unsafe_allow_html=True)
+
 
 # =========================
 # INTERACTIVE WIDGETS
