@@ -1237,6 +1237,13 @@ def main():
                     "Cluster-RCT / Multilevel",
                     "Precision-based (CI Width)",
                     "Pilot / Feasibility Study",
+                    "Wilcoxon Signed-Rank (paired)",
+                    "Kruskal-Wallis Test",
+                    "Friedman Test",
+                    "McNemar's Test",
+                    "Fisher's Exact Test",
+                    "MANOVA (Multivariate ANOVA)",
+                    "Binomial Exact Test",
                 ],
             )
 
@@ -1288,7 +1295,9 @@ def main():
                         0.1,
                     )
                 d_1s = mean_diff / std_dev_1s if std_dev_1s > 0 else 0
-                st.caption(f"Cohen's d = {d_1s:.3f} — Small: 0.20 | Medium: 0.50 | Large: 0.80")
+                st.caption(
+                    f"Cohen's d = {d_1s:.3f} — Small: 0.20 | Medium: 0.50 | Large: 0.80"
+                )
                 ss_params = {"type": "one_mean", "effect_size": d_1s}
 
             elif analysis_type == "Two Independent Means (t-test)":
@@ -1307,7 +1316,9 @@ def main():
                     0.1,
                 )
                 d_2s = abs(m1 - m2) / sd_2s if sd_2s > 0 else 0
-                st.caption(f"Cohen's d = {d_2s:.3f} — Small: 0.20 | Medium: 0.50 | Large: 0.80")
+                st.caption(
+                    f"Cohen's d = {d_2s:.3f} — Small: 0.20 | Medium: 0.50 | Large: 0.80"
+                )
                 ss_params = {
                     "type": "two_means",
                     "effect_size": d_2s,
@@ -1333,7 +1344,9 @@ def main():
                         0.1,
                     )
                 d_pd = pdiff / sddiff if sddiff > 0 else 0
-                st.caption(f"Cohen's d_z = {d_pd:.3f} — Small: 0.20 | Medium: 0.50 | Large: 0.80")
+                st.caption(
+                    f"Cohen's d_z = {d_pd:.3f} — Small: 0.20 | Medium: 0.50 | Large: 0.80"
+                )
                 ss_params = {"type": "paired", "effect_size": d_pd}
 
             elif analysis_type == "One-sample Proportion":
@@ -1412,7 +1425,9 @@ def main():
                 with c2:
                     r2_reg = st.number_input("Expected R²", 0.01, 0.99, 0.15, 0.01)
                 f2_reg = r2_reg / (1 - r2_reg) if r2_reg < 1 else 0
-                st.caption(f"Cohen's f² = {f2_reg:.3f} — Small: 0.02 | Medium: 0.15 | Large: 0.35")
+                st.caption(
+                    f"Cohen's f² = {f2_reg:.3f} — Small: 0.02 | Medium: 0.15 | Large: 0.35"
+                )
                 ss_params = {
                     "type": "regression",
                     "k": int(k_reg),
@@ -1733,6 +1748,122 @@ def main():
                         "fraction": fraction,
                         "main_n": int(main_n),
                     }
+
+            elif analysis_type == "Wilcoxon Signed-Rank (paired)":
+                c1, c2 = st.columns(2)
+                with c1:
+                    pr_pos = st.number_input(
+                        "Pr(positive difference)", 0.51, 0.99, 0.65, 0.01
+                    )
+                    st.caption("Small: ~0.56 | Medium: ~0.64 | Large: ~0.71")
+                with c2:
+                    are_wsr = st.number_input(
+                        "ARE vs paired t-test", 0.5, 1.5, 0.955, 0.001
+                    )
+                st.caption(
+                    "ARE = 0.955 at normality, lower for heavy-tailed distributions"
+                )
+                ss_params = {
+                    "type": "wilcoxon_sr",
+                    "effect_size": pr_pos,
+                    "are": are_wsr,
+                }
+
+            elif analysis_type == "Kruskal-Wallis Test":
+                c1, c2 = st.columns(2)
+                with c1:
+                    k_kw = st.number_input("Number of Groups", 3, 20, 3, 1)
+                with c2:
+                    f_kw = st.number_input(
+                        "Cohen's f (effect size)", 0.01, 2.0, 0.25, 0.01
+                    )
+                    st.caption("Small: 0.10 | Medium: 0.25 | Large: 0.40")
+                ss_params = {"type": "kruskal", "k": int(k_kw), "effect_size": f_kw}
+
+            elif analysis_type == "Friedman Test":
+                c1, c2 = st.columns(2)
+                with c1:
+                    k_fr = st.number_input("Number of Groups", 2, 20, 3, 1)
+                with c2:
+                    m_fr = st.number_input("Number of Measurements", 2, 20, 3, 1)
+                c1, c2 = st.columns(2)
+                with c1:
+                    w_fr = st.number_input("Kendall's W", 0.01, 0.99, 0.3, 0.01)
+                    st.caption("Small: 0.10 | Medium: 0.30 | Large: 0.50")
+                with c2:
+                    are_fr = st.number_input("ARE vs RM-ANOVA", 0.5, 1.5, 0.955, 0.001)
+                ss_params = {
+                    "type": "friedman",
+                    "k": int(k_fr),
+                    "m": int(m_fr),
+                    "w": w_fr,
+                    "are": are_fr,
+                }
+
+            elif analysis_type == "McNemar's Test":
+                c1, c2 = st.columns(2)
+                with c1:
+                    p_b = st.number_input("Discordant prop (b)", 0.01, 0.99, 0.2, 0.01)
+                with c2:
+                    p_c = st.number_input("Discordant prop (c)", 0.01, 0.99, 0.4, 0.01)
+                ss_params = {"type": "mcnemar", "p_b": p_b, "p_c": p_c}
+
+            elif analysis_type == "Fisher's Exact Test":
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    p1_fish = st.number_input(
+                        "Proportion Group 1", 0.01, 0.99, 0.3, 0.01
+                    )
+                with c2:
+                    p2_fish = st.number_input(
+                        "Proportion Group 2", 0.01, 0.99, 0.5, 0.01
+                    )
+                with c3:
+                    ratio_fish = st.number_input(
+                        "Allocation Ratio (n₂/n₁)", 0.1, 10.0, 1.0, 0.1
+                    )
+                ss_params = {
+                    "type": "fisher",
+                    "p1": p1_fish,
+                    "p2": p2_fish,
+                    "ratio": ratio_fish,
+                }
+
+            elif analysis_type == "MANOVA (Multivariate ANOVA)":
+                c1, c2 = st.columns(2)
+                with c1:
+                    k_man = st.number_input("Number of Groups", 2, 20, 3, 1)
+                with c2:
+                    dv_man = st.number_input("Number of DVs", 2, 20, 3, 1)
+                c1, c2 = st.columns(2)
+                with c1:
+                    f2_man = st.number_input(
+                        "Effect size f²(V)", 0.01, 2.0, 0.0625, 0.001, format="%.4f"
+                    )
+                    st.caption("Small: 0.01 | Medium: 0.0625 | Large: 0.16")
+                with c2:
+                    corr_man = st.number_input(
+                        "Correlation among DVs", 0.0, 0.99, 0.5, 0.01
+                    )
+                ss_params = {
+                    "type": "manova",
+                    "k": int(k_man),
+                    "dv": int(dv_man),
+                    "f2": f2_man,
+                    "rho": corr_man,
+                }
+
+            elif analysis_type == "Binomial Exact Test":
+                c1, c2 = st.columns(2)
+                with c1:
+                    p0_bin = st.number_input(
+                        "Null proportion (π₀)", 0.01, 0.99, 0.5, 0.01
+                    )
+                with c2:
+                    p1_bin = st.number_input(
+                        "Expected proportion (π₁)", 0.01, 0.99, 0.7, 0.01
+                    )
+                ss_params = {"type": "binomial", "p0": p0_bin, "p1": p1_bin}
 
             # =========================
             # STUDY ADJUSTMENTS
@@ -7043,6 +7174,186 @@ def render_power_calculator(params):
         )
         formula_latex = r"n_{\text{pilot}} = \text{rule of thumb: } 12\text{/group}"
 
+    elif atype == "wilcoxon_sr":
+        p_val = params["effect_size"]
+        are = params["are"]
+        d_wsr = np.sqrt(3) * (p_val - 0.5) * 2
+        if d_wsr > 0:
+            from statsmodels.stats.power import NormalIndPower
+
+            n_total = int(
+                np.ceil(
+                    NormalIndPower().solve_power(
+                        effect_size=d_wsr,
+                        alpha=alpha,
+                        power=power,
+                        alternative=alternative,
+                    )
+                    / are
+                )
+            )
+            n_per_group = n_total
+        explanation = (
+            f"Required sample size for a paired Wilcoxon signed-rank test ({tails.lower()}) "
+            f"to detect Pr(positive diff) = {p_val:.3f} with α = {alpha}, power = {power}, ARE = {are:.3f}."
+        )
+        formula_latex = r"n = \frac{1}{\text{ARE}} \left( \frac{z_{\alpha/2} + z_{\beta}}{\sqrt{3} \cdot (P - 0.5)} \right)^2"
+
+    elif atype == "kruskal":
+        f_eff = params["effect_size"]
+        k = params["k"]
+        if f_eff > 0:
+            from statsmodels.stats.power import FTestAnovaPower
+
+            n_per_g = FTestAnovaPower().solve_power(
+                effect_size=f_eff, alpha=alpha, power=power, k_groups=k
+            )
+            n_per_g = int(np.ceil(n_per_g * 1.15))
+            n_total = n_per_g * k
+            n_per_group = n_per_g
+        explanation = (
+            f"Required sample size per group for Kruskal-Wallis test with {k} groups "
+            f"to detect Cohen's f = {f_eff:.3f} with α = {alpha}, power = {power}. "
+            f"Inflated by 15% vs ANOVA to account for efficiency loss."
+        )
+        formula_latex = r"n_{\text{KW}} = 1.15 \times n_{\text{ANOVA}} \quad f = \sqrt{\frac{\sum(\bar{R}_i - \bar{R})^2}{(N(N+1)/12)}}"
+
+    elif atype == "friedman":
+        k = params["k"]
+        m = params["m"]
+        w = params["w"]
+        are = params["are"]
+        if w > 0:
+            from statsmodels.stats.power import FTestAnovaPower
+
+            f_fr = np.sqrt(w / (1 - w))
+            n_per_g = FTestAnovaPower().solve_power(
+                effect_size=f_fr, alpha=alpha, power=power, k_groups=k
+            )
+            n_per_g = int(np.ceil(n_per_g * m / are))
+            n_total = n_per_g * k
+            n_per_group = n_per_g
+        explanation = (
+            f"Required sample size per group for Friedman test with {k} groups, {m} measurements, "
+            f"Kendall's W = {w:.3f}, α = {alpha}, power = {power}."
+        )
+        formula_latex = (
+            r"W = \frac{12 \sum R_i^2}{m^2 k(k^2-1)} \quad f = \sqrt{\frac{W}{1-W}}"
+        )
+
+    elif atype == "mcnemar":
+        p_b = params["p_b"]
+        p_c = params["p_c"]
+        d_mc = abs(p_b - p_c)
+        p_discordant = p_b + p_c
+        if d_mc > 0 and p_discordant > 0:
+            n_total = int(np.ceil((z_alpha + z_beta) ** 2 * p_discordant / (d_mc**2)))
+            n_per_group = n_total
+        explanation = (
+            f"Required number of pairs for McNemar's test ({tails.lower()}) "
+            f"to detect discordant proportions p_b = {p_b:.3f}, p_c = {p_c:.3f} "
+            f"with α = {alpha}, power = {power}."
+        )
+        formula_latex = (
+            r"n = \frac{(z_{\alpha/2} + z_{\beta})^2 (p_b + p_c)}{(p_b - p_c)^2}"
+        )
+
+    elif atype == "fisher":
+        p1 = params["p1"]
+        p2 = params["p2"]
+        ratio = params["ratio"]
+        p_bar = (p1 + ratio * p2) / (1 + ratio)
+        d_f = abs(p1 - p2)
+        if d_f > 0 and p_bar > 0 and p_bar < 1:
+            from statsmodels.stats.proportion import proportion_effectsize
+            from statsmodels.stats.power import NormalIndPower
+
+            d_eff = proportion_effectsize(p2, p1)
+            n1 = NormalIndPower().solve_power(
+                effect_size=abs(d_eff),
+                alpha=alpha,
+                power=power,
+                ratio=ratio,
+                alternative=alternative,
+            )
+            n1 = int(np.ceil(n1 * 1.20))
+            n2 = int(np.ceil(n1 * ratio))
+            n_total = n1 + n2
+            n_per_group = (n1, n2)
+        explanation = (
+            f"Required sample size per group for Fisher's exact test ({tails.lower()}) "
+            f"to detect difference between {p1:.3f} and {p2:.3f} "
+            f"with α = {alpha}, power = {power}, ratio = {ratio:.2f}. "
+            f"Inflated by 20% vs z-test for exact-method efficiency."
+        )
+        formula_latex = r"n_{\text{Fisher}} \approx 1.20 \times n_{\text{two-prop}} \quad \text{(exact conditional inference)}"
+
+    elif atype == "manova":
+        k = params["k"]
+        dv = params["dv"]
+        f2 = params["f2"]
+        rho = params["rho"]
+        if f2 > 0:
+            u = dv
+            v_num = k - 1
+            v_den = 1e9
+            n_total = None
+            for n_try in range(k * dv + 2, 5000):
+                v_den = n_try - k - dv
+                if v_den <= 0:
+                    continue
+                s_val = min(u, v_num)
+                df1 = u * v_num
+                df2 = s_val * (v_den - dv + 1) + 4
+                ncp = f2 * n_try * (1 - rho)
+                from scipy.stats import ncf as noncentral_f, f as f_dist
+
+                f_crit = f_dist.ppf(1 - alpha, df1, df2)
+                p_cur = 1 - noncentral_f.cdf(f_crit, df1, df2, ncp)
+                if p_cur >= power:
+                    n_total = n_try
+                    break
+            if n_total is not None:
+                n_per_group = int(np.ceil(n_total / k))
+                n_total = n_per_group * k
+        explanation = (
+            f"Required total sample size for MANOVA with {k} groups, {dv} dependent variables, "
+            f"effect size f²(V) = {f2:.4f}, α = {alpha}, power = {power}, "
+            f"DV correlation ρ = {rho:.2f}. Based on Pillai's trace approximation."
+        )
+        formula_latex = r"n \text{ from non-central } F \text{ with } df_1 = u \cdot v_{\text{num}}, \quad f^2(V) = \frac{V}{s - V}"
+
+    elif atype == "binomial":
+        p0 = params["p0"]
+        p1 = params["p1"]
+        if p0 != p1:
+            from scipy.stats import binom
+
+            n_total = None
+            for n_try in range(3, 10000):
+                if alternative == "two-sided":
+                    alpha_lo = binom.ppf(alpha / 2, n_try, p0)
+                    alpha_hi = binom.ppf(1 - alpha / 2, n_try, p0)
+                    p_pow = binom.cdf(alpha_hi, n_try, p1) - binom.cdf(
+                        alpha_lo - 1, n_try, p1
+                    )
+                elif p1 > p0:
+                    crit = binom.ppf(1 - alpha, n_try, p0)
+                    p_pow = 1 - binom.cdf(crit - 1, n_try, p1)
+                else:
+                    crit = binom.ppf(alpha, n_try, p0)
+                    p_pow = binom.cdf(crit, n_try, p1)
+                if p_pow >= power:
+                    n_total = n_try
+                    break
+            n_per_group = n_total
+        explanation = (
+            f"Required sample size for binomial exact test ({tails.lower()}) "
+            f"to detect π₁ = {p1:.3f} vs π₀ = {p0:.3f} "
+            f"with α = {alpha}, power = {power}. Uses exact binomial CDF."
+        )
+        formula_latex = r"n = \min\{n: 1 - \Phi(\Phi^{-1}(1-\alpha/2) - \sqrt{n} d) \geq \text{power}\}"
+
     # --- Apply Attrition Adjustment ---
     n_total_raw = n_total
     if dropout_rate > 0 and n_total is not None:
@@ -7092,10 +7403,15 @@ def render_power_calculator(params):
     st.info(explanation)
 
     if isinstance(n_per_group, tuple) and n_total is not None and n_total > 0:
-        labels = [f"Group 1 (n₁ = {n_per_group[0]})", f"Group 2 (n₂ = {n_per_group[1]})"]
+        labels = [
+            f"Group 1 (n₁ = {n_per_group[0]})",
+            f"Group 2 (n₂ = {n_per_group[1]})",
+        ]
         values = [n_per_group[0], n_per_group[1]]
         fig_pie = go.Figure(
-            data=[go.Pie(labels=labels, values=values, hole=0.4, textinfo="label+percent")]
+            data=[
+                go.Pie(labels=labels, values=values, hole=0.4, textinfo="label+percent")
+            ]
         )
         fig_pie.update_layout(
             template="plotly_dark",
@@ -7165,7 +7481,9 @@ def render_power_calculator(params):
                     from statsmodels.stats.proportion import proportion_effectsize
 
                     solver = NormalIndPower()
-                    d_eff = proportion_effectsize(params["prop_alt"], params["prop_null"])
+                    d_eff = proportion_effectsize(
+                        params["prop_alt"], params["prop_null"]
+                    )
                     pv = solver.solve_power(
                         effect_size=abs(d_eff),
                         nobs1=n,
@@ -7267,7 +7585,8 @@ def render_power_calculator(params):
                     num_events = n * p_event
                     if log_hr != 0 and num_events > 0:
                         z_val = (
-                            abs(log_hr) * np.sqrt(num_events * ratio / ((ratio + 1) ** 2))
+                            abs(log_hr)
+                            * np.sqrt(num_events * ratio / ((ratio + 1) ** 2))
                             - z_alpha
                         )
                         pv = norm.cdf(z_val)
@@ -7282,7 +7601,8 @@ def render_power_calculator(params):
                     num_events = n * ev_rate
                     if log_hr != 0 and num_events > 0:
                         z_val = (
-                            abs(log_hr) * sd_x * np.sqrt(num_events * (1 - r2_x)) - z_alpha
+                            abs(log_hr) * sd_x * np.sqrt(num_events * (1 - r2_x))
+                            - z_alpha
                         )
                         pv = norm.cdf(z_val)
                     else:
@@ -7354,9 +7674,9 @@ def render_power_calculator(params):
                     auc = params["auc"]
                     null_auc = params["null_auc"]
                     ratio = params["ratio"]
-                    v_auc = auc * (1 - auc) + (ratio - 1) * (auc / (2 - auc) - auc**2) / (
-                        1 + ratio
-                    )
+                    v_auc = auc * (1 - auc) + (ratio - 1) * (
+                        auc / (2 - auc) - auc**2
+                    ) / (1 + ratio)
                     delta_auc = auc - null_auc
                     if delta_auc > 0:
                         n_cases_eff = n / (1 + ratio)
@@ -7372,7 +7692,8 @@ def render_power_calculator(params):
                     delta_k = kappa - null_kappa
                     if delta_k > 0:
                         z_val = (
-                            delta_k * np.sqrt(n / (null_kappa * (1 - null_kappa))) - z_alpha
+                            delta_k * np.sqrt(n / (null_kappa * (1 - null_kappa)))
+                            - z_alpha
                         )
                         pv = norm.cdf(z_val)
                     else:
@@ -7452,6 +7773,114 @@ def render_power_calculator(params):
                         fraction = params["fraction"]
                         n_req = max(int(np.ceil(main_n * fraction)), 5)
                         pv = min(n / n_req, 1.0)
+                elif atype == "wilcoxon_sr":
+                    p_val = params["effect_size"]
+                    are = params["are"]
+                    d_wsr = np.sqrt(3) * (p_val - 0.5) * 2
+                    if d_wsr > 0:
+                        solver = NormalIndPower()
+                        pv = solver.solve_power(
+                            effect_size=d_wsr,
+                            nobs1=n * are,
+                            alpha=alpha,
+                            alternative=alternative,
+                        )
+                    else:
+                        pv = 0
+                elif atype == "kruskal":
+                    f_eff = params["effect_size"]
+                    k = params["k"]
+                    if f_eff > 0:
+                        solver = FTestAnovaPower()
+                        pv = solver.solve_power(
+                            effect_size=f_eff, nobs=n / 1.15, alpha=alpha, k_groups=k
+                        )
+                    else:
+                        pv = 0
+                elif atype == "friedman":
+                    w = params["w"]
+                    k = params["k"]
+                    m = params["m"]
+                    are = params["are"]
+                    f_fr = np.sqrt(w / (1 - w)) if w < 1 else 1
+                    if f_fr > 0:
+                        solver = FTestAnovaPower()
+                        n_indep = n * are / m
+                        pv = solver.solve_power(
+                            effect_size=f_fr, nobs=n_indep, alpha=alpha, k_groups=k
+                        )
+                    else:
+                        pv = 0
+                elif atype == "mcnemar":
+                    p_b = params["p_b"]
+                    p_c = params["p_c"]
+                    d_mc = abs(p_b - p_c)
+                    p_discordant = p_b + p_c
+                    if d_mc > 0 and p_discordant > 0:
+                        z_val = d_mc * np.sqrt(n / p_discordant) - z_alpha
+                        pv = norm.cdf(z_val)
+                    else:
+                        pv = 0
+                elif atype == "fisher":
+                    p1 = params["p1"]
+                    p2 = params["p2"]
+                    ratio = params["ratio"]
+                    from statsmodels.stats.proportion import proportion_effectsize
+
+                    d_eff = proportion_effectsize(p2, p1)
+                    if abs(d_eff) > 0:
+                        solver = NormalIndPower()
+                        pv = solver.solve_power(
+                            effect_size=abs(d_eff),
+                            nobs1=n / (1 + ratio) / 1.20,
+                            alpha=alpha,
+                            ratio=ratio,
+                            alternative=alternative,
+                        )
+                    else:
+                        pv = 0
+                elif atype == "manova":
+                    k = params["k"]
+                    dv = params["dv"]
+                    f2 = params["f2"]
+                    rho = params["rho"]
+                    if f2 > 0:
+                        u = dv
+                        v_num = k - 1
+                        v_den = n - k - dv
+                        if v_den > 0:
+                            s_val = min(u, v_num)
+                            df1 = u * v_num
+                            df2 = s_val * (v_den - dv + 1) + 4
+                            ncp = f2 * n * (1 - rho)
+                            from scipy.stats import ncf as noncentral_f, f as f_dist
+
+                            f_crit = f_dist.ppf(1 - alpha, df1, df2)
+                            pv = 1 - noncentral_f.cdf(f_crit, df1, df2, ncp)
+                        else:
+                            pv = 0
+                    else:
+                        pv = 0
+                elif atype == "binomial":
+                    p0 = params["p0"]
+                    p1 = params["p1"]
+                    if p0 != p1:
+                        from scipy.stats import binom
+
+                        if alternative == "two-sided":
+                            alpha_lo = binom.ppf(alpha / 2, n, p0)
+                            alpha_hi = binom.ppf(1 - alpha / 2, n, p0)
+                            pv = binom.cdf(alpha_hi, n, p1) - binom.cdf(
+                                alpha_lo - 1, n, p1
+                            )
+                        elif p1 > p0:
+                            crit = binom.ppf(1 - alpha, n, p0)
+                            pv = 1 - binom.cdf(crit - 1, n, p1)
+                        else:
+                            crit = binom.ppf(alpha, n, p0)
+                            pv = binom.cdf(crit, n, p1)
+                    else:
+                        pv = 0
                 else:
                     pv = 0
             except Exception:
@@ -7498,6 +7927,202 @@ def render_power_calculator(params):
         yaxis_title="Power (1 − β)",
     )
     st.plotly_chart(fig, use_container_width=True)
+
+    # --- Distribution Plot ---
+    st.subheader(":orange[Distribution Plot (Null & Alternative)]")
+    st.caption(
+        "Shows the sampling distributions under H₀ (null) and H₁ (alternative) with critical regions."
+    )
+    x_min = -4.5
+    x_max = 4.5
+    if n_total is not None and n_total > 0:
+        sqrt_n = np.sqrt(n_total)
+        if atype in ("one_mean", "paired", "wilcoxon_sr"):
+            d = (
+                params.get("effect_size", 0.5)
+                if atype != "wilcoxon_sr"
+                else np.sqrt(3) * (params["effect_size"] - 0.5) * 2
+            )
+            ncp = d * sqrt_n
+        elif atype == "two_means":
+            d = params.get("effect_size", 0.5)
+            ncp = d * sqrt_n / np.sqrt(1 + 1 / params.get("ratio", 1))
+        elif atype in ("one_prop", "binomial"):
+            p0 = params.get("prop_null", params.get("p0", 0.5))
+            p1 = params.get("prop_alt", params.get("p1", 0.7))
+            d_eff = abs(p1 - p0) / np.sqrt(p0 * (1 - p0)) if p0 > 0 and p0 < 1 else 0
+            ncp = d_eff * sqrt_n
+        elif atype in ("two_prop", "fisher"):
+            p1 = params["p1"]
+            ratio = params.get("ratio", 1)
+            d_eff = abs(p1 - params.get("p2", 0.5)) / np.sqrt(p1 * (1 - p1))
+            ncp = d_eff * sqrt_n / np.sqrt(1 + ratio)
+        elif atype in ("mcnemar",):
+            p_b = params.get("p_b", 0.2)
+            p_c = params.get("p_c", 0.4)
+            d_mc = abs(p_b - p_c)
+            p_disc = p_b + p_c
+            ncp = d_mc * sqrt_n / np.sqrt(p_disc) if p_disc > 0 else 0
+        elif atype in ("correlation",):
+            r = params.get("effect_size", 0.3)
+            ncp = np.arctanh(r) * sqrt_n
+        elif atype in ("mannwhitney",):
+            p = params.get("effect_size", 0.65)
+            d_mw = np.sqrt(3) * (p - 0.5)
+            ncp = d_mw * sqrt_n * np.sqrt(params.get("are", 1))
+        elif atype in ("logistic",):
+            or_val = params.get("or", 2)
+            ev_rate = params.get("event_rate", 0.3)
+            p1_log = (or_val * ev_rate) / (1 - ev_rate + or_val * ev_rate)
+            d_log = abs(p1_log - ev_rate)
+            p_bar = (ev_rate + p1_log) / 2
+            se = np.sqrt(2 * p_bar * (1 - p_bar))
+            d_eff = d_log / se if se > 0 else 0
+            ncp = d_eff * sqrt_n
+        elif atype in ("logrank",):
+            hr = params.get("hr", 2)
+            ncp = abs(np.log(hr)) * sqrt_n / 2
+        elif atype in ("cox",):
+            hr = params.get("hr", 2)
+            sd_x = params.get("sd_x", 1)
+            r2_x = params.get("r2_x", 0)
+            ev_rate = params.get("event_rate", 0.5)
+            ncp = abs(np.log(hr)) * sd_x * np.sqrt(ev_rate * (1 - r2_x)) * sqrt_n
+        else:
+            ncp = 2.5
+
+        if ncp > 0:
+            x_range = np.linspace(max(-4.5, -ncp - 4), max(4.5, ncp + 4), 400)
+            null_pdf = norm.pdf(x_range, 0, 1)
+            alt_pdf = norm.pdf(x_range, ncp, 1)
+            z_crit = z_alpha
+            fig_dist = go.Figure()
+            fig_dist.add_trace(
+                go.Scatter(
+                    x=x_range,
+                    y=null_pdf,
+                    mode="lines",
+                    name="H₀ (null)",
+                    line=dict(color="#00BFFF", width=2),
+                )
+            )
+            fig_dist.add_trace(
+                go.Scatter(
+                    x=x_range,
+                    y=alt_pdf,
+                    mode="lines",
+                    name="H₁ (alternative)",
+                    line=dict(color="#FF6B6B", width=2),
+                )
+            )
+            if alternative == "two-sided":
+                x_shade_left = x_range[x_range <= -z_crit]
+                x_shade_right = x_range[x_range >= z_crit]
+                if len(x_shade_left) > 0:
+                    fig_dist.add_trace(
+                        go.Scatter(
+                            x=x_shade_left,
+                            y=null_pdf[: len(x_shade_left)],
+                            mode="lines",
+                            fill="tozeroy",
+                            name=f"α/2 ({alpha/2:.4f})",
+                            line=dict(color="rgba(255,0,0,0.3)"),
+                            fillcolor="rgba(255,0,0,0.2)",
+                        )
+                    )
+                if len(x_shade_right) > 0:
+                    fig_dist.add_trace(
+                        go.Scatter(
+                            x=x_shade_right,
+                            y=null_pdf[len(null_pdf) - len(x_shade_right) :],
+                            mode="lines",
+                            fill="tozeroy",
+                            name=f"α/2 ({alpha/2:.4f})",
+                            line=dict(color="rgba(255,0,0,0.3)"),
+                            fillcolor="rgba(255,0,0,0.2)",
+                        )
+                    )
+                x_beta = x_range[x_range <= z_crit]
+                if len(x_beta) > 0:
+                    beta_pdf = alt_pdf[: len(x_beta)]
+                    fig_dist.add_trace(
+                        go.Scatter(
+                            x=x_beta,
+                            y=beta_pdf,
+                            mode="lines",
+                            fill="tozeroy",
+                            name=f"β ({1-power:.2f})",
+                            line=dict(color="rgba(255,165,0,0.3)"),
+                            fillcolor="rgba(255,165,0,0.2)",
+                        )
+                    )
+            else:
+                ncp_pos = ncp > 0
+                if ncp_pos:
+                    x_shade = x_range[x_range >= z_crit]
+                    x_beta = x_range[x_range <= z_crit]
+                else:
+                    x_shade = x_range[x_range <= -z_crit]
+                    x_beta = x_range[x_range >= -z_crit]
+                if len(x_shade) > 0:
+                    null_shade = (
+                        null_pdf[-len(x_shade) :]
+                        if ncp_pos
+                        else null_pdf[: len(x_shade)]
+                    )
+                    fig_dist.add_trace(
+                        go.Scatter(
+                            x=x_shade,
+                            y=null_shade,
+                            mode="lines",
+                            fill="tozeroy",
+                            name=f"α ({alpha:.4f})",
+                            line=dict(color="rgba(255,0,0,0.3)"),
+                            fillcolor="rgba(255,0,0,0.2)",
+                        )
+                    )
+                if len(x_beta) > 0:
+                    alt_shade = (
+                        alt_pdf[-len(x_beta) :]
+                        if not ncp_pos
+                        else alt_pdf[: len(x_beta)]
+                    )
+                    fig_dist.add_trace(
+                        go.Scatter(
+                            x=x_beta,
+                            y=alt_shade,
+                            mode="lines",
+                            fill="tozeroy",
+                            name=f"β ({1-power:.2f})",
+                            line=dict(color="rgba(255,165,0,0.3)"),
+                            fillcolor="rgba(255,165,0,0.2)",
+                        )
+                    )
+
+            fig_dist.add_vline(
+                x=0,
+                line_dash="dot",
+                line_color="#00BFFF",
+                annotation_text="H₀ center",
+            )
+            fig_dist.add_vline(
+                x=ncp,
+                line_dash="dot",
+                line_color="#FF6B6B",
+                annotation_text="H₁ center",
+            )
+            fig_dist.update_layout(
+                template="plotly_dark",
+                height=350,
+                xaxis_title="Test Statistic (z)",
+                yaxis_title="Density",
+                legend=dict(orientation="h", y=1.1),
+            )
+            st.plotly_chart(fig_dist, use_container_width=True)
+        else:
+            st.info(
+                "Distribution plot not available for this test type with current parameters."
+            )
 
     # --- Sensitivity Table ---
     st.subheader("Sensitivity Analysis")
@@ -7864,6 +8489,149 @@ def render_power_calculator(params):
                     main_n = params["main_n"]
                     fraction = params["fraction"]
                     n_s = max(int(np.ceil(main_n * fraction / max(mult, 0.1))), 5)
+            elif atype == "wilcoxon_sr":
+                p_val = params["effect_size"]
+                are = params["are"]
+                d_wsr = np.sqrt(3) * (p_val - 0.5) * 2
+                adj_es = d_wsr * max(mult, 0.1)
+                if d_wsr > 0:
+                    solver = NormalIndPower()
+                    n_s = int(
+                        np.ceil(
+                            solver.solve_power(
+                                effect_size=adj_es / are,
+                                alpha=alpha,
+                                power=power,
+                                alternative=alternative,
+                            )
+                            / are
+                        )
+                    )
+                else:
+                    n_s = None
+            elif atype == "kruskal":
+                adj_es = params["effect_size"] * mult
+                k = params["k"]
+                if adj_es > 0:
+                    solver = FTestAnovaPower()
+                    n_per_g = solver.solve_power(
+                        effect_size=adj_es, alpha=alpha, power=power, k_groups=k
+                    )
+                    n_per_g = int(np.ceil(n_per_g * 1.15))
+                    n_s = n_per_g * k
+                else:
+                    n_s = None
+            elif atype == "friedman":
+                w = params["w"]
+                k = params["k"]
+                m = params["m"]
+                are = params["are"]
+                adj_w = max(min(w * mult, 0.99), 0.01)
+                adj_es = np.sqrt(adj_w / (1 - adj_w))
+                if adj_es > 0:
+                    solver = FTestAnovaPower()
+                    n_per_g = solver.solve_power(
+                        effect_size=adj_es, alpha=alpha, power=power, k_groups=k
+                    )
+                    n_per_g = int(np.ceil(n_per_g * m / are))
+                    n_s = n_per_g * k
+                else:
+                    n_s = None
+            elif atype == "mcnemar":
+                p_b = params["p_b"]
+                p_c = params["p_c"]
+                p_b_adj = max(min(p_b * mult, 0.99), 0.01)
+                p_c_adj = p_c * mult
+                p_c_adj = max(min(p_c_adj, 0.99), 0.01)
+                d_mc = abs(p_b_adj - p_c_adj)
+                p_discordant = p_b_adj + p_c_adj
+                adj_es = d_mc
+                if d_mc > 0 and p_discordant > 0:
+                    n_s = int(
+                        np.ceil((z_alpha + z_beta) ** 2 * p_discordant / (d_mc**2))
+                    )
+                    n_s = max(n_s, 5)
+                else:
+                    n_s = None
+            elif atype == "fisher":
+                p1 = params["p1"]
+                p2 = params["p2"]
+                ratio = params["ratio"]
+                adj_p2 = p1 + (p2 - p1) * mult
+                adj_p2 = max(min(adj_p2, 0.99), 0.01)
+                adj_es = abs(adj_p2 - p1)
+                from statsmodels.stats.proportion import proportion_effectsize
+
+                d_eff = proportion_effectsize(adj_p2, p1)
+                if abs(d_eff) > 0:
+                    solver = NormalIndPower()
+                    n1 = solver.solve_power(
+                        effect_size=abs(d_eff),
+                        alpha=alpha,
+                        power=power,
+                        ratio=ratio,
+                        alternative=alternative,
+                    )
+                    n1 = int(np.ceil(n1 * 1.20))
+                    n_s = n1 + int(np.ceil(n1 * ratio))
+                else:
+                    n_s = None
+            elif atype == "manova":
+                k = params["k"]
+                dv = params["dv"]
+                f2 = params["f2"]
+                rho = params["rho"]
+                adj_f2 = f2 * mult
+                adj_es = adj_f2
+                if adj_f2 > 0:
+                    u = dv
+                    v_num = k - 1
+                    n_s = None
+                    for n_try in range(k * dv + 2, 5000):
+                        v_den = n_try - k - dv
+                        if v_den <= 0:
+                            continue
+                        s_val = min(u, v_num)
+                        df1 = u * v_num
+                        df2 = s_val * (v_den - dv + 1) + 4
+                        ncp = adj_f2 * n_try * (1 - rho)
+                        from scipy.stats import ncf as noncentral_f, f as f_dist
+
+                        f_crit = f_dist.ppf(1 - alpha, df1, df2)
+                        p_cur = 1 - noncentral_f.cdf(f_crit, df1, df2, ncp)
+                        if p_cur >= power:
+                            n_s = n_try
+                            break
+                else:
+                    n_s = None
+            elif atype == "binomial":
+                p0 = params["p0"]
+                p1 = params["p1"]
+                p1_adj = p0 + (p1 - p0) * mult
+                p1_adj = max(min(p1_adj, 0.99), 0.01)
+                adj_es = abs(p1_adj - p0)
+                if p0 != p1_adj:
+                    from scipy.stats import binom
+
+                    n_s = None
+                    for n_try in range(3, 10000):
+                        if alternative == "two-sided":
+                            alpha_lo = binom.ppf(alpha / 2, n_try, p0)
+                            alpha_hi = binom.ppf(1 - alpha / 2, n_try, p0)
+                            p_pow = binom.cdf(alpha_hi, n_try, p1_adj) - binom.cdf(
+                                alpha_lo - 1, n_try, p1_adj
+                            )
+                        elif p1_adj > p0:
+                            crit = binom.ppf(1 - alpha, n_try, p0)
+                            p_pow = 1 - binom.cdf(crit - 1, n_try, p1_adj)
+                        else:
+                            crit = binom.ppf(alpha, n_try, p0)
+                            p_pow = binom.cdf(crit, n_try, p1_adj)
+                        if p_pow >= power:
+                            n_s = n_try
+                            break
+                else:
+                    n_s = None
             else:
                 n_s = None
         except Exception:
@@ -7951,47 +8719,102 @@ def render_power_calculator(params):
             try:
                 if atype == "one_mean":
                     from statsmodels.stats.power import TTestPower
+
                     d = params["effect_size"] * w_mult
-                    w_n = int(np.ceil(TTestPower().solve_power(effect_size=d, alpha=alpha, power=w_power, alternative=alternative)))
+                    w_n = int(
+                        np.ceil(
+                            TTestPower().solve_power(
+                                effect_size=d,
+                                alpha=alpha,
+                                power=w_power,
+                                alternative=alternative,
+                            )
+                        )
+                    )
                 elif atype == "two_means":
                     from statsmodels.stats.power import TTestIndPower
+
                     d = params["effect_size"] * w_mult
-                    n1 = TTestIndPower().solve_power(effect_size=d, alpha=alpha, power=w_power, ratio=params["ratio"], alternative=alternative)
+                    n1 = TTestIndPower().solve_power(
+                        effect_size=d,
+                        alpha=alpha,
+                        power=w_power,
+                        ratio=params["ratio"],
+                        alternative=alternative,
+                    )
                     n1 = int(np.ceil(n1))
                     w_n = n1 + int(np.ceil(n1 * params["ratio"]))
                 elif atype == "paired":
                     from statsmodels.stats.power import TTestPower
+
                     d = params["effect_size"] * w_mult
-                    w_n = int(np.ceil(TTestPower().solve_power(effect_size=d, alpha=alpha, power=w_power, alternative=alternative)))
+                    w_n = int(
+                        np.ceil(
+                            TTestPower().solve_power(
+                                effect_size=d,
+                                alpha=alpha,
+                                power=w_power,
+                                alternative=alternative,
+                            )
+                        )
+                    )
                 elif atype == "one_prop":
                     from statsmodels.stats.proportion import proportion_effectsize
                     from statsmodels.stats.power import NormalIndPower
-                    adj_p1 = params["prop_null"] + (params["prop_alt"] - params["prop_null"]) * w_mult
+
+                    adj_p1 = (
+                        params["prop_null"]
+                        + (params["prop_alt"] - params["prop_null"]) * w_mult
+                    )
                     adj_p1 = max(min(adj_p1, 0.99), 0.01)
                     d_eff = proportion_effectsize(adj_p1, params["prop_null"])
-                    w_n = int(np.ceil(NormalIndPower().solve_power(effect_size=abs(d_eff), alpha=alpha, power=w_power, alternative=alternative)))
+                    w_n = int(
+                        np.ceil(
+                            NormalIndPower().solve_power(
+                                effect_size=abs(d_eff),
+                                alpha=alpha,
+                                power=w_power,
+                                alternative=alternative,
+                            )
+                        )
+                    )
                 elif atype == "two_prop":
                     from statsmodels.stats.proportion import proportion_effectsize
                     from statsmodels.stats.power import NormalIndPower
+
                     adj_p2 = params["p1"] + (params["p2"] - params["p1"]) * w_mult
                     adj_p2 = max(min(adj_p2, 0.99), 0.01)
                     d_eff = proportion_effectsize(adj_p2, params["p1"])
-                    n1 = NormalIndPower().solve_power(effect_size=abs(d_eff), alpha=alpha, power=w_power, ratio=params["ratio"], alternative=alternative)
+                    n1 = NormalIndPower().solve_power(
+                        effect_size=abs(d_eff),
+                        alpha=alpha,
+                        power=w_power,
+                        ratio=params["ratio"],
+                        alternative=alternative,
+                    )
                     n1 = int(np.ceil(n1))
                     w_n = n1 + int(np.ceil(n1 * params["ratio"]))
                 elif atype == "anova":
                     from statsmodels.stats.power import FTestAnovaPower
+
                     f_eff = params["effect_size"] * w_mult
-                    n_per_g = FTestAnovaPower().solve_power(effect_size=f_eff, alpha=alpha, power=w_power, k_groups=params["k"])
+                    n_per_g = FTestAnovaPower().solve_power(
+                        effect_size=f_eff,
+                        alpha=alpha,
+                        power=w_power,
+                        k_groups=params["k"],
+                    )
                     n_per_g = int(np.ceil(n_per_g))
                     w_n = n_per_g * params["k"]
                 elif atype == "correlation":
                     import math
+
                     r_val = max(min(params["effect_size"] * w_mult, 0.99), 0.01)
                     fisher_z = math.atanh(r_val)
                     w_n = int(np.ceil(3 + ((z_alpha + w_z_beta) / fisher_z) ** 2))
                 elif atype == "regression":
                     from scipy.stats import ncf as noncentral_f, f as f_dist
+
                     adj_f2 = params["effect_size"] * w_mult
                     k_r = params["k"]
                     w_n = None
@@ -8005,6 +8828,7 @@ def render_power_calculator(params):
                             break
                 elif atype == "logistic":
                     from statsmodels.stats.power import NormalIndPower
+
                     adj_or = max(params["or"] ** w_mult, 1.01)
                     ev_rate = params["event_rate"]
                     k_log = params["k"]
@@ -8013,18 +8837,47 @@ def render_power_calculator(params):
                     p_bar = (ev_rate + p1_log) / 2
                     se = np.sqrt(2 * p_bar * (1 - p_bar))
                     d_eff = d_log / se if se > 0 else 0
-                    w_n = int(np.ceil(max(NormalIndPower().solve_power(effect_size=d_eff, alpha=alpha, power=w_power, alternative=alternative), 10 * k_log)))
+                    w_n = int(
+                        np.ceil(
+                            max(
+                                NormalIndPower().solve_power(
+                                    effect_size=d_eff,
+                                    alpha=alpha,
+                                    power=w_power,
+                                    alternative=alternative,
+                                ),
+                                10 * k_log,
+                            )
+                        )
+                    )
                 elif atype == "chisq":
                     from statsmodels.stats.power import GofChisquarePower
+
                     adj_w = params["effect_size"] * w_mult
-                    w_n = int(np.ceil(GofChisquarePower().solve_power(effect_size=adj_w, alpha=alpha, power=w_power, n_bins=params["df"] + 1)))
+                    w_n = int(
+                        np.ceil(
+                            GofChisquarePower().solve_power(
+                                effect_size=adj_w,
+                                alpha=alpha,
+                                power=w_power,
+                                n_bins=params["df"] + 1,
+                            )
+                        )
+                    )
                 elif atype == "mannwhitney":
                     from statsmodels.stats.power import NormalIndPower
+
                     adj_p = max(min(params["effect_size"] * w_mult, 0.99), 0.01)
                     d_mw = np.sqrt(3) * (adj_p - 0.5)
                     are = params["are"]
                     ratio = params["ratio"]
-                    n1 = NormalIndPower().solve_power(effect_size=d_mw, alpha=alpha, power=w_power, ratio=ratio, alternative=alternative)
+                    n1 = NormalIndPower().solve_power(
+                        effect_size=d_mw,
+                        alpha=alpha,
+                        power=w_power,
+                        ratio=ratio,
+                        alternative=alternative,
+                    )
                     n1 = int(np.ceil(n1 / are))
                     w_n = n1 + int(np.ceil(n1 * ratio))
                 elif atype == "logrank":
@@ -8033,7 +8886,11 @@ def render_power_calculator(params):
                     med_ctrl = params["median_survival"]
                     study_dur = params["study_duration"]
                     log_hr = np.log(adj_hr)
-                    num_events = ((z_alpha + w_z_beta) ** 2) * ((ratio + 1) ** 2) / (ratio * (log_hr ** 2))
+                    num_events = (
+                        ((z_alpha + w_z_beta) ** 2)
+                        * ((ratio + 1) ** 2)
+                        / (ratio * (log_hr**2))
+                    )
                     lambda_ctrl = np.log(2) / med_ctrl
                     p_event_ctrl = 1 - np.exp(-lambda_ctrl * study_dur)
                     p_event_trt = 1 - np.exp(-lambda_ctrl / adj_hr * study_dur)
@@ -8046,7 +8903,7 @@ def render_power_calculator(params):
                     r2_x = params["r2_x"]
                     ev_rate = params["event_rate"]
                     log_hr = np.log(adj_hr)
-                    var_denom = (sd_x ** 2) * (log_hr ** 2) * (1 - r2_x)
+                    var_denom = (sd_x**2) * (log_hr**2) * (1 - r2_x)
                     if var_denom > 0:
                         num_events = ((z_alpha + w_z_beta) ** 2) / var_denom
                         num_events = max(num_events, 10 * k)
@@ -8062,25 +8919,43 @@ def render_power_calculator(params):
                     if d_e > 0:
                         es_e = d_e / sd
                         from statsmodels.stats.power import NormalIndPower
-                        n1 = NormalIndPower().solve_power(effect_size=es_e, alpha=alpha, power=w_power, ratio=ratio, alternative="larger")
+
+                        n1 = NormalIndPower().solve_power(
+                            effect_size=es_e,
+                            alpha=alpha,
+                            power=w_power,
+                            ratio=ratio,
+                            alternative="larger",
+                        )
                         n1 = int(np.ceil(n1))
                         w_n = n1 + int(np.ceil(n1 * ratio))
                     else:
                         w_n = None
                 elif atype == "rm_anova":
                     from statsmodels.stats.power import FTestAnovaPower
+
                     adj_es = params["effect_size"] * w_mult
                     k = params["k"]
                     m = params["m"]
                     rho = params["rho"]
                     epsilon = params["epsilon"]
-                    n_per_g = FTestAnovaPower().solve_power(effect_size=adj_es, alpha=alpha, power=w_power, k_groups=k)
+                    n_per_g = FTestAnovaPower().solve_power(
+                        effect_size=adj_es, alpha=alpha, power=w_power, k_groups=k
+                    )
                     design_effect = (1 + (m - 1) * rho) / m
                     df_adj = (m - 1) * epsilon
-                    n_per_g_adj = max(int(np.ceil(n_per_g * design_effect * k / (k * df_adj / (k - 1)))), int(np.ceil(n_per_g)))
+                    n_per_g_adj = max(
+                        int(
+                            np.ceil(
+                                n_per_g * design_effect * k / (k * df_adj / (k - 1))
+                            )
+                        ),
+                        int(np.ceil(n_per_g)),
+                    )
                     w_n = n_per_g_adj * k
                 elif atype == "twoway_anova":
                     from statsmodels.stats.power import FTestAnovaPower
+
                     rows = params["rows"]
                     cols = params["cols"]
                     focus = params["focus"]
@@ -8093,7 +8968,16 @@ def render_power_calculator(params):
                     else:
                         adj_es = params["f_ab"] * w_mult
                         k_use = rows * cols
-                    n_per_cell = int(np.ceil(FTestAnovaPower().solve_power(effect_size=adj_es, alpha=alpha, power=w_power, k_groups=k_use)))
+                    n_per_cell = int(
+                        np.ceil(
+                            FTestAnovaPower().solve_power(
+                                effect_size=adj_es,
+                                alpha=alpha,
+                                power=w_power,
+                                k_groups=k_use,
+                            )
+                        )
+                    )
                     w_n = n_per_cell * rows * cols
                 elif atype == "roc_auc":
                     auc = params["auc"]
@@ -8101,10 +8985,16 @@ def render_power_calculator(params):
                     adj_auc = max(min(adj_auc, 0.99), 0.51)
                     null_auc = params["null_auc"]
                     ratio = params["ratio"]
-                    v_auc = adj_auc * (1 - adj_auc) + (ratio - 1) * (adj_auc / (2 - adj_auc) - adj_auc ** 2) / (1 + ratio)
+                    v_auc = adj_auc * (1 - adj_auc) + (ratio - 1) * (
+                        adj_auc / (2 - adj_auc) - adj_auc**2
+                    ) / (1 + ratio)
                     delta_auc = adj_auc - null_auc
                     if delta_auc > 0:
-                        n_cases = int(np.ceil(((z_alpha + w_z_beta) ** 2 * v_auc) / (delta_auc ** 2)))
+                        n_cases = int(
+                            np.ceil(
+                                ((z_alpha + w_z_beta) ** 2 * v_auc) / (delta_auc**2)
+                            )
+                        )
                         n_controls = int(np.ceil(n_cases * ratio))
                         w_n = n_cases + n_controls
                     else:
@@ -8117,18 +9007,34 @@ def render_power_calculator(params):
                     adj_kappa = max(adj_kappa, null_kappa + 0.01)
                     delta_k = adj_kappa - null_kappa
                     if delta_k > 0:
-                        w_n = int(np.ceil(((z_alpha + w_z_beta) ** 2 * null_kappa * (1 - null_kappa)) / (delta_k ** 2)))
+                        w_n = int(
+                            np.ceil(
+                                (
+                                    (z_alpha + w_z_beta) ** 2
+                                    * null_kappa
+                                    * (1 - null_kappa)
+                                )
+                                / (delta_k**2)
+                            )
+                        )
                         w_n = max(w_n, params["raters"] * params["categories"] * 5)
                     else:
                         w_n = None
                 elif atype == "cluster_rct":
                     from statsmodels.stats.power import TTestIndPower
+
                     adj_d = params["effect_size"] * w_mult
                     icc = params["icc"]
                     cluster_m = params["cluster_size"]
                     ratio = params["ratio"]
                     deff = 1 + (cluster_m - 1) * icc
-                    n1_ind = TTestIndPower().solve_power(effect_size=adj_d, alpha=alpha, power=w_power, ratio=ratio, alternative=alternative)
+                    n1_ind = TTestIndPower().solve_power(
+                        effect_size=adj_d,
+                        alpha=alpha,
+                        power=w_power,
+                        ratio=ratio,
+                        alternative=alternative,
+                    )
                     n1_ind = int(np.ceil(n1_ind))
                     n1_clust = int(np.ceil(n1_ind * deff))
                     n1_clust = int(np.ceil(n1_clust / cluster_m)) * cluster_m
@@ -8142,10 +9048,18 @@ def render_power_calculator(params):
                     param_type = params["param_type"]
                     if param_type == "Mean":
                         sd = params["sd"]
-                        w_n = int(np.ceil((z_hw * sd / adj_hw) ** 2)) if sd > 0 and adj_hw > 0 else None
+                        w_n = (
+                            int(np.ceil((z_hw * sd / adj_hw) ** 2))
+                            if sd > 0 and adj_hw > 0
+                            else None
+                        )
                     else:
                         prop = params["prop"]
-                        w_n = int(np.ceil((z_hw ** 2 * prop * (1 - prop)) / (adj_hw ** 2))) if prop > 0 and adj_hw > 0 else None
+                        w_n = (
+                            int(np.ceil((z_hw**2 * prop * (1 - prop)) / (adj_hw**2)))
+                            if prop > 0 and adj_hw > 0
+                            else None
+                        )
                     if w_n is not None:
                         w_n = max(w_n, 3)
                 elif atype == "pilot":
@@ -8160,16 +9074,171 @@ def render_power_calculator(params):
                         adj_hw = params["half_width"] * w_mult
                         if param_type == "Mean":
                             sd = params["sd"]
-                            w_n = int(np.ceil((z_hw * sd / adj_hw) ** 2)) if sd > 0 and adj_hw > 0 else None
+                            w_n = (
+                                int(np.ceil((z_hw * sd / adj_hw) ** 2))
+                                if sd > 0 and adj_hw > 0
+                                else None
+                            )
                         else:
                             prop = params["prop"]
-                            w_n = int(np.ceil((z_hw ** 2 * prop * (1 - prop)) / (adj_hw ** 2))) if prop > 0 and adj_hw > 0 else None
+                            w_n = (
+                                int(
+                                    np.ceil((z_hw**2 * prop * (1 - prop)) / (adj_hw**2))
+                                )
+                                if prop > 0 and adj_hw > 0
+                                else None
+                            )
                         if w_n is not None:
                             w_n = max(w_n, 5)
                     else:
                         main_n = params["main_n"]
                         fraction = params["fraction"]
                         w_n = max(int(np.ceil(main_n * fraction / max(w_mult, 0.1))), 5)
+                elif atype == "wilcoxon_sr":
+                    p_val = params["effect_size"]
+                    are = params["are"]
+                    d_wsr = np.sqrt(3) * (p_val - 0.5) * 2
+                    if d_wsr > 0:
+                        from statsmodels.stats.power import NormalIndPower
+
+                        w_n = int(
+                            np.ceil(
+                                NormalIndPower().solve_power(
+                                    effect_size=d_wsr,
+                                    alpha=alpha,
+                                    power=w_power,
+                                    alternative=alternative,
+                                )
+                                / are
+                            )
+                        )
+                    else:
+                        w_n = None
+                elif atype == "kruskal":
+                    f_eff = params["effect_size"] * w_mult
+                    k = params["k"]
+                    if f_eff > 0:
+                        from statsmodels.stats.power import FTestAnovaPower
+
+                        n_per_g = FTestAnovaPower().solve_power(
+                            effect_size=f_eff, alpha=alpha, power=w_power, k_groups=k
+                        )
+                        n_per_g = int(np.ceil(n_per_g * 1.15))
+                        w_n = n_per_g * k
+                    else:
+                        w_n = None
+                elif atype == "friedman":
+                    w = params["w"]
+                    k = params["k"]
+                    m = params["m"]
+                    are = params["are"]
+                    adj_w = max(min(w * w_mult, 0.99), 0.01)
+                    f_fr = np.sqrt(adj_w / (1 - adj_w))
+                    if f_fr > 0:
+                        from statsmodels.stats.power import FTestAnovaPower
+
+                        n_per_g = FTestAnovaPower().solve_power(
+                            effect_size=f_fr, alpha=alpha, power=w_power, k_groups=k
+                        )
+                        n_per_g = int(np.ceil(n_per_g * m / are))
+                        w_n = n_per_g * k
+                    else:
+                        w_n = None
+                elif atype == "mcnemar":
+                    p_b = params["p_b"]
+                    p_c = params["p_c"]
+                    p_b_adj = max(min(p_b * w_mult, 0.99), 0.01)
+                    p_c_adj = max(min(p_c * w_mult, 0.99), 0.01)
+                    d_mc = abs(p_b_adj - p_c_adj)
+                    p_discordant = p_b_adj + p_c_adj
+                    if d_mc > 0 and p_discordant > 0:
+                        w_n = max(
+                            int(
+                                np.ceil(
+                                    ((z_alpha + w_z_beta) ** 2 * p_discordant)
+                                    / (d_mc**2)
+                                )
+                            ),
+                            5,
+                        )
+                    else:
+                        w_n = None
+                elif atype == "fisher":
+                    p1 = params["p1"]
+                    p2 = params["p2"]
+                    ratio = params["ratio"]
+                    adj_p2 = p1 + (p2 - p1) * w_mult
+                    adj_p2 = max(min(adj_p2, 0.99), 0.01)
+                    from statsmodels.stats.proportion import proportion_effectsize
+                    from statsmodels.stats.power import NormalIndPower
+
+                    d_eff = proportion_effectsize(adj_p2, p1)
+                    if abs(d_eff) > 0:
+                        n1 = NormalIndPower().solve_power(
+                            effect_size=abs(d_eff),
+                            alpha=alpha,
+                            power=w_power,
+                            ratio=ratio,
+                            alternative=alternative,
+                        )
+                        n1 = int(np.ceil(n1 * 1.20))
+                        w_n = n1 + int(np.ceil(n1 * ratio))
+                    else:
+                        w_n = None
+                elif atype == "manova":
+                    k = params["k"]
+                    dv = params["dv"]
+                    f2 = params["f2"]
+                    rho = params["rho"]
+                    adj_f2 = f2 * w_mult
+                    if adj_f2 > 0:
+                        u = dv
+                        v_num = k - 1
+                        w_n = None
+                        for n_try in range(k * dv + 2, 5000):
+                            v_den = n_try - k - dv
+                            if v_den <= 0:
+                                continue
+                            s_val = min(u, v_num)
+                            df1 = u * v_num
+                            df2 = s_val * (v_den - dv + 1) + 4
+                            ncp = adj_f2 * n_try * (1 - rho)
+                            from scipy.stats import ncf as noncentral_f, f as f_dist
+
+                            f_crit = f_dist.ppf(1 - alpha, df1, df2)
+                            p_cur = 1 - noncentral_f.cdf(f_crit, df1, df2, ncp)
+                            if p_cur >= w_power:
+                                w_n = n_try
+                                break
+                    else:
+                        w_n = None
+                elif atype == "binomial":
+                    p0 = params["p0"]
+                    p1 = params["p1"]
+                    p1_adj = p0 + (p1 - p0) * w_mult
+                    p1_adj = max(min(p1_adj, 0.99), 0.01)
+                    if p0 != p1_adj:
+                        from scipy.stats import binom
+
+                        w_n = None
+                        for n_try in range(3, 10000):
+                            if alternative == "two-sided":
+                                alpha_lo = binom.ppf(alpha / 2, n_try, p0)
+                                alpha_hi = binom.ppf(1 - alpha / 2, n_try, p0)
+                                p_pow = binom.cdf(alpha_hi, n_try, p1_adj) - binom.cdf(
+                                    alpha_lo - 1, n_try, p1_adj
+                                )
+                            elif p1_adj > p0:
+                                crit = binom.ppf(1 - alpha, n_try, p0)
+                                p_pow = 1 - binom.cdf(crit - 1, n_try, p1_adj)
+                            else:
+                                crit = binom.ppf(alpha, n_try, p0)
+                                p_pow = binom.cdf(crit, n_try, p1_adj)
+                            if p_pow >= w_power:
+                                w_n = n_try
+                                break
+                    else:
+                        w_n = None
                 else:
                     w_n = None
             except Exception:
