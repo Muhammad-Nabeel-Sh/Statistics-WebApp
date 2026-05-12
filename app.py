@@ -1244,12 +1244,21 @@ def main():
             col_a, col_b = st.columns(2)
             with col_a:
                 alpha_ss = st.slider(
-                    "Significance Level (α)", 0.001, 0.10, 0.05, 0.001,
+                    "Significance Level (α)",
+                    0.001,
+                    0.10,
+                    0.05,
+                    0.001,
                     format="%.3f",
                 )
             with col_b:
                 power_ss = st.slider(
-                    "Power (1 − β)", 0.50, 0.99, 0.80, 0.01, format="%.2f",
+                    "Power (1 − β)",
+                    0.50,
+                    0.99,
+                    0.80,
+                    0.01,
+                    format="%.2f",
                 )
             tails_ss = st.radio(
                 "Test Direction",
@@ -1264,11 +1273,19 @@ def main():
                 c1, c2 = st.columns(2)
                 with c1:
                     mean_diff = st.number_input(
-                        "Expected Mean Difference (μ − μ₀)", 0.0, 100.0, 1.0, 0.1,
+                        "Expected Mean Difference (μ − μ₀)",
+                        0.0,
+                        100.0,
+                        1.0,
+                        0.1,
                     )
                 with c2:
                     std_dev_1s = st.number_input(
-                        "Standard Deviation (σ)", 0.1, 100.0, 2.0, 0.1,
+                        "Standard Deviation (σ)",
+                        0.1,
+                        100.0,
+                        2.0,
+                        0.1,
                     )
                 d_1s = mean_diff / std_dev_1s if std_dev_1s > 0 else 0
                 st.caption(f"Cohen's d = {d_1s:.3f}")
@@ -1283,23 +1300,37 @@ def main():
                 with c3:
                     sd_2s = st.number_input("Pooled SD", 0.1, 100.0, 1.0, 0.1)
                 ratio_2s = st.number_input(
-                    "Allocation Ratio (n₂/n₁)", 0.1, 10.0, 1.0, 0.1,
+                    "Allocation Ratio (n₂/n₁)",
+                    0.1,
+                    10.0,
+                    1.0,
+                    0.1,
                 )
                 d_2s = abs(m1 - m2) / sd_2s if sd_2s > 0 else 0
                 st.caption(f"Cohen's d = {d_2s:.3f}")
                 ss_params = {
-                    "type": "two_means", "effect_size": d_2s, "ratio": ratio_2s,
+                    "type": "two_means",
+                    "effect_size": d_2s,
+                    "ratio": ratio_2s,
                 }
 
             elif analysis_type == "Paired Means (t-test)":
                 c1, c2 = st.columns(2)
                 with c1:
                     pdiff = st.number_input(
-                        "Expected Mean Difference", 0.0, 100.0, 1.0, 0.1,
+                        "Expected Mean Difference",
+                        0.0,
+                        100.0,
+                        1.0,
+                        0.1,
                     )
                 with c2:
                     sddiff = st.number_input(
-                        "SD of Differences", 0.1, 100.0, 1.5, 0.1,
+                        "SD of Differences",
+                        0.1,
+                        100.0,
+                        1.5,
+                        0.1,
                     )
                 d_pd = pdiff / sddiff if sddiff > 0 else 0
                 st.caption(f"Cohen's d_z = {d_pd:.3f}")
@@ -1311,24 +1342,41 @@ def main():
                     p0 = st.number_input("Null Proportion (p₀)", 0.01, 0.99, 0.5, 0.01)
                 with c2:
                     p1 = st.number_input(
-                        "Expected Proportion (p₁)", 0.01, 0.99, 0.7, 0.01,
+                        "Expected Proportion (p₁)",
+                        0.01,
+                        0.99,
+                        0.7,
+                        0.01,
                     )
                 ss_params = {
-                    "type": "one_prop", "prop_null": p0, "prop_alt": p1,
+                    "type": "one_prop",
+                    "prop_null": p0,
+                    "prop_alt": p1,
                 }
 
             elif analysis_type == "Two Proportions":
                 c1, c2, c3 = st.columns(3)
                 with c1:
-                    prop1 = st.number_input("Proportion in Group 1", 0.01, 0.99, 0.3, 0.01)
+                    prop1 = st.number_input(
+                        "Proportion in Group 1", 0.01, 0.99, 0.3, 0.01
+                    )
                 with c2:
-                    prop2 = st.number_input("Proportion in Group 2", 0.01, 0.99, 0.5, 0.01)
+                    prop2 = st.number_input(
+                        "Proportion in Group 2", 0.01, 0.99, 0.5, 0.01
+                    )
                 with c3:
                     ratio_prop = st.number_input(
-                        "Allocation Ratio (n₂/n₁)", 0.1, 10.0, 1.0, 0.1,
+                        "Allocation Ratio (n₂/n₁)",
+                        0.1,
+                        10.0,
+                        1.0,
+                        0.1,
                     )
                 ss_params = {
-                    "type": "two_prop", "p1": prop1, "p2": prop2, "ratio": ratio_prop,
+                    "type": "two_prop",
+                    "p1": prop1,
+                    "p2": prop2,
+                    "ratio": ratio_prop,
                 }
 
             elif analysis_type == "One-way ANOVA":
@@ -1337,13 +1385,21 @@ def main():
                     k_anova = st.number_input("Number of Groups", 3, 20, 3, 1)
                 with c2:
                     f_anova = st.number_input(
-                        "Cohen's f (effect size)", 0.01, 2.0, 0.25, 0.01,
+                        "Cohen's f (effect size)",
+                        0.01,
+                        2.0,
+                        0.25,
+                        0.01,
                     )
                 ss_params = {"type": "anova", "k": int(k_anova), "effect_size": f_anova}
 
             elif analysis_type == "Correlation (Pearson)":
                 r_val = st.number_input(
-                    "Expected Correlation (r)", 0.01, 0.99, 0.3, 0.01,
+                    "Expected Correlation (r)",
+                    0.01,
+                    0.99,
+                    0.3,
+                    0.01,
                 )
                 ss_params = {"type": "correlation", "effect_size": r_val}
 
@@ -1355,7 +1411,11 @@ def main():
                     r2_reg = st.number_input("Expected R²", 0.01, 0.99, 0.15, 0.01)
                 f2_reg = r2_reg / (1 - r2_reg) if r2_reg < 1 else 0
                 st.caption(f"Cohen's f² = {f2_reg:.3f}")
-                ss_params = {"type": "regression", "k": int(k_reg), "effect_size": f2_reg}
+                ss_params = {
+                    "type": "regression",
+                    "k": int(k_reg),
+                    "effect_size": f2_reg,
+                }
 
             elif analysis_type == "Logistic Regression":
                 c1, c2 = st.columns(2)
@@ -1363,11 +1423,17 @@ def main():
                     k_log = st.number_input("Number of Predictors", 1, 50, 3, 1)
                 with c2:
                     ev_rate = st.number_input(
-                        "Baseline Event Rate", 0.01, 0.99, 0.3, 0.01,
+                        "Baseline Event Rate",
+                        0.01,
+                        0.99,
+                        0.3,
+                        0.01,
                     )
                 or_val = st.number_input("Odds Ratio to Detect", 1.1, 10.0, 2.0, 0.1)
                 ss_params = {
-                    "type": "logistic", "k": int(k_log), "event_rate": ev_rate,
+                    "type": "logistic",
+                    "k": int(k_log),
+                    "event_rate": ev_rate,
                     "or": or_val,
                 }
 
@@ -1377,32 +1443,59 @@ def main():
                     df_cs = st.number_input("Degrees of Freedom", 1, 50, 2, 1)
                 with c2:
                     w_cs = st.number_input(
-                        "Cohen's w (effect size)", 0.01, 2.0, 0.3, 0.01,
+                        "Cohen's w (effect size)",
+                        0.01,
+                        2.0,
+                        0.3,
+                        0.01,
                     )
                 ss_params = {"type": "chisq", "df": int(df_cs), "effect_size": w_cs}
 
             elif analysis_type == "Mann-Whitney / Wilcoxon (Non-parametric)":
                 c1, c2 = st.columns(2)
                 with c1:
-                    P_val = st.number_input("P(X>Y) probability", 0.51, 0.99, 0.65, 0.01)
+                    P_val = st.number_input(
+                        "P(X>Y) probability", 0.51, 0.99, 0.65, 0.01
+                    )
                 with c2:
                     are_val = st.number_input("ARE", 0.5, 1.5, 0.955, 0.001)
-                ratio_mw = st.number_input("Allocation Ratio (n₂/n₁)", 0.1, 10.0, 1.0, 0.1)
-                st.caption("ARE = 0.955 at normality, lower for heavy-tailed distributions")
-                ss_params = {"type": "mannwhitney", "effect_size": P_val, "ratio": ratio_mw, "are": are_val}
+                ratio_mw = st.number_input(
+                    "Allocation Ratio (n₂/n₁)", 0.1, 10.0, 1.0, 0.1
+                )
+                st.caption(
+                    "ARE = 0.955 at normality, lower for heavy-tailed distributions"
+                )
+                ss_params = {
+                    "type": "mannwhitney",
+                    "effect_size": P_val,
+                    "ratio": ratio_mw,
+                    "are": are_val,
+                }
 
             elif analysis_type == "Log-Rank Test (Survival)":
                 c1, c2 = st.columns(2)
                 with c1:
                     hr_val = st.number_input("Hazard Ratio", 1.1, 10.0, 2.0, 0.1)
                 with c2:
-                    ratio_lr = st.number_input("Allocation Ratio (n₂/n₁)", 0.1, 10.0, 1.0, 0.1)
+                    ratio_lr = st.number_input(
+                        "Allocation Ratio (n₂/n₁)", 0.1, 10.0, 1.0, 0.1
+                    )
                 c1, c2 = st.columns(2)
                 with c1:
-                    med_val = st.number_input("Median Survival Control (months)", 1, 120, 12, 1)
+                    med_val = st.number_input(
+                        "Median Survival Control (months)", 1, 120, 12, 1
+                    )
                 with c2:
-                    dur_val = st.number_input("Total Study Duration (months)", 1, 240, 36, 1)
-                ss_params = {"type": "logrank", "hr": hr_val, "ratio": ratio_lr, "median_survival": med_val, "study_duration": dur_val}
+                    dur_val = st.number_input(
+                        "Total Study Duration (months)", 1, 240, 36, 1
+                    )
+                ss_params = {
+                    "type": "logrank",
+                    "hr": hr_val,
+                    "ratio": ratio_lr,
+                    "median_survival": med_val,
+                    "study_duration": dur_val,
+                }
 
             elif analysis_type == "Cox Regression":
                 c1, c2 = st.columns(2)
@@ -1414,22 +1507,41 @@ def main():
                 with c1:
                     sd_val = st.number_input("SD of Predictor", 0.1, 10.0, 1.0, 0.1)
                 with c2:
-                    r2_val = st.number_input("R-squared with other covariates", 0.0, 0.99, 0.0, 0.01)
+                    r2_val = st.number_input(
+                        "R-squared with other covariates", 0.0, 0.99, 0.0, 0.01
+                    )
                 ev_val = st.number_input("Event Rate", 0.01, 0.99, 0.5, 0.01)
-                ss_params = {"type": "cox", "hr": hr_val, "k": int(k_val), "sd_x": sd_val, "r2_x": r2_val, "event_rate": ev_val}
+                ss_params = {
+                    "type": "cox",
+                    "hr": hr_val,
+                    "k": int(k_val),
+                    "sd_x": sd_val,
+                    "r2_x": r2_val,
+                    "event_rate": ev_val,
+                }
 
             elif analysis_type == "Equivalence / Non-Inferiority":
                 c1, c2 = st.columns(2)
                 with c1:
                     margin = st.number_input("Margin (delta)", 0.01, 10.0, 1.0, 0.01)
                 with c2:
-                    d_exp = st.number_input("Expected Difference", -10.0, 10.0, 0.0, 0.01)
+                    d_exp = st.number_input(
+                        "Expected Difference", -10.0, 10.0, 0.0, 0.01
+                    )
                 c1, c2 = st.columns(2)
                 with c1:
                     sd_val = st.number_input("SD", 0.1, 100.0, 1.0, 0.1)
                 with c2:
-                    ratio_eq = st.number_input("Allocation Ratio (n₂/n₁)", 0.1, 10.0, 1.0, 0.1)
-                ss_params = {"type": "equiv", "margin": margin, "expected_diff": d_exp, "sd": sd_val, "ratio": ratio_eq}
+                    ratio_eq = st.number_input(
+                        "Allocation Ratio (n₂/n₁)", 0.1, 10.0, 1.0, 0.1
+                    )
+                ss_params = {
+                    "type": "equiv",
+                    "margin": margin,
+                    "expected_diff": d_exp,
+                    "sd": sd_val,
+                    "ratio": ratio_eq,
+                }
 
             elif analysis_type == "Repeated Measures ANOVA":
                 c1, c2 = st.columns(2)
@@ -1441,9 +1553,20 @@ def main():
                 with c1:
                     m_val = st.number_input("Number of Measurements", 2, 20, 3, 1)
                 with c2:
-                    rho_val = st.number_input("Correlation between measurements", 0.0, 0.99, 0.5, 0.01)
-                eps_val = st.number_input("Sphericity correction epsilon", 0.1, 1.0, 0.75, 0.01)
-                ss_params = {"type": "rm_anova", "effect_size": f_val, "k": int(k_val), "m": int(m_val), "rho": rho_val, "epsilon": eps_val}
+                    rho_val = st.number_input(
+                        "Correlation between measurements", 0.0, 0.99, 0.5, 0.01
+                    )
+                eps_val = st.number_input(
+                    "Sphericity correction epsilon", 0.1, 1.0, 0.75, 0.01
+                )
+                ss_params = {
+                    "type": "rm_anova",
+                    "effect_size": f_val,
+                    "k": int(k_val),
+                    "m": int(m_val),
+                    "rho": rho_val,
+                    "epsilon": eps_val,
+                }
 
             elif analysis_type == "Two-way / Factorial ANOVA":
                 c1, c2 = st.columns(2)
@@ -1453,11 +1576,27 @@ def main():
                     c_val = st.number_input("Columns (Factor B levels)", 2, 10, 2, 1)
                 c1, c2 = st.columns(2)
                 with c1:
-                    f_a = st.number_input("Cohen's f for main effect", 0.01, 2.0, 0.25, 0.01)
+                    f_a = st.number_input(
+                        "Cohen's f for main effect", 0.01, 2.0, 0.25, 0.01
+                    )
                 with c2:
-                    f_ab = st.number_input("Cohen's f for interaction", 0.01, 2.0, 0.25, 0.01)
-                focus = st.radio("Effect of interest", ["Main Effect A", "Main Effect B", "Interaction"], horizontal=True)
-                ss_params = {"type": "twoway_anova", "f_a": f_a, "f_b": f_a, "f_ab": f_ab, "rows": int(r_val), "cols": int(c_val), "focus": focus}
+                    f_ab = st.number_input(
+                        "Cohen's f for interaction", 0.01, 2.0, 0.25, 0.01
+                    )
+                focus = st.radio(
+                    "Effect of interest",
+                    ["Main Effect A", "Main Effect B", "Interaction"],
+                    horizontal=True,
+                )
+                ss_params = {
+                    "type": "twoway_anova",
+                    "f_a": f_a,
+                    "f_b": f_a,
+                    "f_ab": f_ab,
+                    "rows": int(r_val),
+                    "cols": int(c_val),
+                    "focus": focus,
+                }
 
             elif analysis_type == "ROC / AUC Analysis":
                 c1, c2 = st.columns(2)
@@ -1465,8 +1604,15 @@ def main():
                     auc_val = st.number_input("Expected AUC", 0.5, 0.99, 0.7, 0.01)
                 with c2:
                     st.number_input("Null AUC", 0.5, 0.5, 0.5, disabled=True)
-                ratio_roc = st.number_input("Ratio of controls to cases", 0.1, 10.0, 1.0, 0.1)
-                ss_params = {"type": "roc_auc", "auc": auc_val, "null_auc": 0.5, "ratio": ratio_roc}
+                ratio_roc = st.number_input(
+                    "Ratio of controls to cases", 0.1, 10.0, 1.0, 0.1
+                )
+                ss_params = {
+                    "type": "roc_auc",
+                    "auc": auc_val,
+                    "null_auc": 0.5,
+                    "ratio": ratio_roc,
+                }
 
             elif analysis_type == "Cohen's Kappa / ICC Agreement":
                 atype = st.radio("Type", ["Cohen's Kappa", "ICC"], horizontal=True)
@@ -1480,26 +1626,47 @@ def main():
                     raters = st.number_input("Number of Raters", 2, 10, 2, 1)
                 with c2:
                     cats = st.number_input("Number of Categories", 2, 10, 2, 1)
-                ss_params = {"type": "kappa", "kappa": kappa_val, "null_kappa": null_kap, "raters": int(raters), "categories": int(cats), "agreement_type": atype}
+                ss_params = {
+                    "type": "kappa",
+                    "kappa": kappa_val,
+                    "null_kappa": null_kap,
+                    "raters": int(raters),
+                    "categories": int(cats),
+                    "agreement_type": atype,
+                }
 
             elif analysis_type == "Cluster-RCT / Multilevel":
                 c1, c2 = st.columns(2)
                 with c1:
                     d_val = st.number_input("Effect size d", 0.1, 5.0, 0.5, 0.01)
                 with c2:
-                    icc_val = st.number_input("ICC", 0.001, 0.5, 0.05, 0.001, format="%.3f")
+                    icc_val = st.number_input(
+                        "ICC", 0.001, 0.5, 0.05, 0.001, format="%.3f"
+                    )
                 c1, c2 = st.columns(2)
                 with c1:
                     m_val = st.number_input("Cluster size (m)", 2, 1000, 30, 1)
                 with c2:
-                    ratio_cl = st.number_input("Allocation Ratio (n₂/n₁)", 0.1, 10.0, 1.0, 0.1)
-                ss_params = {"type": "cluster_rct", "effect_size": d_val, "icc": icc_val, "cluster_size": int(m_val), "ratio": ratio_cl}
+                    ratio_cl = st.number_input(
+                        "Allocation Ratio (n₂/n₁)", 0.1, 10.0, 1.0, 0.1
+                    )
+                ss_params = {
+                    "type": "cluster_rct",
+                    "effect_size": d_val,
+                    "icc": icc_val,
+                    "cluster_size": int(m_val),
+                    "ratio": ratio_cl,
+                }
 
             elif analysis_type == "Precision-based (CI Width)":
-                ptype = st.radio("Type of parameter", ["Mean", "Proportion"], horizontal=True)
+                ptype = st.radio(
+                    "Type of parameter", ["Mean", "Proportion"], horizontal=True
+                )
                 c1, c2 = st.columns(2)
                 with c1:
-                    hw_val = st.number_input("Desired half-width of CI", 0.01, 100.0, 5.0, 0.01)
+                    hw_val = st.number_input(
+                        "Desired half-width of CI", 0.01, 100.0, 5.0, 0.01
+                    )
                 with c2:
                     cl_val = st.number_input("Confidence Level %", 80, 99, 95, 1)
                 if ptype == "Mean":
@@ -1507,26 +1674,56 @@ def main():
                     prop_val = 0.5
                 else:
                     sd_val = 1.0
-                    prop_val = st.number_input("Expected Proportion", 0.01, 0.99, 0.5, 0.01)
-                ss_params = {"type": "precision", "half_width": hw_val, "conf_level": cl_val, "param_type": ptype, "sd": sd_val, "prop": prop_val}
+                    prop_val = st.number_input(
+                        "Expected Proportion", 0.01, 0.99, 0.5, 0.01
+                    )
+                ss_params = {
+                    "type": "precision",
+                    "half_width": hw_val,
+                    "conf_level": cl_val,
+                    "param_type": ptype,
+                    "sd": sd_val,
+                    "prop": prop_val,
+                }
 
             elif analysis_type == "Pilot / Feasibility Study":
-                method = st.radio("Method", ["Rule of thumb", "Precision-based", "Fraction of main study"], horizontal=True)
+                method = st.radio(
+                    "Method",
+                    ["Rule of thumb", "Precision-based", "Fraction of main study"],
+                    horizontal=True,
+                )
                 if method == "Rule of thumb":
                     npg_val = st.number_input("Participants per group", 5, 100, 12, 1)
-                    ss_params = {"type": "pilot", "method": method, "n_per_group": int(npg_val)}
+                    ss_params = {
+                        "type": "pilot",
+                        "method": method,
+                        "n_per_group": int(npg_val),
+                    }
                 elif method == "Precision-based":
                     c1, c2 = st.columns(2)
                     with c1:
-                        hw_val = st.number_input("Desired half-width of CI", 0.01, 100.0, 5.0, 0.01)
+                        hw_val = st.number_input(
+                            "Desired half-width of CI", 0.01, 100.0, 5.0, 0.01
+                        )
                     with c2:
                         cl_val = st.number_input("Confidence Level %", 80, 99, 95, 1)
                     sd_val = st.number_input("SD", 0.1, 100.0, 10.0, 0.1)
-                    ss_params = {"type": "pilot", "method": method, "half_width": hw_val, "conf_level": cl_val, "sd": sd_val}
+                    ss_params = {
+                        "type": "pilot",
+                        "method": method,
+                        "half_width": hw_val,
+                        "conf_level": cl_val,
+                        "sd": sd_val,
+                    }
                 else:
                     main_n = st.number_input("Expected main study N", 10, 10000, 100, 1)
                     fraction = st.number_input("Fraction", 0.05, 0.5, 0.1, 0.01)
-                    ss_params = {"type": "pilot", "method": method, "fraction": fraction, "main_n": int(main_n)}
+                    ss_params = {
+                        "type": "pilot",
+                        "method": method,
+                        "fraction": fraction,
+                        "main_n": int(main_n),
+                    }
 
             # =========================
             # STUDY ADJUSTMENTS
@@ -1534,26 +1731,50 @@ def main():
             with st.expander("⚙️ Study Adjustments"):
                 col_d1, col_d2 = st.columns(2)
                 with col_d1:
-                    adjust_attrition = st.checkbox("Adjust for dropout rate", value=False)
+                    adjust_attrition = st.checkbox(
+                        "Adjust for dropout rate", value=False
+                    )
                 with col_d2:
-                    dropout_rate = st.slider(
-                        "Expected dropout rate", 0.0, 0.5, 0.1, 0.01,
-                        disabled=not adjust_attrition,
-                    ) if adjust_attrition else 0.0
+                    dropout_rate = (
+                        st.slider(
+                            "Expected dropout rate",
+                            0.0,
+                            0.5,
+                            0.1,
+                            0.01,
+                            disabled=not adjust_attrition,
+                        )
+                        if adjust_attrition
+                        else 0.0
+                    )
 
-                adjust_multiple = st.checkbox("Multiple testing correction (Bonferroni)")
-                num_tests = st.number_input(
-                    "Number of tests/comparisons", 1, 100, 1, 1,
-                    disabled=not adjust_multiple,
-                ) if adjust_multiple else 1
+                adjust_multiple = st.checkbox(
+                    "Multiple testing correction (Bonferroni)"
+                )
+                num_tests = (
+                    st.number_input(
+                        "Number of tests/comparisons",
+                        1,
+                        100,
+                        1,
+                        1,
+                        disabled=not adjust_multiple,
+                    )
+                    if adjust_multiple
+                    else 1
+                )
 
                 show_budget = st.checkbox("Show budget / feasibility estimates")
                 if show_budget:
                     c1, c2 = st.columns(2)
                     with c1:
-                        cost_per = st.number_input("Cost per participant ($)", 0.0, 100000.0, 100.0, 10.0)
+                        cost_per = st.number_input(
+                            "Cost per participant ($)", 0.0, 100000.0, 100.0, 10.0
+                        )
                     with c2:
-                        recruitment_rate = st.number_input("Recruitment rate (per month)", 0.0, 1000.0, 10.0, 1.0)
+                        recruitment_rate = st.number_input(
+                            "Recruitment rate (per month)", 0.0, 1000.0, 10.0, 1.0
+                        )
                 else:
                     cost_per = 0.0
                     recruitment_rate = 0.0
@@ -1662,7 +1883,9 @@ def main():
 
     with col_right:
         # SAMPLE SIZE ESTIMATION RESULTS
-        if Objective == "Sample Size Estimation" and st.session_state.get("power_params"):
+        if Objective == "Sample Size Estimation" and st.session_state.get(
+            "power_params"
+        ):
             render_power_calculator(st.session_state.power_params)
 
         # TEST FINDER RESULTS
@@ -1912,8 +2135,26 @@ def render_test_widget(test_name):
         cohens_d = (sample_mean - population_mean) / sample_sd
 
         results_data = {
-            "Metric": ["Sample Mean", "Reference Mean", "Mean Difference", "95% CI of Diff", "t-statistic", "df", "p-value", "Cohen's d"],
-            "Value": [f"{sample_mean:.3f}", f"{population_mean:.3f}", f"{sample_mean - population_mean:.3f}", f"±{ci:.3f}", f"{t:.3f}", f"{n - 1}", f"{p:.5f}", f"{cohens_d:.3f}"]
+            "Metric": [
+                "Sample Mean",
+                "Reference Mean",
+                "Mean Difference",
+                "95% CI of Diff",
+                "t-statistic",
+                "df",
+                "p-value",
+                "Cohen's d",
+            ],
+            "Value": [
+                f"{sample_mean:.3f}",
+                f"{population_mean:.3f}",
+                f"{sample_mean - population_mean:.3f}",
+                f"±{ci:.3f}",
+                f"{t:.3f}",
+                f"{n - 1}",
+                f"{p:.5f}",
+                f"{cohens_d:.3f}",
+            ],
         }
         st.table(pd.DataFrame(results_data))
 
@@ -1935,6 +2176,7 @@ def render_test_widget(test_name):
 
         x_dense = np.linspace(sample.min(), sample.max(), 200)
         from scipy.stats import norm
+
         y_dense = norm.pdf(x_dense, sample_mean, sample_sd)
         fig2.add_trace(
             go.Scatter(
@@ -2061,8 +2303,26 @@ def render_test_widget(test_name):
         ci_z = 1.96 * se_z
 
         results_data = {
-            "Metric": ["Sample Mean", "Population Mean (μ₀)", "z-statistic", "p-value", "SE (σ/√n)", "n", "95% CI of Mean", "Known σ"],
-            "Value": [f"{sample_mean_z:.3f}", f"{population_mean:.3f}", f"{z:.3f}", f"{p:.5f}", f"{se_z:.4f}", f"{n_z}", f"{sample_mean_z - ci_z:.2f} to {sample_mean_z + ci_z:.2f}", "1.0"]
+            "Metric": [
+                "Sample Mean",
+                "Population Mean (μ₀)",
+                "z-statistic",
+                "p-value",
+                "SE (σ/√n)",
+                "n",
+                "95% CI of Mean",
+                "Known σ",
+            ],
+            "Value": [
+                f"{sample_mean_z:.3f}",
+                f"{population_mean:.3f}",
+                f"{z:.3f}",
+                f"{p:.5f}",
+                f"{se_z:.4f}",
+                f"{n_z}",
+                f"{sample_mean_z - ci_z:.2f} to {sample_mean_z + ci_z:.2f}",
+                "1.0",
+            ],
         }
         st.table(pd.DataFrame(results_data))
 
@@ -2084,6 +2344,7 @@ def render_test_widget(test_name):
 
         x_dense = np.linspace(sample.min(), sample.max(), 200)
         from scipy.stats import norm as norm2
+
         y_dense = norm2.pdf(x_dense, sample_mean_z, 1 / np.sqrt(n_z) * np.sqrt(n_z))
         y_dense = norm2.pdf(x_dense, sample_mean_z, np.std(sample, ddof=1))
         fig2.add_trace(
@@ -2208,8 +2469,26 @@ def render_test_widget(test_name):
         ci_prop = 1.96 * np.sqrt(p_hat * (1 - p_hat) / n)
 
         results_data = {
-            "Metric": ["Observed Proportion", "Expected Proportion", "Difference", "95% CI of Proportion", "Number of Successes", "Sample Size (n)", "z-approximation", "Exact p-value"],
-            "Value": [f"{p_hat:.3f}", f"{expected_p:.3f}", f"{p_hat - expected_p:.3f}", f"{p_hat - ci_prop:.3f} to {p_hat + ci_prop:.3f}", f"{successes}", f"{n}", f"{z_prop:.3f}", f"{result.pvalue:.5f}"]
+            "Metric": [
+                "Observed Proportion",
+                "Expected Proportion",
+                "Difference",
+                "95% CI of Proportion",
+                "Number of Successes",
+                "Sample Size (n)",
+                "z-approximation",
+                "Exact p-value",
+            ],
+            "Value": [
+                f"{p_hat:.3f}",
+                f"{expected_p:.3f}",
+                f"{p_hat - expected_p:.3f}",
+                f"{p_hat - ci_prop:.3f} to {p_hat + ci_prop:.3f}",
+                f"{successes}",
+                f"{n}",
+                f"{z_prop:.3f}",
+                f"{result.pvalue:.5f}",
+            ],
         }
         st.table(pd.DataFrame(results_data))
 
@@ -2349,12 +2628,31 @@ def render_test_widget(test_name):
         hypothesized_median = 0
         median_diff_1w = median_1w - hypothesized_median
         from scipy.stats import wilcoxon as wilcoxon_1samp
+
         T_1w, p_1w = wilcoxon_1samp(sample)
         r_rb_1w = 1 - 2 * T_1w / (n_1w * (n_1w + 1) / 2)
 
         results_data = {
-            "Metric": ["Median", "Hypothesized Median", "W-statistic", "p-value", "Sample Size (n)", "Median Difference", "Rank-biserial r", ""],
-            "Value": [f"{median_1w:.3f}", f"{hypothesized_median}", f"{T_1w:.3f}", f"{p_1w:.5f}", f"{n_1w}", f"{median_diff_1w:.3f}", f"{r_rb_1w:.4f}", ""]
+            "Metric": [
+                "Median",
+                "Hypothesized Median",
+                "W-statistic",
+                "p-value",
+                "Sample Size (n)",
+                "Median Difference",
+                "Rank-biserial r",
+                "",
+            ],
+            "Value": [
+                f"{median_1w:.3f}",
+                f"{hypothesized_median}",
+                f"{T_1w:.3f}",
+                f"{p_1w:.5f}",
+                f"{n_1w}",
+                f"{median_diff_1w:.3f}",
+                f"{r_rb_1w:.4f}",
+                "",
+            ],
         }
         st.table(pd.DataFrame(results_data))
 
@@ -2369,19 +2667,32 @@ def render_test_widget(test_name):
         jitter_x = np.random.normal(0, 0.06, n_1w)
         fig2.add_trace(
             go.Scatter(
-                x=jitter_x, y=sample, mode="markers", name="Data points",
+                x=jitter_x,
+                y=sample,
+                mode="markers",
+                name="Data points",
                 marker=dict(color="rgba(0, 123, 255, 0.5)", size=5),
             )
         )
 
         fig2.add_hline(
-            y=hypothesized_median, line_dash="dash", line_color="red",
+            y=hypothesized_median,
+            line_dash="dash",
+            line_color="red",
             annotation_text="H₀: median = 0",
         )
 
-        ci_1w = 1.58 * (np.percentile(sample, 75) - np.percentile(sample, 25)) / np.sqrt(n_1w)
-        fig2.add_hline(y=median_1w + ci_1w, line_dash="dot", line_color="gray", opacity=0.5)
-        fig2.add_hline(y=median_1w - ci_1w, line_dash="dot", line_color="gray", opacity=0.5)
+        ci_1w = (
+            1.58
+            * (np.percentile(sample, 75) - np.percentile(sample, 25))
+            / np.sqrt(n_1w)
+        )
+        fig2.add_hline(
+            y=median_1w + ci_1w, line_dash="dot", line_color="gray", opacity=0.5
+        )
+        fig2.add_hline(
+            y=median_1w - ci_1w, line_dash="dot", line_color="gray", opacity=0.5
+        )
 
         fig2.update_layout(
             template="plotly_dark",
@@ -2463,19 +2774,59 @@ def render_test_widget(test_name):
         k_gof = len(observed)
         df_gof = k_gof - 1
         expected_val = expected
-        cramer_v_gof = np.sqrt(chi2 / (n_gof * (k_gof - 1))) if n_gof > 0 and k_gof > 1 else 0
+        cramer_v_gof = (
+            np.sqrt(chi2 / (n_gof * (k_gof - 1))) if n_gof > 0 and k_gof > 1 else 0
+        )
 
         results_data = {
-            "Metric": ["Observed A", "Observed B", "Observed C", "Expected (mean)", "χ²", "df", "p-value", "Cramer's V"],
-            "Value": [f"{observed[0]}", f"{observed[1]}", f"{observed[2]}", f"{expected_val:.1f}", f"{chi2:.3f}", f"{df_gof}", f"{p:.5f}", f"{cramer_v_gof:.4f}"]
+            "Metric": [
+                "Observed A",
+                "Observed B",
+                "Observed C",
+                "Expected (mean)",
+                "χ²",
+                "df",
+                "p-value",
+                "Cramer's V",
+            ],
+            "Value": [
+                f"{observed[0]}",
+                f"{observed[1]}",
+                f"{observed[2]}",
+                f"{expected_val:.1f}",
+                f"{chi2:.3f}",
+                f"{df_gof}",
+                f"{p:.5f}",
+                f"{cramer_v_gof:.4f}",
+            ],
         }
         st.table(pd.DataFrame(results_data))
 
         categories_gof = ["A", "B", "C"]
         fig2 = go.Figure()
-        fig2.add_trace(go.Bar(name="Observed", x=categories_gof, y=observed, marker_color="rgba(54, 162, 235, 0.7)"))
-        fig2.add_trace(go.Bar(name="Expected", x=categories_gof, y=[expected_val] * 3, marker_color="rgba(255, 99, 71, 0.7)"))
-        fig2.update_layout(template="plotly_dark", height=400, xaxis_title="Category", yaxis_title="Count", barmode="group")
+        fig2.add_trace(
+            go.Bar(
+                name="Observed",
+                x=categories_gof,
+                y=observed,
+                marker_color="rgba(54, 162, 235, 0.7)",
+            )
+        )
+        fig2.add_trace(
+            go.Bar(
+                name="Expected",
+                x=categories_gof,
+                y=[expected_val] * 3,
+                marker_color="rgba(255, 99, 71, 0.7)",
+            )
+        )
+        fig2.update_layout(
+            template="plotly_dark",
+            height=400,
+            xaxis_title="Category",
+            yaxis_title="Count",
+            barmode="group",
+        )
         st.plotly_chart(fig2, use_container_width=True)
 
     # Categorial Tests
@@ -2542,11 +2893,33 @@ def render_test_widget(test_name):
         from scipy.stats import chi2 as chi2_dist_cs
 
         n_cs = np.sum(table)
-        cramer_v_cs = np.sqrt(chi2 / (n_cs * min(table.shape[0] - 1, table.shape[1] - 1))) if n_cs > 0 else 0
+        cramer_v_cs = (
+            np.sqrt(chi2 / (n_cs * min(table.shape[0] - 1, table.shape[1] - 1)))
+            if n_cs > 0
+            else 0
+        )
 
         results_data = {
-            "Metric": ["χ²", "df", "p-value", "Cramer's V", "Cell A (R1,C1)", "Cell B (R1,C2)", "Cell C (R2,C1)", "Cell D (R2,C2)"],
-            "Value": [f"{chi2:.3f}", f"{dof}", f"{p:.5f}", f"{cramer_v_cs:.4f}", f"{table[0, 0]}", f"{table[0, 1]}", f"{table[1, 0]}", f"{table[1, 1]}"]
+            "Metric": [
+                "χ²",
+                "df",
+                "p-value",
+                "Cramer's V",
+                "Cell A (R1,C1)",
+                "Cell B (R1,C2)",
+                "Cell C (R2,C1)",
+                "Cell D (R2,C2)",
+            ],
+            "Value": [
+                f"{chi2:.3f}",
+                f"{dof}",
+                f"{p:.5f}",
+                f"{cramer_v_cs:.4f}",
+                f"{table[0, 0]}",
+                f"{table[0, 1]}",
+                f"{table[1, 0]}",
+                f"{table[1, 1]}",
+            ],
         }
         st.table(pd.DataFrame(results_data))
 
@@ -2554,9 +2927,29 @@ def render_test_widget(test_name):
         observed_flat = table.flatten()
         expected_flat = expected.flatten()
         fig2 = go.Figure()
-        fig2.add_trace(go.Bar(name="Observed", x=cells_cs, y=observed_flat, marker_color="rgba(54, 162, 235, 0.7)"))
-        fig2.add_trace(go.Bar(name="Expected", x=cells_cs, y=expected_flat, marker_color="rgba(255, 99, 71, 0.7)"))
-        fig2.update_layout(template="plotly_dark", height=400, xaxis_title="Cell", yaxis_title="Count", barmode="group")
+        fig2.add_trace(
+            go.Bar(
+                name="Observed",
+                x=cells_cs,
+                y=observed_flat,
+                marker_color="rgba(54, 162, 235, 0.7)",
+            )
+        )
+        fig2.add_trace(
+            go.Bar(
+                name="Expected",
+                x=cells_cs,
+                y=expected_flat,
+                marker_color="rgba(255, 99, 71, 0.7)",
+            )
+        )
+        fig2.update_layout(
+            template="plotly_dark",
+            height=400,
+            xaxis_title="Cell",
+            yaxis_title="Count",
+            barmode="group",
+        )
         st.plotly_chart(fig2, use_container_width=True)
 
     elif test_name == "McNemar's Test":
@@ -2625,14 +3018,44 @@ def render_test_widget(test_name):
         odds_ratio_mc = b_mc / c_mc if c_mc > 0 else float("inf")
 
         results_data = {
-            "Metric": ["χ²", "p-value", "b (Yes→No)", "c (No→Yes)", "Odds Ratio (b/c)", "", "", ""],
-            "Value": [f"{result.statistic:.3f}", f"{result.pvalue:.5f}", f"{b_mc}", f"{c_mc}", f"{odds_ratio_mc:.3f}" if c_mc > 0 else "∞", "", "", ""]
+            "Metric": [
+                "χ²",
+                "p-value",
+                "b (Yes→No)",
+                "c (No→Yes)",
+                "Odds Ratio (b/c)",
+                "",
+                "",
+                "",
+            ],
+            "Value": [
+                f"{result.statistic:.3f}",
+                f"{result.pvalue:.5f}",
+                f"{b_mc}",
+                f"{c_mc}",
+                f"{odds_ratio_mc:.3f}" if c_mc > 0 else "∞",
+                "",
+                "",
+                "",
+            ],
         }
         st.table(pd.DataFrame(results_data))
 
         fig2 = go.Figure()
-        fig2.add_trace(go.Bar(name="Discordant Pairs", x=["b (Yes→No)", "c (No→Yes)"], y=[b_mc, c_mc], marker_color=["rgba(255, 99, 71, 0.7)", "rgba(54, 162, 235, 0.7)"]))
-        fig2.update_layout(template="plotly_dark", height=400, xaxis_title="Discordant Pair Type", yaxis_title="Count")
+        fig2.add_trace(
+            go.Bar(
+                name="Discordant Pairs",
+                x=["b (Yes→No)", "c (No→Yes)"],
+                y=[b_mc, c_mc],
+                marker_color=["rgba(255, 99, 71, 0.7)", "rgba(54, 162, 235, 0.7)"],
+            )
+        )
+        fig2.update_layout(
+            template="plotly_dark",
+            height=400,
+            xaxis_title="Discordant Pair Type",
+            yaxis_title="Count",
+        )
         st.plotly_chart(fig2, use_container_width=True)
 
     elif test_name == "Cochran's Q Test":
@@ -2731,20 +3154,63 @@ def render_test_widget(test_name):
         proportions = means
 
         results_data = {
-            "Metric": ["Q", "df", "p-value", "Proportion C1", "Proportion C2", "Proportion C3", "", ""],
-            "Value": [f"{result.statistic:.3f}", f"{df_cq}", f"{result.pvalue:.5f}", f"{proportions[0]:.3f}", f"{proportions[1]:.3f}", f"{proportions[2]:.3f}", "", ""]
+            "Metric": [
+                "Q",
+                "df",
+                "p-value",
+                "Proportion C1",
+                "Proportion C2",
+                "Proportion C3",
+                "",
+                "",
+            ],
+            "Value": [
+                f"{result.statistic:.3f}",
+                f"{df_cq}",
+                f"{result.pvalue:.5f}",
+                f"{proportions[0]:.3f}",
+                f"{proportions[1]:.3f}",
+                f"{proportions[2]:.3f}",
+                "",
+                "",
+            ],
         }
         st.table(pd.DataFrame(results_data))
 
         cond_names = ["Condition 1", "Condition 2", "Condition 3"]
         fig2 = go.Figure()
-        fig2.add_trace(go.Bar(x=cond_names, y=proportions, marker_color=["rgba(54, 162, 235, 0.7)", "rgba(255, 99, 71, 0.7)", "rgba(75, 192, 192, 0.7)"], name="Proportion"))
+        fig2.add_trace(
+            go.Bar(
+                x=cond_names,
+                y=proportions,
+                marker_color=[
+                    "rgba(54, 162, 235, 0.7)",
+                    "rgba(255, 99, 71, 0.7)",
+                    "rgba(75, 192, 192, 0.7)",
+                ],
+                name="Proportion",
+            )
+        )
         np.random.seed(123)
         for j in range(data.shape[1]):
             jitter_x = np.random.normal(j, 0.05, size=data.shape[0])
             response_y = data[:, j]
-            fig2.add_trace(go.Scatter(x=jitter_x, y=response_y, mode="markers", showlegend=False, marker=dict(color="white", size=3, opacity=0.3)))
-        fig2.update_layout(template="plotly_dark", height=400, xaxis_title="Condition", yaxis_title="Proportion", yaxis=dict(range=[0, 1]))
+            fig2.add_trace(
+                go.Scatter(
+                    x=jitter_x,
+                    y=response_y,
+                    mode="markers",
+                    showlegend=False,
+                    marker=dict(color="white", size=3, opacity=0.3),
+                )
+            )
+        fig2.update_layout(
+            template="plotly_dark",
+            height=400,
+            xaxis_title="Condition",
+            yaxis_title="Proportion",
+            yaxis=dict(range=[0, 1]),
+        )
         st.plotly_chart(fig2, use_container_width=True)
 
     elif test_name == "Fisher's Exact Test":
@@ -2817,14 +3283,48 @@ def render_test_widget(test_name):
         ci_high_f = np.exp(log_or + 1.96 * se_log_or) if se_log_or > 0 else float("inf")
 
         results_data = {
-            "Metric": ["Odds Ratio", "95% CI (OR)", "p-value", "", "Cell A", "Cell B", "Cell C", "Cell D"],
-            "Value": [f"{or_f:.3f}", f"[{ci_low_f:.3f}, {ci_high_f:.3f}]", f"{p_f:.5f}", "", f"{table[0, 0]}", f"{table[0, 1]}", f"{table[1, 0]}", f"{table[1, 1]}"]
+            "Metric": [
+                "Odds Ratio",
+                "95% CI (OR)",
+                "p-value",
+                "",
+                "Cell A",
+                "Cell B",
+                "Cell C",
+                "Cell D",
+            ],
+            "Value": [
+                f"{or_f:.3f}",
+                f"[{ci_low_f:.3f}, {ci_high_f:.3f}]",
+                f"{p_f:.5f}",
+                "",
+                f"{table[0, 0]}",
+                f"{table[0, 1]}",
+                f"{table[1, 0]}",
+                f"{table[1, 1]}",
+            ],
         }
         st.table(pd.DataFrame(results_data))
 
-        fig2 = go.Figure(data=go.Heatmap(z=table, text=table, texttemplate="%{text}", colorscale="Blues", showscale=False))
+        fig2 = go.Figure(
+            data=go.Heatmap(
+                z=table,
+                text=table,
+                texttemplate="%{text}",
+                colorscale="Blues",
+                showscale=False,
+            )
+        )
         fig2.update_layout(template="plotly_dark", height=400)
-        fig2.add_annotation(x=0.5, y=-0.15, xref="paper", yref="paper", text=f"OR = {or_f:.3f}, 95% CI: [{ci_low_f:.3f}, {ci_high_f:.3f}]", showarrow=False, font=dict(size=14))
+        fig2.add_annotation(
+            x=0.5,
+            y=-0.15,
+            xref="paper",
+            yref="paper",
+            text=f"OR = {or_f:.3f}, 95% CI: [{ci_low_f:.3f}, {ci_high_f:.3f}]",
+            showarrow=False,
+            font=dict(size=14),
+        )
         st.plotly_chart(fig2, use_container_width=True)
 
     # Parametric Two Sample Tests
@@ -2910,15 +3410,43 @@ def render_test_widget(test_name):
         n1_s, n2_s = len(group1), len(group2)
         m1_s, m2_s = np.mean(group1), np.mean(group2)
         sd1_s, sd2_s = np.std(group1, ddof=1), np.std(group2, ddof=1)
-        pooled_sd = np.sqrt(((n1_s - 1) * sd1_s**2 + (n2_s - 1) * sd2_s**2) / (n1_s + n2_s - 2))
+        pooled_sd = np.sqrt(
+            ((n1_s - 1) * sd1_s**2 + (n2_s - 1) * sd2_s**2) / (n1_s + n2_s - 2)
+        )
         mean_diff_s = m2_s - m1_s
         se_diff_s = pooled_sd * np.sqrt(1 / n1_s + 1 / n2_s)
         ci_diff_s = se_diff_s * t_dist_student.ppf(0.975, n1_s + n2_s - 2)
         cohens_d_s = mean_diff_s / pooled_sd
 
         results_data = {
-            "Metric": ["Mean G1 (SD)", "Mean G2 (SD)", "Mean Difference", "95% CI of Diff", "Pooled SD", "t-statistic", "df", "p-value", "Cohen's d", "", "", ""],
-            "Value": [f"{m1_s:.2f} ({sd1_s:.2f})", f"{m2_s:.2f} ({sd2_s:.2f})", f"{mean_diff_s:.3f}", f"[{mean_diff_s - ci_diff_s:.3f}, {mean_diff_s + ci_diff_s:.3f}]", f"{pooled_sd:.3f}", f"{t:.3f}", f"{n1_s + n2_s - 2}", f"{p:.5f}", f"{cohens_d_s:.4f}", "", "", ""]
+            "Metric": [
+                "Mean G1 (SD)",
+                "Mean G2 (SD)",
+                "Mean Difference",
+                "95% CI of Diff",
+                "Pooled SD",
+                "t-statistic",
+                "df",
+                "p-value",
+                "Cohen's d",
+                "",
+                "",
+                "",
+            ],
+            "Value": [
+                f"{m1_s:.2f} ({sd1_s:.2f})",
+                f"{m2_s:.2f} ({sd2_s:.2f})",
+                f"{mean_diff_s:.3f}",
+                f"[{mean_diff_s - ci_diff_s:.3f}, {mean_diff_s + ci_diff_s:.3f}]",
+                f"{pooled_sd:.3f}",
+                f"{t:.3f}",
+                f"{n1_s + n2_s - 2}",
+                f"{p:.5f}",
+                f"{cohens_d_s:.4f}",
+                "",
+                "",
+                "",
+            ],
         }
         st.table(pd.DataFrame(results_data))
 
@@ -2929,11 +3457,22 @@ def render_test_widget(test_name):
         fig2 = go.Figure()
 
         for i, (g, name) in enumerate(zip([group1, group2], ["Group 1", "Group 2"])):
-            fig2.add_trace(go.Violin(y=g, name=name, box_visible=True, meanline_visible=True, points=False))
+            fig2.add_trace(
+                go.Violin(
+                    y=g,
+                    name=name,
+                    box_visible=True,
+                    meanline_visible=True,
+                    points=False,
+                )
+            )
             jitter_x = np.random.normal(i + 1, 0.06, len(g))
             fig2.add_trace(
                 go.Scatter(
-                    x=jitter_x, y=g, mode="markers", showlegend=False,
+                    x=jitter_x,
+                    y=g,
+                    mode="markers",
+                    showlegend=False,
                     marker=dict(color="rgba(0, 123, 255, 0.4)", size=4),
                 )
             )
@@ -3017,8 +3556,10 @@ def render_test_widget(test_name):
         mean_diff_w = m2_w - m1_w
         se_w = np.sqrt(sd1_w**2 / n1_w + sd2_w**2 / n2_w)
 
-        welch_df_num = (sd1_w**2 / n1_w + sd2_w**2 / n2_w)**2
-        welch_df_den = (sd1_w**2 / n1_w)**2 / (n1_w - 1) + (sd2_w**2 / n2_w)**2 / (n2_w - 1)
+        welch_df_num = (sd1_w**2 / n1_w + sd2_w**2 / n2_w) ** 2
+        welch_df_den = (sd1_w**2 / n1_w) ** 2 / (n1_w - 1) + (
+            sd2_w**2 / n2_w
+        ) ** 2 / (n2_w - 1)
         welch_df = welch_df_num / welch_df_den
 
         ci_diff_w = se_w * t_dist_welch.ppf(0.975, welch_df)
@@ -3027,8 +3568,26 @@ def render_test_widget(test_name):
         cohens_d_w = mean_diff_w / pooled_sd_w
 
         results_data = {
-            "Metric": ["Mean G1 (SD)", "Mean G2 (SD)", "Mean Difference", "95% CI of Diff", "t-statistic", "Welch df", "p-value", "Cohen's d"],
-            "Value": [f"{m1_w:.2f} ({sd1_w:.2f})", f"{m2_w:.2f} ({sd2_w:.2f})", f"{mean_diff_w:.3f}", f"[{mean_diff_w - ci_diff_w:.3f}, {mean_diff_w + ci_diff_w:.3f}]", f"{t:.3f}", f"{welch_df:.1f}", f"{p:.5f}", f"{cohens_d_w:.4f}"]
+            "Metric": [
+                "Mean G1 (SD)",
+                "Mean G2 (SD)",
+                "Mean Difference",
+                "95% CI of Diff",
+                "t-statistic",
+                "Welch df",
+                "p-value",
+                "Cohen's d",
+            ],
+            "Value": [
+                f"{m1_w:.2f} ({sd1_w:.2f})",
+                f"{m2_w:.2f} ({sd2_w:.2f})",
+                f"{mean_diff_w:.3f}",
+                f"[{mean_diff_w - ci_diff_w:.3f}, {mean_diff_w + ci_diff_w:.3f}]",
+                f"{t:.3f}",
+                f"{welch_df:.1f}",
+                f"{p:.5f}",
+                f"{cohens_d_w:.4f}",
+            ],
         }
         st.table(pd.DataFrame(results_data))
 
@@ -3039,11 +3598,22 @@ def render_test_widget(test_name):
         fig2 = go.Figure()
 
         for i, (g, name) in enumerate(zip([g1, g2], ["Group 1", "Group 2"])):
-            fig2.add_trace(go.Violin(y=g, name=name, box_visible=True, meanline_visible=True, points=False))
+            fig2.add_trace(
+                go.Violin(
+                    y=g,
+                    name=name,
+                    box_visible=True,
+                    meanline_visible=True,
+                    points=False,
+                )
+            )
             jitter_x = np.random.normal(i + 1, 0.06, len(g))
             fig2.add_trace(
                 go.Scatter(
-                    x=jitter_x, y=g, mode="markers", showlegend=False,
+                    x=jitter_x,
+                    y=g,
+                    mode="markers",
+                    showlegend=False,
                     marker=dict(color="rgba(0, 123, 255, 0.4)", size=4),
                 )
             )
@@ -3151,8 +3721,26 @@ def render_test_widget(test_name):
         cohens_dz = mean_diff_p / sd_diff
 
         results_data = {
-            "Metric": ["Mean Pre (SD)", "Mean Post (SD)", "Mean Difference", "95% CI of Diff", "t-statistic", "df", "p-value", "Cohen's d_z"],
-            "Value": [f"{mean_pre:.2f} ({sd_pre:.2f})", f"{mean_post:.2f} ({sd_post:.2f})", f"{mean_diff_p:.3f}", f"[{mean_diff_p - ci_diff_paired:.3f}, {mean_diff_p + ci_diff_paired:.3f}]", f"{t:.3f}", f"{n_p - 1}", f"{p:.5f}", f"{cohens_dz:.4f}"]
+            "Metric": [
+                "Mean Pre (SD)",
+                "Mean Post (SD)",
+                "Mean Difference",
+                "95% CI of Diff",
+                "t-statistic",
+                "df",
+                "p-value",
+                "Cohen's d_z",
+            ],
+            "Value": [
+                f"{mean_pre:.2f} ({sd_pre:.2f})",
+                f"{mean_post:.2f} ({sd_post:.2f})",
+                f"{mean_diff_p:.3f}",
+                f"[{mean_diff_p - ci_diff_paired:.3f}, {mean_diff_p + ci_diff_paired:.3f}]",
+                f"{t:.3f}",
+                f"{n_p - 1}",
+                f"{p:.5f}",
+                f"{cohens_dz:.4f}",
+            ],
         }
         st.table(pd.DataFrame(results_data))
 
@@ -3196,7 +3784,8 @@ def render_test_widget(test_name):
         fig2.add_hrect(
             y0=mean_diff_p - ci_diff_paired,
             y1=mean_diff_p + ci_diff_paired,
-            x0=-0.5, x1=1.5,
+            x0=-0.5,
+            x1=1.5,
             fillcolor="rgba(255, 0, 0, 0.1)",
             line_width=0,
             name="95% CI of difference",
@@ -3293,7 +3882,9 @@ def render_test_widget(test_name):
         k_1w = len(groups_1w)
         grand_mean_1w = np.mean(np.concatenate(groups_1w))
 
-        ss_between = sum(n_i * (m_i - grand_mean_1w)**2 for n_i, m_i in zip(n_1w, means_1w))
+        ss_between = sum(
+            n_i * (m_i - grand_mean_1w) ** 2 for n_i, m_i in zip(n_1w, means_1w)
+        )
         ss_within = sum((n_i - 1) * sd_i**2 for n_i, sd_i in zip(n_1w, sds_1w))
         df_between = k_1w - 1
         df_within = n_total_1w - k_1w
@@ -3302,11 +3893,31 @@ def render_test_widget(test_name):
         F_1w = ms_between / ms_within
         p_1w = 1 - f_dist_1w.cdf(F_1w, df_between, df_within)
         eta_sq = ss_between / (ss_between + ss_within)
-        omega_sq = (ss_between - df_between * ms_within) / (ss_between + ss_within + ms_within)
+        omega_sq = (ss_between - df_between * ms_within) / (
+            ss_between + ss_within + ms_within
+        )
 
         results_data = {
-            "Metric": ["Mean G1 (SD)", "Mean G2 (SD)", "Mean G3 (SD)", "F", f"df ({df_between}, {df_within})", "p-value", "η²", "Partial ω²"],
-            "Value": [f"{means_1w[0]:.2f} ({sds_1w[0]:.2f})", f"{means_1w[1]:.2f} ({sds_1w[1]:.2f})", f"{means_1w[2]:.2f} ({sds_1w[2]:.2f})", f"{F_1w:.3f}", f"{df_between}, {df_within}", f"{p_1w:.5f}", f"{eta_sq:.4f}", f"{omega_sq:.4f}"]
+            "Metric": [
+                "Mean G1 (SD)",
+                "Mean G2 (SD)",
+                "Mean G3 (SD)",
+                "F",
+                f"df ({df_between}, {df_within})",
+                "p-value",
+                "η²",
+                "Partial ω²",
+            ],
+            "Value": [
+                f"{means_1w[0]:.2f} ({sds_1w[0]:.2f})",
+                f"{means_1w[1]:.2f} ({sds_1w[1]:.2f})",
+                f"{means_1w[2]:.2f} ({sds_1w[2]:.2f})",
+                f"{F_1w:.3f}",
+                f"{df_between}, {df_within}",
+                f"{p_1w:.5f}",
+                f"{eta_sq:.4f}",
+                f"{omega_sq:.4f}",
+            ],
         }
         st.table(pd.DataFrame(results_data))
 
@@ -3316,18 +3927,35 @@ def render_test_widget(test_name):
 
         fig2 = go.Figure()
 
-        for i, (g, name) in enumerate(zip(groups_1w, ["Group 1", "Group 2", "Group 3"])):
-            fig2.add_trace(go.Violin(y=g, name=name, box_visible=True, meanline_visible=True, points=False))
+        for i, (g, name) in enumerate(
+            zip(groups_1w, ["Group 1", "Group 2", "Group 3"])
+        ):
+            fig2.add_trace(
+                go.Violin(
+                    y=g,
+                    name=name,
+                    box_visible=True,
+                    meanline_visible=True,
+                    points=False,
+                )
+            )
             jitter_x = np.random.normal(i + 1, 0.06, len(g))
             fig2.add_trace(
                 go.Scatter(
-                    x=jitter_x, y=g, mode="markers", showlegend=False,
+                    x=jitter_x,
+                    y=g,
+                    mode="markers",
+                    showlegend=False,
                     marker=dict(color="rgba(0, 123, 255, 0.4)", size=4),
                 )
             )
 
-        fig2.add_hline(y=grand_mean_1w, line_dash="dash", line_color="red",
-                       annotation_text=f"Grand Mean = {grand_mean_1w:.2f}")
+        fig2.add_hline(
+            y=grand_mean_1w,
+            line_dash="dash",
+            line_color="red",
+            annotation_text=f"Grand Mean = {grand_mean_1w:.2f}",
+        )
 
         fig2.update_layout(
             template="plotly_dark",
@@ -3394,12 +4022,14 @@ def render_test_widget(test_name):
         from statsmodels.formula.api import ols as ols_tw
         import statsmodels.api as sm_tw
 
-        df_tw = pd.DataFrame({
-            'y': np.concatenate([A1B1, A1B2, A2B1, A2B2]),
-            'A': np.repeat(['A1', 'A1', 'A2', 'A2'], n_per_cell),
-            'B': np.repeat(['B1', 'B2', 'B1', 'B2'], n_per_cell),
-        })
-        model_tw = ols_tw('y ~ C(A) * C(B)', data=df_tw).fit()
+        df_tw = pd.DataFrame(
+            {
+                "y": np.concatenate([A1B1, A1B2, A2B1, A2B2]),
+                "A": np.repeat(["A1", "A1", "A2", "A2"], n_per_cell),
+                "B": np.repeat(["B1", "B2", "B1", "B2"], n_per_cell),
+            }
+        )
+        model_tw = ols_tw("y ~ C(A) * C(B)", data=df_tw).fit()
         anova_tw = sm_tw.stats.anova_lm(model_tw, typ=2)
 
         F_A = anova_tw.loc["C(A)", "F"]
@@ -3419,8 +4049,42 @@ def render_test_widget(test_name):
         partial_eta_AB = ss_AB / (ss_AB + ss_resid_tw)
 
         results_data = {
-            "Metric": ["Mean A1B1", "Mean A1B2", "Mean A2B1", "Mean A2B2", "F_A", "p_A", "Partial η²_A", "", "F_B", "p_B", "Partial η²_B", "", "F_AB", "p_AB", "Partial η²_AB", ""],
-            "Value": [f"{np.mean(A1B1):.3f}", f"{np.mean(A1B2):.3f}", f"{np.mean(A2B1):.3f}", f"{np.mean(A2B2):.3f}", f"{F_A:.3f}", f"{p_A:.5f}", f"{partial_eta_A:.4f}", "", f"{F_B:.3f}", f"{p_B:.5f}", f"{partial_eta_B:.4f}", "", f"{F_AB:.3f}", f"{p_AB:.5f}", f"{partial_eta_AB:.4f}", ""]
+            "Metric": [
+                "Mean A1B1",
+                "Mean A1B2",
+                "Mean A2B1",
+                "Mean A2B2",
+                "F_A",
+                "p_A",
+                "Partial η²_A",
+                "",
+                "F_B",
+                "p_B",
+                "Partial η²_B",
+                "",
+                "F_AB",
+                "p_AB",
+                "Partial η²_AB",
+                "",
+            ],
+            "Value": [
+                f"{np.mean(A1B1):.3f}",
+                f"{np.mean(A1B2):.3f}",
+                f"{np.mean(A2B1):.3f}",
+                f"{np.mean(A2B2):.3f}",
+                f"{F_A:.3f}",
+                f"{p_A:.5f}",
+                f"{partial_eta_A:.4f}",
+                "",
+                f"{F_B:.3f}",
+                f"{p_B:.5f}",
+                f"{partial_eta_B:.4f}",
+                "",
+                f"{F_AB:.3f}",
+                f"{p_AB:.5f}",
+                f"{partial_eta_AB:.4f}",
+                "",
+            ],
         }
         st.table(pd.DataFrame(results_data))
 
@@ -3484,7 +4148,9 @@ def render_test_widget(test_name):
         control = covariate * covariate_strength + np.random.normal(0, noise, n)
 
         treatment = (
-            covariate * covariate_strength + treatment_effect + np.random.normal(0, noise, n)
+            covariate * covariate_strength
+            + treatment_effect
+            + np.random.normal(0, noise, n)
         )
 
         # =========================
@@ -3495,13 +4161,19 @@ def render_test_widget(test_name):
 
         fig.add_trace(
             go.Scatter(
-                x=covariate, y=control, mode="markers", name="Control",
+                x=covariate,
+                y=control,
+                mode="markers",
+                name="Control",
             )
         )
 
         fig.add_trace(
             go.Scatter(
-                x=covariate, y=treatment, mode="markers", name="Treatment",
+                x=covariate,
+                y=treatment,
+                mode="markers",
+                name="Treatment",
             )
         )
 
@@ -3545,16 +4217,22 @@ def render_test_widget(test_name):
 
         from statsmodels.formula.api import ols as ols_anc
 
-        df_anc = pd.DataFrame({
-            'outcome': np.concatenate([control, treatment]),
-            'group': np.repeat(['Control', 'Treatment'], n),
-            'cov': np.tile(covariate, 2),
-        })
-        model_anc = ols_anc('outcome ~ C(group) + cov', data=df_anc).fit()
-        beta_cov = model_anc.params['cov']
+        df_anc = pd.DataFrame(
+            {
+                "outcome": np.concatenate([control, treatment]),
+                "group": np.repeat(["Control", "Treatment"], n),
+                "cov": np.tile(covariate, 2),
+            }
+        )
+        model_anc = ols_anc("outcome ~ C(group) + cov", data=df_anc).fit()
+        beta_cov = model_anc.params["cov"]
         grand_mean_cov = np.mean(covariate)
-        adj_control = model_anc.params['Intercept'] + beta_cov * grand_mean_cov
-        adj_treatment = model_anc.params['Intercept'] + model_anc.params['C(group)[T.Treatment]'] + beta_cov * grand_mean_cov
+        adj_control = model_anc.params["Intercept"] + beta_cov * grand_mean_cov
+        adj_treatment = (
+            model_anc.params["Intercept"]
+            + model_anc.params["C(group)[T.Treatment]"]
+            + beta_cov * grand_mean_cov
+        )
         F_group = model_anc.fvalue
         p_group = model_anc.f_pvalue
         ss_resid = model_anc.ssr
@@ -3562,8 +4240,26 @@ def render_test_widget(test_name):
         partial_eta_anc = ss_expl / (ss_expl + ss_resid)
 
         results_data = {
-            "Metric": ["Adj. Mean Control", "Adj. Mean Treatment", "F (group)", "p-value", "Covariate β", "Partial η²", "", ""],
-            "Value": [f"{adj_control:.3f}", f"{adj_treatment:.3f}", f"{F_group:.3f}", f"{p_group:.5f}", f"{beta_cov:.3f}", f"{partial_eta_anc:.4f}", "", ""]
+            "Metric": [
+                "Adj. Mean Control",
+                "Adj. Mean Treatment",
+                "F (group)",
+                "p-value",
+                "Covariate β",
+                "Partial η²",
+                "",
+                "",
+            ],
+            "Value": [
+                f"{adj_control:.3f}",
+                f"{adj_treatment:.3f}",
+                f"{F_group:.3f}",
+                f"{p_group:.5f}",
+                f"{beta_cov:.3f}",
+                f"{partial_eta_anc:.4f}",
+                "",
+                "",
+            ],
         }
         st.table(pd.DataFrame(results_data))
 
@@ -3574,31 +4270,69 @@ def render_test_widget(test_name):
         fig2 = go.Figure()
 
         fig2.add_trace(
-            go.Scatter(x=covariate, y=control, mode="markers", name="Control",
-                       marker=dict(color="rgba(0, 123, 255, 0.6)", size=6))
+            go.Scatter(
+                x=covariate,
+                y=control,
+                mode="markers",
+                name="Control",
+                marker=dict(color="rgba(0, 123, 255, 0.6)", size=6),
+            )
         )
         fig2.add_trace(
-            go.Scatter(x=covariate, y=treatment, mode="markers", name="Treatment",
-                       marker=dict(color="rgba(255, 65, 54, 0.6)", size=6))
+            go.Scatter(
+                x=covariate,
+                y=treatment,
+                mode="markers",
+                name="Treatment",
+                marker=dict(color="rgba(255, 65, 54, 0.6)", size=6),
+            )
         )
 
         slope_c, intercept_c, _, _, _ = linregress(covariate, control)
         slope_t, intercept_t, _, _, _ = linregress(covariate, treatment)
         x_line = np.linspace(covariate.min(), covariate.max(), 100)
         fig2.add_trace(
-            go.Scatter(x=x_line, y=intercept_c + slope_c * x_line, mode="lines",
-                       name="Control (adjusted)", line=dict(color="blue", width=2, dash="dash"))
+            go.Scatter(
+                x=x_line,
+                y=intercept_c + slope_c * x_line,
+                mode="lines",
+                name="Control (adjusted)",
+                line=dict(color="blue", width=2, dash="dash"),
+            )
         )
         fig2.add_trace(
-            go.Scatter(x=x_line, y=intercept_t + slope_t * x_line, mode="lines",
-                       name="Treatment (adjusted)", line=dict(color="red", width=2, dash="dash"))
+            go.Scatter(
+                x=x_line,
+                y=intercept_t + slope_t * x_line,
+                mode="lines",
+                name="Treatment (adjusted)",
+                line=dict(color="red", width=2, dash="dash"),
+            )
         )
 
-        fig2.add_vline(x=grand_mean_cov, line_dash="dot", line_color="gray", opacity=0.5)
-        fig2.add_annotation(x=grand_mean_cov, y=adj_control, text=f"Adj. Control: {adj_control:.2f}",
-                           showarrow=True, arrowhead=1, ax=30, ay=-30, bgcolor="blue")
-        fig2.add_annotation(x=grand_mean_cov, y=adj_treatment, text=f"Adj. Treatment: {adj_treatment:.2f}",
-                           showarrow=True, arrowhead=1, ax=30, ay=30, bgcolor="red")
+        fig2.add_vline(
+            x=grand_mean_cov, line_dash="dot", line_color="gray", opacity=0.5
+        )
+        fig2.add_annotation(
+            x=grand_mean_cov,
+            y=adj_control,
+            text=f"Adj. Control: {adj_control:.2f}",
+            showarrow=True,
+            arrowhead=1,
+            ax=30,
+            ay=-30,
+            bgcolor="blue",
+        )
+        fig2.add_annotation(
+            x=grand_mean_cov,
+            y=adj_treatment,
+            text=f"Adj. Treatment: {adj_treatment:.2f}",
+            showarrow=True,
+            arrowhead=1,
+            ax=30,
+            ay=30,
+            bgcolor="red",
+        )
 
         fig2.update_layout(
             template="plotly_dark",
@@ -3694,26 +4428,53 @@ def render_test_widget(test_name):
         st.divider()
         st.subheader("Detailed Results")
 
-        time_means = [np.mean([data[s][t] for s in range(subjects)]) for t in range(timepoints)]
+        time_means = [
+            np.mean([data[s][t] for s in range(subjects)]) for t in range(timepoints)
+        ]
 
-        df_rm = pd.DataFrame({
-            'subject': np.tile(range(subjects), timepoints),
-            'time': np.repeat(range(timepoints), subjects),
-            'y': np.array(data).T.flatten(),
-        })
+        df_rm = pd.DataFrame(
+            {
+                "subject": np.tile(range(subjects), timepoints),
+                "time": np.repeat(range(timepoints), subjects),
+                "y": np.array(data).T.flatten(),
+            }
+        )
 
         from statsmodels.stats.anova import AnovaRM
-        rm_result = AnovaRM(df_rm, 'y', 'subject', within=['time']).fit()
+
+        rm_result = AnovaRM(df_rm, "y", "subject", within=["time"]).fit()
         rm_table = rm_result.anova_table
         F_rm = rm_table.loc["time", "F Value"]
         p_rm = rm_table.loc["time", "Pr > F"]
         df_num_rm = int(rm_table.loc["time", "Num DF"])
         df_den_rm = int(rm_table.loc["time", "Den DF"])
-        partial_eta_sq_rm = rm_table.loc["time", "F Value"] * df_num_rm / (rm_table.loc["time", "F Value"] * df_num_rm + df_den_rm)
+        partial_eta_sq_rm = (
+            rm_table.loc["time", "F Value"]
+            * df_num_rm
+            / (rm_table.loc["time", "F Value"] * df_num_rm + df_den_rm)
+        )
 
         results_data = {
-            "Metric": ["Mean T1", "Mean T2", "Mean T3", "Mean T4", "F", f"df ({df_num_rm}, {df_den_rm})", "p-value", "Partial η²"],
-            "Value": [f"{time_means[0]:.3f}", f"{time_means[1]:.3f}", f"{time_means[2]:.3f}", f"{time_means[3]:.3f}", f"{F_rm:.3f}", f"{df_num_rm}, {df_den_rm}", f"{p_rm:.5f}", f"{partial_eta_sq_rm:.4f}"]
+            "Metric": [
+                "Mean T1",
+                "Mean T2",
+                "Mean T3",
+                "Mean T4",
+                "F",
+                f"df ({df_num_rm}, {df_den_rm})",
+                "p-value",
+                "Partial η²",
+            ],
+            "Value": [
+                f"{time_means[0]:.3f}",
+                f"{time_means[1]:.3f}",
+                f"{time_means[2]:.3f}",
+                f"{time_means[3]:.3f}",
+                f"{F_rm:.3f}",
+                f"{df_num_rm}, {df_den_rm}",
+                f"{p_rm:.5f}",
+                f"{partial_eta_sq_rm:.4f}",
+            ],
         }
         st.table(pd.DataFrame(results_data))
 
@@ -3833,8 +4594,12 @@ def render_test_widget(test_name):
         mean1 = np.mean(g1, axis=0)
         mean2 = np.mean(g2, axis=0)
 
-        H_m = n_m * np.outer(mean1 - grand_mean, mean1 - grand_mean) + n_m * np.outer(mean2 - grand_mean, mean2 - grand_mean)
-        E_m = (n_m - 1) * np.cov(g1, rowvar=False) + (n_m - 1) * np.cov(g2, rowvar=False)
+        H_m = n_m * np.outer(mean1 - grand_mean, mean1 - grand_mean) + n_m * np.outer(
+            mean2 - grand_mean, mean2 - grand_mean
+        )
+        E_m = (n_m - 1) * np.cov(g1, rowvar=False) + (n_m - 1) * np.cov(
+            g2, rowvar=False
+        )
         wilks_lambda = np.linalg.det(E_m) / np.linalg.det(E_m + H_m)
 
         p_manova = 3
@@ -3844,20 +4609,62 @@ def render_test_widget(test_name):
         F_m = ((1 - wilks_lambda) / wilks_lambda) * (df2_m / df1_m)
 
         from scipy.stats import f as f_dist_m
+
         p_m = 1 - f_dist_m.cdf(F_m, df1_m, df2_m)
 
         results_data = {
-            "Metric": ["Wilks' Λ", "F-approx", f"df ({df1_m}, {df2_m:.0f})", "p-value", "Number of DVs", "Number of Groups", "", ""],
-            "Value": [f"{wilks_lambda:.4f}", f"{F_m:.3f}", f"{df1_m}, {df2_m:.0f}", f"{p_m:.5f}", f"{p_manova}", f"{k_manova}", "", ""]
+            "Metric": [
+                "Wilks' Λ",
+                "F-approx",
+                f"df ({df1_m}, {df2_m:.0f})",
+                "p-value",
+                "Number of DVs",
+                "Number of Groups",
+                "",
+                "",
+            ],
+            "Value": [
+                f"{wilks_lambda:.4f}",
+                f"{F_m:.3f}",
+                f"{df1_m}, {df2_m:.0f}",
+                f"{p_m:.5f}",
+                f"{p_manova}",
+                f"{k_manova}",
+                "",
+                "",
+            ],
         }
         st.table(pd.DataFrame(results_data))
 
         fig2 = go.Figure()
-        for idx, (g, name, color) in enumerate(zip([g1, g2], ["Group 1", "Group 2"], ["blue", "red"])):
-            fig2.add_trace(go.Scatter(x=g[:, 0], y=g[:, 1], mode="markers", name=name, marker=dict(color=color, size=6, opacity=0.5)))
+        for idx, (g, name, color) in enumerate(
+            zip([g1, g2], ["Group 1", "Group 2"], ["blue", "red"])
+        ):
+            fig2.add_trace(
+                go.Scatter(
+                    x=g[:, 0],
+                    y=g[:, 1],
+                    mode="markers",
+                    name=name,
+                    marker=dict(color=color, size=6, opacity=0.5),
+                )
+            )
             centroid = np.mean(g[:, :2], axis=0)
-            fig2.add_trace(go.Scatter(x=[centroid[0]], y=[centroid[1]], mode="markers", showlegend=False, marker=dict(color=color, size=15, symbol="x")))
-        fig2.update_layout(template="plotly_dark", height=500, xaxis_title="Dimension 1", yaxis_title="Dimension 2")
+            fig2.add_trace(
+                go.Scatter(
+                    x=[centroid[0]],
+                    y=[centroid[1]],
+                    mode="markers",
+                    showlegend=False,
+                    marker=dict(color=color, size=15, symbol="x"),
+                )
+            )
+        fig2.update_layout(
+            template="plotly_dark",
+            height=500,
+            xaxis_title="Dimension 1",
+            yaxis_title="Dimension 2",
+        )
         st.plotly_chart(fig2, use_container_width=True)
 
     # Non-parametric Two Sample Tests
@@ -3950,12 +4757,31 @@ def render_test_widget(test_name):
         median_post = np.median(after)
         median_diff = median_post - median_pre
         from scipy.stats import norm as norm_w
+
         z_w = -norm_w.ppf(p / 2)
         r_ws = z_w / np.sqrt(n) if n > 0 else 0
 
         results_data = {
-            "Metric": ["Median (Pre)", "Median (Post)", "Median Difference", "W-statistic", "z", "p-value", "Rank-biserial r", ""],
-            "Value": [f"{median_pre:.3f}", f"{median_post:.3f}", f"{median_diff:.3f}", f"{stat:.3f}", f"{z_w:.3f}", f"{p:.5f}", f"{r_ws:.4f}", ""]
+            "Metric": [
+                "Median (Pre)",
+                "Median (Post)",
+                "Median Difference",
+                "W-statistic",
+                "z",
+                "p-value",
+                "Rank-biserial r",
+                "",
+            ],
+            "Value": [
+                f"{median_pre:.3f}",
+                f"{median_post:.3f}",
+                f"{median_diff:.3f}",
+                f"{stat:.3f}",
+                f"{z_w:.3f}",
+                f"{p:.5f}",
+                f"{r_ws:.4f}",
+                "",
+            ],
         }
         st.table(pd.DataFrame(results_data))
 
@@ -4075,16 +4901,34 @@ def render_test_widget(test_name):
 
         medians_mw = [np.median(g) for g in [g1, g2]]
         iqr_mw = [
-            f"{np.percentile(g, 25):.2f}–{np.percentile(g, 75):.2f}"
-            for g in [g1, g2]
+            f"{np.percentile(g, 25):.2f}–{np.percentile(g, 75):.2f}" for g in [g1, g2]
         ]
         from scipy.stats import norm as norm_mw
+
         z_mw = -norm_mw.ppf(p / 2)
         r_rb_mw = 1 - 2 * min(u, n * n - u) / (n * n)
 
         results_data = {
-            "Metric": ["Median G1 (IQR)", "Median G2 (IQR)", "U-statistic", "z", "p-value", "Rank-biserial r", "", ""],
-            "Value": [f"{medians_mw[0]:.3f} ({iqr_mw[0]})", f"{medians_mw[1]:.3f} ({iqr_mw[1]})", f"{u:.3f}", f"{z_mw:.3f}", f"{p:.5f}", f"{r_rb_mw:.4f}", "", ""]
+            "Metric": [
+                "Median G1 (IQR)",
+                "Median G2 (IQR)",
+                "U-statistic",
+                "z",
+                "p-value",
+                "Rank-biserial r",
+                "",
+                "",
+            ],
+            "Value": [
+                f"{medians_mw[0]:.3f} ({iqr_mw[0]})",
+                f"{medians_mw[1]:.3f} ({iqr_mw[1]})",
+                f"{u:.3f}",
+                f"{z_mw:.3f}",
+                f"{p:.5f}",
+                f"{r_rb_mw:.4f}",
+                "",
+                "",
+            ],
         }
         st.table(pd.DataFrame(results_data))
 
@@ -4095,7 +4939,9 @@ def render_test_widget(test_name):
         fig2 = go.Figure()
 
         for i, (g, name) in enumerate(zip([g1, g2], ["Group 1", "Group 2"])):
-            fig2.add_trace(go.Violin(y=g, name=name, box_visible=True, meanline_visible=True))
+            fig2.add_trace(
+                go.Violin(y=g, name=name, box_visible=True, meanline_visible=True)
+            )
             jitter_x = np.random.normal(i + 1, 0.06, len(g))
             fig2.add_trace(
                 go.Scatter(
@@ -4200,8 +5046,26 @@ def render_test_widget(test_name):
         eps_sq = H / (n_total_kw - 1) if n_total_kw > 1 else 0
 
         results_data = {
-            "Metric": ["Median G1 (IQR)", "Median G2 (IQR)", "Median G3 (IQR)", "H", "df", "p-value", "ε²", ""],
-            "Value": [f"{medians_kw[0]:.3f} ({iqr_kw[0]})", f"{medians_kw[1]:.3f} ({iqr_kw[1]})", f"{medians_kw[2]:.3f} ({iqr_kw[2]})", f"{H:.3f}", "2", f"{p:.5f}", f"{eps_sq:.4f}", ""]
+            "Metric": [
+                "Median G1 (IQR)",
+                "Median G2 (IQR)",
+                "Median G3 (IQR)",
+                "H",
+                "df",
+                "p-value",
+                "ε²",
+                "",
+            ],
+            "Value": [
+                f"{medians_kw[0]:.3f} ({iqr_kw[0]})",
+                f"{medians_kw[1]:.3f} ({iqr_kw[1]})",
+                f"{medians_kw[2]:.3f} ({iqr_kw[2]})",
+                f"{H:.3f}",
+                "2",
+                f"{p:.5f}",
+                f"{eps_sq:.4f}",
+                "",
+            ],
         }
         st.table(pd.DataFrame(results_data))
 
@@ -4211,7 +5075,9 @@ def render_test_widget(test_name):
 
         fig2 = go.Figure()
 
-        for i, (g, name) in enumerate(zip([g1, g2, g3], ["Group 1", "Group 2", "Group 3"])):
+        for i, (g, name) in enumerate(
+            zip([g1, g2, g3], ["Group 1", "Group 2", "Group 3"])
+        ):
             fig2.add_trace(go.Box(y=g, name=name, boxmean="sd"))
             jitter_x = np.random.normal(i + 1, 0.06, len(g))
             fig2.add_trace(
@@ -4323,8 +5189,26 @@ def render_test_widget(test_name):
         kendall_w = stat / (subjects * (3 - 1))
 
         results_data = {
-            "Metric": ["Median T1", "Median T2", "Median T3", "χ²", "df", "p-value", "Kendall's W", ""],
-            "Value": [f"{medians_f[0]:.3f}", f"{medians_f[1]:.3f}", f"{medians_f[2]:.3f}", f"{stat:.3f}", "2", f"{p:.5f}", f"{kendall_w:.4f}", ""]
+            "Metric": [
+                "Median T1",
+                "Median T2",
+                "Median T3",
+                "χ²",
+                "df",
+                "p-value",
+                "Kendall's W",
+                "",
+            ],
+            "Value": [
+                f"{medians_f[0]:.3f}",
+                f"{medians_f[1]:.3f}",
+                f"{medians_f[2]:.3f}",
+                f"{stat:.3f}",
+                "2",
+                f"{p:.5f}",
+                f"{kendall_w:.4f}",
+                "",
+            ],
         }
         st.table(pd.DataFrame(results_data))
 
@@ -4450,10 +5334,12 @@ def render_test_widget(test_name):
         y_all_pm = np.vstack([g1, g2])
         grand_mean_pm = np.mean(y_all_pm, axis=0)
 
-        SSt_pm = np.sum((y_all_pm - grand_mean_pm)**2)
+        SSt_pm = np.sum((y_all_pm - grand_mean_pm) ** 2)
         mean1_pm = np.mean(g1, axis=0)
         mean2_pm = np.mean(g2, axis=0)
-        SSb_pm = n_pm * np.sum((mean1_pm - grand_mean_pm)**2) + n_pm * np.sum((mean2_pm - grand_mean_pm)**2)
+        SSb_pm = n_pm * np.sum((mean1_pm - grand_mean_pm) ** 2) + n_pm * np.sum(
+            (mean2_pm - grand_mean_pm) ** 2
+        )
         SSw_pm = SSt_pm - SSb_pm
 
         k_pm = 2
@@ -4471,30 +5357,65 @@ def render_test_widget(test_name):
             perm_mean1 = np.mean(perm_g1, axis=0)
             perm_mean2 = np.mean(perm_g2, axis=0)
             perm_grand = np.mean(combined, axis=0)
-            perm_SSb = n_pm * np.sum((perm_mean1 - perm_grand)**2) + n_pm * np.sum((perm_mean2 - perm_grand)**2)
-            perm_SSw = np.sum((combined - perm_grand)**2) - perm_SSb
+            perm_SSb = n_pm * np.sum((perm_mean1 - perm_grand) ** 2) + n_pm * np.sum(
+                (perm_mean2 - perm_grand) ** 2
+            )
+            perm_SSw = np.sum((combined - perm_grand) ** 2) - perm_SSb
             pseudo_Fs[perm] = (perm_SSb / (k_pm - 1)) / (perm_SSw / (N_pm - k_pm))
 
         p_pm = (np.sum(pseudo_Fs >= pseudo_F) + 1) / (n_perms + 1)
 
         results_data = {
             "Metric": ["Pseudo-F", "R²", "Permutations", "p-value"],
-            "Value": [f"{pseudo_F:.3f}", f"{R2_pm:.4f}", f"{n_perms + 1}", f"{p_pm:.5f}"]
+            "Value": [
+                f"{pseudo_F:.3f}",
+                f"{R2_pm:.4f}",
+                f"{n_perms + 1}",
+                f"{p_pm:.5f}",
+            ],
         }
         st.table(pd.DataFrame(results_data))
 
         fig2 = go.Figure()
-        for idx, (g, name, color) in enumerate(zip([g1, g2], ["Group 1", "Group 2"], ["blue", "red"])):
-            fig2.add_trace(go.Scatter(x=g[:, 0], y=g[:, 1], mode="markers", name=name, marker=dict(color=color, size=6, opacity=0.5)))
+        for idx, (g, name, color) in enumerate(
+            zip([g1, g2], ["Group 1", "Group 2"], ["blue", "red"])
+        ):
+            fig2.add_trace(
+                go.Scatter(
+                    x=g[:, 0],
+                    y=g[:, 1],
+                    mode="markers",
+                    name=name,
+                    marker=dict(color=color, size=6, opacity=0.5),
+                )
+            )
             mean_pos = np.mean(g, axis=0)
             cov_pos = np.cov(g, rowvar=False)
             theta = np.linspace(0, 2 * np.pi, 100)
             eigvals, eigvecs = np.linalg.eigh(cov_pos)
             order = eigvals.argsort()[::-1]
             eigvals, eigvecs = eigvals[order], eigvecs[:, order]
-            ellipse = np.column_stack([np.cos(theta), np.sin(theta)]) @ (np.diag(np.sqrt(eigvals) * 2)) @ eigvecs.T + mean_pos
-            fig2.add_trace(go.Scatter(x=ellipse[:, 0], y=ellipse[:, 1], mode="lines", showlegend=False, line=dict(color=color, width=2, dash="dash")))
-        fig2.update_layout(template="plotly_dark", height=500, xaxis_title="Dimension 1", yaxis_title="Dimension 2")
+            ellipse = (
+                np.column_stack([np.cos(theta), np.sin(theta)])
+                @ (np.diag(np.sqrt(eigvals) * 2))
+                @ eigvecs.T
+                + mean_pos
+            )
+            fig2.add_trace(
+                go.Scatter(
+                    x=ellipse[:, 0],
+                    y=ellipse[:, 1],
+                    mode="lines",
+                    showlegend=False,
+                    line=dict(color=color, width=2, dash="dash"),
+                )
+            )
+        fig2.update_layout(
+            template="plotly_dark",
+            height=500,
+            xaxis_title="Dimension 1",
+            yaxis_title="Dimension 2",
+        )
         st.plotly_chart(fig2, use_container_width=True)
 
     # Correlation and Association Tests
@@ -5156,7 +6077,11 @@ def render_test_widget(test_name):
             surv = np.exp(-baseline_hazard * hr * t_grid)
             fig.add_trace(
                 go.Scatter(
-                    x=t_grid, y=surv, mode="lines", name=label, line=dict(color=color),
+                    x=t_grid,
+                    y=surv,
+                    mode="lines",
+                    name=label,
+                    line=dict(color=color),
                 )
             )
 
@@ -5500,13 +6425,9 @@ def render_test_widget(test_name):
 
         fig.add_hline(y=mean_diff, line_dash="solid", annotation_text="Bias")
 
-        fig.add_hline(
-            y=upper_loa, line_dash="dash", annotation_text="+1.96 SD"
-        )
+        fig.add_hline(y=upper_loa, line_dash="dash", annotation_text="+1.96 SD")
 
-        fig.add_hline(
-            y=lower_loa, line_dash="dash", annotation_text="−1.96 SD"
-        )
+        fig.add_hline(y=lower_loa, line_dash="dash", annotation_text="−1.96 SD")
 
         fig.update_layout(
             template="plotly_dark",
@@ -5567,11 +6488,16 @@ def render_power_calculator(params):
     if atype == "one_mean":
         d = params["effect_size"]
         from statsmodels.stats.power import TTestPower
+
         solver = TTestPower()
         if d > 0:
-            n_total = int(np.ceil(solver.solve_power(
-                effect_size=d, alpha=alpha, power=power, alternative=alternative
-            )))
+            n_total = int(
+                np.ceil(
+                    solver.solve_power(
+                        effect_size=d, alpha=alpha, power=power, alternative=alternative
+                    )
+                )
+            )
             n_per_group = n_total
         explanation = (
             f"Required total sample size for a one-sample {tails.lower()} t-test "
@@ -5583,11 +6509,15 @@ def render_power_calculator(params):
         d = params["effect_size"]
         ratio = params["ratio"]
         from statsmodels.stats.power import TTestIndPower
+
         solver = TTestIndPower()
         if d > 0:
             n1 = solver.solve_power(
-                effect_size=d, alpha=alpha, power=power,
-                ratio=ratio, alternative=alternative,
+                effect_size=d,
+                alpha=alpha,
+                power=power,
+                ratio=ratio,
+                alternative=alternative,
             )
             n1 = int(np.ceil(n1))
             n2 = int(np.ceil(n1 * ratio))
@@ -5603,11 +6533,19 @@ def render_power_calculator(params):
     elif atype == "paired":
         d = params["effect_size"]
         from statsmodels.stats.power import TTestPower
+
         solver = TTestPower()
         if d > 0:
-            n_total = int(np.ceil(solver.solve_power(
-                effect_size=d, alpha=alpha, power=power, alternative=alternative,
-            )))
+            n_total = int(
+                np.ceil(
+                    solver.solve_power(
+                        effect_size=d,
+                        alpha=alpha,
+                        power=power,
+                        alternative=alternative,
+                    )
+                )
+            )
             n_per_group = n_total
         explanation = (
             f"Required number of pairs for a paired {tails.lower()} t-test "
@@ -5620,13 +6558,20 @@ def render_power_calculator(params):
         p1 = params["prop_alt"]
         from statsmodels.stats.proportion import proportion_effectsize
         from statsmodels.stats.power import NormalIndPower
+
         d_eff = proportion_effectsize(p1, p0)
         solver = NormalIndPower()
         if abs(d_eff) > 0:
-            n_total = int(np.ceil(solver.solve_power(
-                effect_size=abs(d_eff), alpha=alpha, power=power,
-                alternative=alternative,
-            )))
+            n_total = int(
+                np.ceil(
+                    solver.solve_power(
+                        effect_size=abs(d_eff),
+                        alpha=alpha,
+                        power=power,
+                        alternative=alternative,
+                    )
+                )
+            )
             n_per_group = n_total
         explanation = (
             f"Required sample size for a one-sample proportion test "
@@ -5641,12 +6586,16 @@ def render_power_calculator(params):
         ratio = params["ratio"]
         from statsmodels.stats.proportion import proportion_effectsize
         from statsmodels.stats.power import NormalIndPower
+
         d_eff = proportion_effectsize(p2, p1)
         solver = NormalIndPower()
         if abs(d_eff) > 0:
             n1 = solver.solve_power(
-                effect_size=abs(d_eff), alpha=alpha, power=power,
-                ratio=ratio, alternative=alternative,
+                effect_size=abs(d_eff),
+                alpha=alpha,
+                power=power,
+                ratio=ratio,
+                alternative=alternative,
             )
             n1 = int(np.ceil(n1))
             n2 = int(np.ceil(n1 * ratio))
@@ -5663,10 +6612,14 @@ def render_power_calculator(params):
         f_eff = params["effect_size"]
         k = params["k"]
         from statsmodels.stats.power import FTestAnovaPower
+
         solver = FTestAnovaPower()
         if f_eff > 0:
             n_per_g = solver.solve_power(
-                effect_size=f_eff, alpha=alpha, power=power, k_groups=k,
+                effect_size=f_eff,
+                alpha=alpha,
+                power=power,
+                k_groups=k,
             )
             n_per_g = int(np.ceil(n_per_g))
             n_total = n_per_g * k
@@ -5680,6 +6633,7 @@ def render_power_calculator(params):
     elif atype == "correlation":
         r_val = params["effect_size"]
         import math
+
         fisher_z = math.atanh(r_val)
         n_total = int(np.ceil(3 + ((z_alpha + z_beta) / fisher_z) ** 2))
         n_per_group = n_total
@@ -5695,6 +6649,7 @@ def render_power_calculator(params):
         k = params["k"]
         if f2 > 0:
             from scipy.stats import ncf as noncentral_f, f as f_dist
+
             for n_candidate in range(k + 2, 10000):
                 dfd = n_candidate - k - 1
                 ncp = f2 * n_candidate
@@ -5719,12 +6674,16 @@ def render_power_calculator(params):
         d_log = abs(p1_log - ev_rate)
         p_bar = (ev_rate + p1_log) / 2
         from statsmodels.stats.power import NormalIndPower
+
         solver = NormalIndPower()
         se = np.sqrt(2 * p_bar * (1 - p_bar))
         d_eff_log = d_log / se if se > 0 else 0
         if d_eff_log > 0:
             n1 = solver.solve_power(
-                effect_size=d_eff_log, alpha=alpha, power=power, alternative=alternative,
+                effect_size=d_eff_log,
+                alpha=alpha,
+                power=power,
+                alternative=alternative,
             )
             n_base = int(np.ceil(n1))
             n_total = max(n_base, 10 * k)
@@ -5741,12 +6700,19 @@ def render_power_calculator(params):
         w = params["effect_size"]
         df = params["df"]
         from statsmodels.stats.power import GofChisquarePower
+
         solver = GofChisquarePower()
         if w > 0:
-            n_total = int(np.ceil(solver.solve_power(
-                effect_size=w, alpha=alpha, power=power,
-                n_bins=df + 1,
-            )))
+            n_total = int(
+                np.ceil(
+                    solver.solve_power(
+                        effect_size=w,
+                        alpha=alpha,
+                        power=power,
+                        n_bins=df + 1,
+                    )
+                )
+            )
             n_per_group = n_total
         explanation = (
             f"Required total sample size for a chi-square test "
@@ -5760,12 +6726,16 @@ def render_power_calculator(params):
         ratio = params["ratio"]
         are = params["are"]
         from statsmodels.stats.power import NormalIndPower
+
         solver = NormalIndPower()
         d_mw = np.sqrt(3) * (p_val - 0.5)
         if d_mw > 0:
             n1 = solver.solve_power(
-                effect_size=d_mw, alpha=alpha, power=power,
-                ratio=ratio, alternative=alternative,
+                effect_size=d_mw,
+                alpha=alpha,
+                power=power,
+                ratio=ratio,
+                alternative=alternative,
             )
             n1 = int(np.ceil(n1 / are))
             n2 = int(np.ceil(n1 * ratio))
@@ -5784,7 +6754,9 @@ def render_power_calculator(params):
         med_ctrl = params["median_survival"]
         study_dur = params["study_duration"]
         log_hr = np.log(hr)
-        num_events = ((z_alpha + z_beta) ** 2) * ((ratio + 1) ** 2) / (ratio * (log_hr ** 2))
+        num_events = (
+            ((z_alpha + z_beta) ** 2) * ((ratio + 1) ** 2) / (ratio * (log_hr**2))
+        )
         lambda_ctrl = np.log(2) / med_ctrl
         p_event_ctrl = 1 - np.exp(-lambda_ctrl * study_dur)
         p_event_trt = 1 - np.exp(-lambda_ctrl / hr * study_dur)
@@ -5809,7 +6781,7 @@ def render_power_calculator(params):
         r2_x = params["r2_x"]
         ev_rate = params["event_rate"]
         log_hr = np.log(hr)
-        var_denom = (sd_x ** 2) * (log_hr ** 2) * (1 - r2_x)
+        var_denom = (sd_x**2) * (log_hr**2) * (1 - r2_x)
         if var_denom > 0:
             num_events = ((z_alpha + z_beta) ** 2) / var_denom
             num_events = max(num_events, 10 * k)
@@ -5831,11 +6803,15 @@ def render_power_calculator(params):
         d_e = margin - abs(exp_diff)
         if d_e > 0:
             from statsmodels.stats.power import NormalIndPower
+
             solver = NormalIndPower()
             es_e = d_e / sd
             n1 = solver.solve_power(
-                effect_size=es_e, alpha=alpha, power=power,
-                ratio=ratio, alternative='larger',
+                effect_size=es_e,
+                alpha=alpha,
+                power=power,
+                ratio=ratio,
+                alternative="larger",
             )
             n1 = int(np.ceil(n1))
             n2 = int(np.ceil(n1 * ratio))
@@ -5846,7 +6822,9 @@ def render_power_calculator(params):
             f"with margin = {margin:.2f}, expected difference = {exp_diff:.2f}, "
             f"SD = {sd:.1f}, α = {alpha}, power = {power}, ratio = {ratio:.2f}."
         )
-        formula_latex = r"n_1 = \frac{(z_{\alpha}+z_{\beta})^2 \sigma^2 (1+1/r)}{(\delta - |d|)^2}"
+        formula_latex = (
+            r"n_1 = \frac{(z_{\alpha}+z_{\beta})^2 \sigma^2 (1+1/r)}{(\delta - |d|)^2}"
+        )
 
     elif atype == "rm_anova":
         f_eff = params["effect_size"]
@@ -5855,14 +6833,20 @@ def render_power_calculator(params):
         rho = params["rho"]
         epsilon = params["epsilon"]
         from statsmodels.stats.power import FTestAnovaPower
+
         solver = FTestAnovaPower()
         if f_eff > 0:
             n_per_g = solver.solve_power(
-                effect_size=f_eff, alpha=alpha, power=power, k_groups=k,
+                effect_size=f_eff,
+                alpha=alpha,
+                power=power,
+                k_groups=k,
             )
             design_effect = (1 + (m - 1) * rho) / m
             df_adj = (m - 1) * epsilon
-            n_per_g_adj = int(np.ceil(n_per_g * design_effect * k / (k * df_adj / (k - 1))))
+            n_per_g_adj = int(
+                np.ceil(n_per_g * design_effect * k / (k * df_adj / (k - 1)))
+            )
             n_per_g_adj = max(n_per_g_adj, int(np.ceil(n_per_g)))
             n_total = n_per_g_adj * k
             n_per_group = n_per_g_adj
@@ -5881,6 +6865,7 @@ def render_power_calculator(params):
         cols = params["cols"]
         focus = params["focus"]
         from statsmodels.stats.power import FTestAnovaPower
+
         solver = FTestAnovaPower()
         if focus == "Main Effect A":
             f_use = f_a
@@ -5893,7 +6878,10 @@ def render_power_calculator(params):
             k_use = rows * cols
         if f_use > 0:
             n_per_cell = solver.solve_power(
-                effect_size=f_use, alpha=alpha, power=power, k_groups=k_use,
+                effect_size=f_use,
+                alpha=alpha,
+                power=power,
+                k_groups=k_use,
             )
             n_per_cell = int(np.ceil(n_per_cell))
             n_total = n_per_cell * rows * cols
@@ -5910,10 +6898,10 @@ def render_power_calculator(params):
         auc = params["auc"]
         null_auc = params["null_auc"]
         ratio = params["ratio"]
-        v_auc = auc * (1 - auc) + (ratio - 1) * (auc / (2 - auc) - auc ** 2) / (1 + ratio)
+        v_auc = auc * (1 - auc) + (ratio - 1) * (auc / (2 - auc) - auc**2) / (1 + ratio)
         delta_auc = auc - null_auc
         if delta_auc > 0:
-            n_cases = ((z_alpha + z_beta) ** 2 * v_auc) / (delta_auc ** 2)
+            n_cases = ((z_alpha + z_beta) ** 2 * v_auc) / (delta_auc**2)
             n_cases = int(np.ceil(n_cases))
             n_controls = int(np.ceil(n_cases * ratio))
             n_total = n_cases + n_controls
@@ -5932,7 +6920,12 @@ def render_power_calculator(params):
         cats = params["categories"]
         delta_k = kappa - null_kappa
         if delta_k > 0:
-            n_total = int(np.ceil(((z_alpha + z_beta) ** 2 * null_kappa * (1 - null_kappa)) / (delta_k ** 2)))
+            n_total = int(
+                np.ceil(
+                    ((z_alpha + z_beta) ** 2 * null_kappa * (1 - null_kappa))
+                    / (delta_k**2)
+                )
+            )
             n_total = max(n_total, raters * cats * 5)
             n_per_group = n_total
         explanation = (
@@ -5949,11 +6942,15 @@ def render_power_calculator(params):
         ratio = params["ratio"]
         deff = 1 + (cluster_m - 1) * icc
         from statsmodels.stats.power import TTestIndPower
+
         solver = TTestIndPower()
         if d > 0:
             n1_ind = solver.solve_power(
-                effect_size=d, alpha=alpha, power=power,
-                ratio=ratio, alternative=alternative,
+                effect_size=d,
+                alpha=alpha,
+                power=power,
+                ratio=ratio,
+                alternative=alternative,
             )
             n1_ind = int(np.ceil(n1_ind))
             n1_clust = int(np.ceil(n1_ind * deff))
@@ -5969,7 +6966,9 @@ def render_power_calculator(params):
             f"Cohen's d = {d:.3f}, α = {alpha}, power = {power}, ratio = {ratio:.2f}. "
             f"Clusters needed: {num_clusters_1} in group 1, {num_clusters_2} in group 2."
         )
-        formula_latex = r"N_{\text{clust}} = N_{\text{ind}} \times [1+(m-1)\rho] \quad \text{DEFF}"
+        formula_latex = (
+            r"N_{\text{clust}} = N_{\text{ind}} \times [1+(m-1)\rho] \quad \text{DEFF}"
+        )
 
     elif atype == "precision":
         half_width = params["half_width"]
@@ -5984,15 +6983,21 @@ def render_power_calculator(params):
         else:
             prop = params["prop"]
             if prop > 0 and half_width > 0:
-                n_total = int(np.ceil((z_hw ** 2 * prop * (1 - prop)) / (half_width ** 2)))
+                n_total = int(np.ceil((z_hw**2 * prop * (1 - prop)) / (half_width**2)))
         n_total = max(n_total, 3)
         n_per_group = n_total
         explanation = (
             f"Required sample size for precision-based estimation of a {param_type.lower()} "
             f"with {conf_level:.0f}% CI half-width = {half_width:.2f}. "
-            f"σ = {sd:.2f}" if param_type == "Mean" else f"p = {prop:.3f}."
+            f"σ = {sd:.2f}"
+            if param_type == "Mean"
+            else f"p = {prop:.3f}."
         )
-        formula_latex = r"n = \left(\frac{z_{\alpha/2} \sigma}{w}\right)^2" if param_type == "Mean" else r"n = \frac{z_{\alpha/2}^2 p(1-p)}{w^2}"
+        formula_latex = (
+            r"n = \left(\frac{z_{\alpha/2} \sigma}{w}\right)^2"
+            if param_type == "Mean"
+            else r"n = \frac{z_{\alpha/2}^2 p(1-p)}{w^2}"
+        )
 
     elif atype == "pilot":
         method = params["method"]
@@ -6012,7 +7017,9 @@ def render_power_calculator(params):
             else:
                 prop = params["prop"]
                 if prop > 0 and half_width > 0:
-                    n_total = int(np.ceil((z_hw ** 2 * prop * (1 - prop)) / (half_width ** 2)))
+                    n_total = int(
+                        np.ceil((z_hw**2 * prop * (1 - prop)) / (half_width**2))
+                    )
             n_total = max(n_total, 5)
             n_per_group = n_total
         else:
@@ -6041,7 +7048,9 @@ def render_power_calculator(params):
     # --- Display Results ---
 
     if n_total is None:
-        st.error("Effect size is too small — consider a larger effect or different design.")
+        st.error(
+            "Effect size is too small — consider a larger effect or different design."
+        )
         return
 
     st.subheader("📊 Sample Size Results")
@@ -6066,7 +7075,13 @@ def render_power_calculator(params):
     max_n = max(n_total * 3, 30)
     n_range = np.arange(5, max_n + 1, 2)
 
-    from statsmodels.stats.power import TTestIndPower, TTestPower, NormalIndPower, FTestAnovaPower, GofChisquarePower
+    from statsmodels.stats.power import (
+        TTestIndPower,
+        TTestPower,
+        NormalIndPower,
+        FTestAnovaPower,
+        GofChisquarePower,
+    )
 
     power_vals = []
     for n in n_range:
@@ -6074,51 +7089,73 @@ def render_power_calculator(params):
             if atype == "one_mean":
                 solver = TTestPower()
                 pv = solver.solve_power(
-                    effect_size=params["effect_size"], nobs=n,
-                    alpha=alpha, alternative=alternative,
+                    effect_size=params["effect_size"],
+                    nobs=n,
+                    alpha=alpha,
+                    alternative=alternative,
                 )
             elif atype == "two_means":
                 solver = TTestIndPower()
                 pv = solver.solve_power(
-                    effect_size=params["effect_size"], nobs1=n,
-                    alpha=alpha, ratio=params["ratio"], alternative=alternative,
+                    effect_size=params["effect_size"],
+                    nobs1=n,
+                    alpha=alpha,
+                    ratio=params["ratio"],
+                    alternative=alternative,
                 )
             elif atype == "paired":
                 solver = TTestPower()
                 pv = solver.solve_power(
-                    effect_size=params["effect_size"], nobs=n,
-                    alpha=alpha, alternative=alternative,
+                    effect_size=params["effect_size"],
+                    nobs=n,
+                    alpha=alpha,
+                    alternative=alternative,
                 )
             elif atype == "one_prop":
                 from statsmodels.stats.proportion import proportion_effectsize
+
                 solver = NormalIndPower()
                 d_eff = proportion_effectsize(params["prop_alt"], params["prop_null"])
                 pv = solver.solve_power(
-                    effect_size=abs(d_eff), nobs1=n,
-                    alpha=alpha, alternative=alternative,
+                    effect_size=abs(d_eff),
+                    nobs1=n,
+                    alpha=alpha,
+                    alternative=alternative,
                 )
             elif atype == "two_prop":
                 from statsmodels.stats.proportion import proportion_effectsize
+
                 solver = NormalIndPower()
                 d_eff = proportion_effectsize(params["p2"], params["p1"])
                 pv = solver.solve_power(
-                    effect_size=abs(d_eff), nobs1=n,
-                    alpha=alpha, ratio=params["ratio"], alternative=alternative,
+                    effect_size=abs(d_eff),
+                    nobs1=n,
+                    alpha=alpha,
+                    ratio=params["ratio"],
+                    alternative=alternative,
                 )
             elif atype == "anova":
                 solver = FTestAnovaPower()
                 pv = solver.solve_power(
-                    effect_size=params["effect_size"], nobs=n,
-                    alpha=alpha, k_groups=params["k"],
+                    effect_size=params["effect_size"],
+                    nobs=n,
+                    alpha=alpha,
+                    k_groups=params["k"],
                 )
             elif atype == "correlation":
                 import math
+
                 fisher_z = math.atanh(params["effect_size"])
-                z_alpha_c = norm.ppf(1 - alpha / 2) if alternative == "two-sided" else norm.ppf(1 - alpha)
+                z_alpha_c = (
+                    norm.ppf(1 - alpha / 2)
+                    if alternative == "two-sided"
+                    else norm.ppf(1 - alpha)
+                )
                 z_beta_c = (np.sqrt(n - 3) * fisher_z) - z_alpha_c
                 pv = norm.cdf(z_beta_c)
             elif atype == "regression":
                 from scipy.stats import ncf as noncentral_f, f as f_dist
+
                 k_r = params["k"]
                 dfd = n - k_r - 1
                 if dfd > 0:
@@ -6138,14 +7175,18 @@ def render_power_calculator(params):
                 d_eff_log = d_log / se if se > 0 else 0
                 solver = NormalIndPower()
                 pv = solver.solve_power(
-                    effect_size=d_eff_log, nobs1=n,
-                    alpha=alpha, alternative=alternative,
+                    effect_size=d_eff_log,
+                    nobs1=n,
+                    alpha=alpha,
+                    alternative=alternative,
                 )
             elif atype == "chisq":
                 solver = GofChisquarePower()
                 pv = solver.solve_power(
-                    effect_size=params["effect_size"], nobs=n,
-                    alpha=alpha, n_bins=params["df"] + 1,
+                    effect_size=params["effect_size"],
+                    nobs=n,
+                    alpha=alpha,
+                    n_bins=params["df"] + 1,
                 )
             elif atype == "mannwhitney":
                 p_val = params["effect_size"]
@@ -6155,8 +7196,11 @@ def render_power_calculator(params):
                 if d_mw > 0:
                     solver = NormalIndPower()
                     pv = solver.solve_power(
-                        effect_size=d_mw, nobs1=n * are, alpha=alpha,
-                        ratio=ratio, alternative=alternative,
+                        effect_size=d_mw,
+                        nobs1=n * are,
+                        alpha=alpha,
+                        ratio=ratio,
+                        alternative=alternative,
                     )
                 else:
                     pv = 0
@@ -6172,7 +7216,10 @@ def render_power_calculator(params):
                 p_event = (p_event_ctrl + ratio * p_event_trt) / (1 + ratio)
                 num_events = n * p_event
                 if log_hr != 0 and num_events > 0:
-                    z_val = abs(log_hr) * np.sqrt(num_events * ratio / ((ratio + 1) ** 2)) - z_alpha
+                    z_val = (
+                        abs(log_hr) * np.sqrt(num_events * ratio / ((ratio + 1) ** 2))
+                        - z_alpha
+                    )
                     pv = norm.cdf(z_val)
                 else:
                     pv = 0
@@ -6184,7 +7231,9 @@ def render_power_calculator(params):
                 log_hr = np.log(hr)
                 num_events = n * ev_rate
                 if log_hr != 0 and num_events > 0:
-                    z_val = abs(log_hr) * sd_x * np.sqrt(num_events * (1 - r2_x)) - z_alpha
+                    z_val = (
+                        abs(log_hr) * sd_x * np.sqrt(num_events * (1 - r2_x)) - z_alpha
+                    )
                     pv = norm.cdf(z_val)
                 else:
                     pv = 0
@@ -6198,8 +7247,11 @@ def render_power_calculator(params):
                     es_e = d_e / sd
                     solver = NormalIndPower()
                     pv = solver.solve_power(
-                        effect_size=es_e, nobs1=n, alpha=alpha,
-                        ratio=ratio, alternative='larger',
+                        effect_size=es_e,
+                        nobs1=n,
+                        alpha=alpha,
+                        ratio=ratio,
+                        alternative="larger",
                     )
                 else:
                     pv = 0
@@ -6215,7 +7267,10 @@ def render_power_calculator(params):
                     df_adj = (m - 1) * epsilon
                     n_indep = max(n * df_adj / (design_effect * (k - 1)), k + 1)
                     pv = solver.solve_power(
-                        effect_size=f_eff, nobs=n_indep, alpha=alpha, k_groups=k,
+                        effect_size=f_eff,
+                        nobs=n_indep,
+                        alpha=alpha,
+                        k_groups=k,
                     )
                 else:
                     pv = 0
@@ -6238,7 +7293,10 @@ def render_power_calculator(params):
                 if f_use > 0:
                     solver = FTestAnovaPower()
                     pv = solver.solve_power(
-                        effect_size=f_use, nobs=n, alpha=alpha, k_groups=k_use,
+                        effect_size=f_use,
+                        nobs=n,
+                        alpha=alpha,
+                        k_groups=k_use,
                     )
                 else:
                     pv = 0
@@ -6246,7 +7304,9 @@ def render_power_calculator(params):
                 auc = params["auc"]
                 null_auc = params["null_auc"]
                 ratio = params["ratio"]
-                v_auc = auc * (1 - auc) + (ratio - 1) * (auc / (2 - auc) - auc ** 2) / (1 + ratio)
+                v_auc = auc * (1 - auc) + (ratio - 1) * (auc / (2 - auc) - auc**2) / (
+                    1 + ratio
+                )
                 delta_auc = auc - null_auc
                 if delta_auc > 0:
                     n_cases_eff = n / (1 + ratio)
@@ -6261,7 +7321,9 @@ def render_power_calculator(params):
                 cats = params["categories"]
                 delta_k = kappa - null_kappa
                 if delta_k > 0:
-                    z_val = delta_k * np.sqrt(n / (null_kappa * (1 - null_kappa))) - z_alpha
+                    z_val = (
+                        delta_k * np.sqrt(n / (null_kappa * (1 - null_kappa))) - z_alpha
+                    )
                     pv = norm.cdf(z_val)
                 else:
                     pv = 0
@@ -6276,8 +7338,11 @@ def render_power_calculator(params):
                     solver = TTestIndPower()
                     if n1_equiv > 1:
                         pv = solver.solve_power(
-                            effect_size=d, nobs1=n1_equiv, alpha=alpha,
-                            ratio=ratio, alternative=alternative,
+                            effect_size=d,
+                            nobs1=n1_equiv,
+                            alpha=alpha,
+                            ratio=ratio,
+                            alternative=alternative,
                         )
                     else:
                         pv = 0
@@ -6298,7 +7363,7 @@ def render_power_calculator(params):
                 else:
                     prop = params["prop"]
                     if prop > 0 and half_width > 0:
-                        n_req = (z_hw ** 2 * prop * (1 - prop)) / (half_width ** 2)
+                        n_req = (z_hw**2 * prop * (1 - prop)) / (half_width**2)
                     else:
                         n_req = 0
                 if n_req > 0:
@@ -6318,11 +7383,19 @@ def render_power_calculator(params):
                     if param_type == "Mean":
                         sd = params["sd"]
                         half_width = params["half_width"]
-                        n_req = (z_hw * sd / half_width) ** 2 if sd > 0 and half_width > 0 else 0
+                        n_req = (
+                            (z_hw * sd / half_width) ** 2
+                            if sd > 0 and half_width > 0
+                            else 0
+                        )
                     else:
                         prop = params["prop"]
                         half_width = params["half_width"]
-                        n_req = (z_hw ** 2 * prop * (1 - prop)) / (half_width ** 2) if prop > 0 and half_width > 0 else 0
+                        n_req = (
+                            (z_hw**2 * prop * (1 - prop)) / (half_width**2)
+                            if prop > 0 and half_width > 0
+                            else 0
+                        )
                     pv = min(n / n_req, 1.0) if n_req > 0 else 0
                 else:
                     main_n = params["main_n"]
@@ -6336,17 +7409,26 @@ def render_power_calculator(params):
         power_vals.append(pv)
 
     fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=n_range, y=power_vals, mode="lines",
-        name="Power", line=dict(color="#00BFFF", width=3),
-    ))
+    fig.add_trace(
+        go.Scatter(
+            x=n_range,
+            y=power_vals,
+            mode="lines",
+            name="Power",
+            line=dict(color="#00BFFF", width=3),
+        )
+    )
     target_power_val = params["power"]
     fig.add_hline(
-        y=target_power_val, line_dash="dash", line_color="orange",
+        y=target_power_val,
+        line_dash="dash",
+        line_color="orange",
         annotation_text=f"Target Power ({target_power_val:.0%})",
     )
     fig.add_vline(
-        x=n_total, line_dash="dot", line_color="green",
+        x=n_total,
+        line_dash="dot",
+        line_color="green",
         annotation_text=f"N = {n_total}",
     )
     fig.update_layout(
@@ -6369,44 +7451,68 @@ def render_power_calculator(params):
                 adj_es = params["effect_size"] * mult
                 if atype == "correlation":
                     import math
+
                     adj_es = max(min(adj_es, 0.99), 0.01)
                     fisher_z_s = math.atanh(adj_es)
                     n_s = int(np.ceil(3 + ((z_alpha + z_beta) / fisher_z_s) ** 2))
                 elif atype in ("one_mean", "paired"):
                     solver = TTestPower()
-                    n_s = int(np.ceil(solver.solve_power(
-                        effect_size=adj_es, alpha=alpha, power=power,
-                        alternative=alternative,
-                    )))
+                    n_s = int(
+                        np.ceil(
+                            solver.solve_power(
+                                effect_size=adj_es,
+                                alpha=alpha,
+                                power=power,
+                                alternative=alternative,
+                            )
+                        )
+                    )
             elif atype == "two_means":
                 adj_es = params["effect_size"] * mult
                 solver = TTestIndPower()
                 n1_s = solver.solve_power(
-                    effect_size=adj_es, alpha=alpha, power=power,
-                    ratio=params["ratio"], alternative=alternative,
+                    effect_size=adj_es,
+                    alpha=alpha,
+                    power=power,
+                    ratio=params["ratio"],
+                    alternative=alternative,
                 )
                 n1_s = int(np.ceil(n1_s))
                 n_s = n1_s + int(np.ceil(n1_s * params["ratio"]))
             elif atype == "one_prop":
-                adj_es = params["prop_null"] + (params["prop_alt"] - params["prop_null"]) * mult
+                adj_es = (
+                    params["prop_null"]
+                    + (params["prop_alt"] - params["prop_null"]) * mult
+                )
                 adj_es = max(min(adj_es, 0.99), 0.01)
                 from statsmodels.stats.proportion import proportion_effectsize
+
                 d_eff_s = proportion_effectsize(adj_es, params["prop_null"])
                 solver = NormalIndPower()
-                n_s = int(np.ceil(solver.solve_power(
-                    effect_size=abs(d_eff_s), alpha=alpha, power=power,
-                    alternative=alternative,
-                )))
+                n_s = int(
+                    np.ceil(
+                        solver.solve_power(
+                            effect_size=abs(d_eff_s),
+                            alpha=alpha,
+                            power=power,
+                            alternative=alternative,
+                        )
+                    )
+                )
             elif atype == "two_prop":
                 adj_p2 = params["p1"] + (params["p2"] - params["p1"]) * mult
                 adj_p2 = max(min(adj_p2, 0.99), 0.01)
                 adj_es = abs(adj_p2 - params["p1"])
                 from statsmodels.stats.proportion import proportion_effectsize
+
                 d_eff_s = proportion_effectsize(adj_p2, params["p1"])
                 solver = NormalIndPower()
                 n1_s = solver.solve_power(
-                    effect_size=abs(d_eff_s), alpha=alpha, power=power,
-                    ratio=params["ratio"], alternative=alternative,
+                    effect_size=abs(d_eff_s),
+                    alpha=alpha,
+                    power=power,
+                    ratio=params["ratio"],
+                    alternative=alternative,
                 )
                 n1_s = int(np.ceil(n1_s))
                 n_s = n1_s + int(np.ceil(n1_s * params["ratio"]))
@@ -6420,22 +7526,38 @@ def render_power_calculator(params):
                 se = np.sqrt(2 * p_bar * (1 - p_bar))
                 d_eff_log = d_log / se if se > 0 else 0
                 solver = NormalIndPower()
-                n_base = int(np.ceil(solver.solve_power(
-                    effect_size=d_eff_log, alpha=alpha, power=power,
-                    alternative=alternative,
-                )))
+                n_base = int(
+                    np.ceil(
+                        solver.solve_power(
+                            effect_size=d_eff_log,
+                            alpha=alpha,
+                            power=power,
+                            alternative=alternative,
+                        )
+                    )
+                )
                 n_s = max(n_base, 10 * k_log)
             elif atype == "anova":
                 adj_es = params["effect_size"] * mult
                 solver = FTestAnovaPower()
-                n_s = int(np.ceil(solver.solve_power(
-                    effect_size=adj_es, alpha=alpha, power=power,
-                    k_groups=params["k"],
-                ))) * params["k"]
+                n_s = (
+                    int(
+                        np.ceil(
+                            solver.solve_power(
+                                effect_size=adj_es,
+                                alpha=alpha,
+                                power=power,
+                                k_groups=params["k"],
+                            )
+                        )
+                    )
+                    * params["k"]
+                )
             elif atype == "regression":
                 adj_es = params["effect_size"] * mult
                 k_r = params["k"]
                 from scipy.stats import ncf as noncentral_f, f as f_dist
+
                 n_s = None
                 for nc in range(k_r + 2, 10000):
                     dfd = nc - k_r - 1
@@ -6448,10 +7570,16 @@ def render_power_calculator(params):
             elif atype == "chisq":
                 adj_es = params["effect_size"] * mult
                 solver = GofChisquarePower()
-                n_s = int(np.ceil(solver.solve_power(
-                    effect_size=adj_es, alpha=alpha, power=power,
-                    n_bins=params["df"] + 1,
-                )))
+                n_s = int(
+                    np.ceil(
+                        solver.solve_power(
+                            effect_size=adj_es,
+                            alpha=alpha,
+                            power=power,
+                            n_bins=params["df"] + 1,
+                        )
+                    )
+                )
             elif atype == "mannwhitney":
                 adj_p = params["effect_size"]
                 adj_p = max(min(adj_p * mult, 0.99), 0.01)
@@ -6460,8 +7588,11 @@ def render_power_calculator(params):
                 ratio = params["ratio"]
                 solver = NormalIndPower()
                 n1_s = solver.solve_power(
-                    effect_size=adj_es, alpha=alpha, power=power,
-                    ratio=ratio, alternative=alternative,
+                    effect_size=adj_es,
+                    alpha=alpha,
+                    power=power,
+                    ratio=ratio,
+                    alternative=alternative,
                 )
                 n1_s = int(np.ceil(n1_s / are))
                 n_s = n1_s + int(np.ceil(n1_s * ratio))
@@ -6471,7 +7602,11 @@ def render_power_calculator(params):
                 med_ctrl = params["median_survival"]
                 study_dur = params["study_duration"]
                 log_hr = np.log(adj_es)
-                num_events = ((z_alpha + z_beta) ** 2) * ((ratio + 1) ** 2) / (ratio * (log_hr ** 2))
+                num_events = (
+                    ((z_alpha + z_beta) ** 2)
+                    * ((ratio + 1) ** 2)
+                    / (ratio * (log_hr**2))
+                )
                 lambda_ctrl = np.log(2) / med_ctrl
                 p_event_ctrl = 1 - np.exp(-lambda_ctrl * study_dur)
                 p_event_trt = 1 - np.exp(-lambda_ctrl / adj_es * study_dur)
@@ -6487,7 +7622,7 @@ def render_power_calculator(params):
                 r2_x = params["r2_x"]
                 ev_rate = params["event_rate"]
                 log_hr = np.log(adj_es)
-                var_denom = (sd_x ** 2) * (log_hr ** 2) * (1 - r2_x)
+                var_denom = (sd_x**2) * (log_hr**2) * (1 - r2_x)
                 if var_denom > 0:
                     num_events = ((z_alpha + z_beta) ** 2) / var_denom
                     num_events = max(num_events, 10 * k)
@@ -6505,8 +7640,11 @@ def render_power_calculator(params):
                     es_e = d_e / sd
                     solver = NormalIndPower()
                     n1_s = solver.solve_power(
-                        effect_size=es_e, alpha=alpha, power=power,
-                        ratio=ratio, alternative='larger',
+                        effect_size=es_e,
+                        alpha=alpha,
+                        power=power,
+                        ratio=ratio,
+                        alternative="larger",
                     )
                     n1_s = int(np.ceil(n1_s))
                     n_s = n1_s + int(np.ceil(n1_s * ratio))
@@ -6520,11 +7658,16 @@ def render_power_calculator(params):
                 epsilon = params["epsilon"]
                 solver = FTestAnovaPower()
                 n_per_g = solver.solve_power(
-                    effect_size=adj_es, alpha=alpha, power=power, k_groups=k,
+                    effect_size=adj_es,
+                    alpha=alpha,
+                    power=power,
+                    k_groups=k,
                 )
                 design_effect = (1 + (m - 1) * rho) / m
                 df_adj = (m - 1) * epsilon
-                n_per_g_adj = int(np.ceil(n_per_g * design_effect * k / (k * df_adj / (k - 1))))
+                n_per_g_adj = int(
+                    np.ceil(n_per_g * design_effect * k / (k * df_adj / (k - 1)))
+                )
                 n_per_g_adj = max(n_per_g_adj, int(np.ceil(n_per_g)))
                 n_s = n_per_g_adj * k
             elif atype == "twoway_anova":
@@ -6545,7 +7688,10 @@ def render_power_calculator(params):
                     k_use = rows * cols
                 solver = FTestAnovaPower()
                 n_per_cell = solver.solve_power(
-                    effect_size=adj_es, alpha=alpha, power=power, k_groups=k_use,
+                    effect_size=adj_es,
+                    alpha=alpha,
+                    power=power,
+                    k_groups=k_use,
                 )
                 n_per_cell = int(np.ceil(n_per_cell))
                 n_s = n_per_cell * rows * cols
@@ -6555,11 +7701,13 @@ def render_power_calculator(params):
                 adj_auc = max(min(adj_auc, 0.99), 0.51)
                 null_auc = params["null_auc"]
                 ratio = params["ratio"]
-                v_auc = adj_auc * (1 - adj_auc) + (ratio - 1) * (adj_auc / (2 - adj_auc) - adj_auc ** 2) / (1 + ratio)
+                v_auc = adj_auc * (1 - adj_auc) + (ratio - 1) * (
+                    adj_auc / (2 - adj_auc) - adj_auc**2
+                ) / (1 + ratio)
                 delta_auc = adj_auc - null_auc
                 adj_es = delta_auc
                 if delta_auc > 0:
-                    n_cases = ((z_alpha + z_beta) ** 2 * v_auc) / (delta_auc ** 2)
+                    n_cases = ((z_alpha + z_beta) ** 2 * v_auc) / (delta_auc**2)
                     n_cases = int(np.ceil(n_cases))
                     n_controls = int(np.ceil(n_cases * ratio))
                     n_s = n_cases + n_controls
@@ -6576,7 +7724,12 @@ def render_power_calculator(params):
                 cats = params["categories"]
                 adj_es = delta_k
                 if delta_k > 0:
-                    n_s = int(np.ceil(((z_alpha + z_beta) ** 2 * null_kappa * (1 - null_kappa)) / (delta_k ** 2)))
+                    n_s = int(
+                        np.ceil(
+                            ((z_alpha + z_beta) ** 2 * null_kappa * (1 - null_kappa))
+                            / (delta_k**2)
+                        )
+                    )
                     n_s = max(n_s, raters * cats * 5)
                 else:
                     n_s = None
@@ -6588,8 +7741,11 @@ def render_power_calculator(params):
                 deff = 1 + (cluster_m - 1) * icc
                 solver = TTestIndPower()
                 n1_ind = solver.solve_power(
-                    effect_size=adj_es, alpha=alpha, power=power,
-                    ratio=ratio, alternative=alternative,
+                    effect_size=adj_es,
+                    alpha=alpha,
+                    power=power,
+                    ratio=ratio,
+                    alternative=alternative,
                 )
                 n1_ind = int(np.ceil(n1_ind))
                 n1_clust = int(np.ceil(n1_ind * deff))
@@ -6612,7 +7768,7 @@ def render_power_calculator(params):
                 else:
                     prop = params["prop"]
                     if prop > 0 and adj_hw > 0:
-                        n_s = int(np.ceil((z_hw ** 2 * prop * (1 - prop)) / (adj_hw ** 2)))
+                        n_s = int(np.ceil((z_hw**2 * prop * (1 - prop)) / (adj_hw**2)))
                     else:
                         n_s = None
                 if n_s is not None:
@@ -6637,7 +7793,9 @@ def render_power_calculator(params):
                     else:
                         prop = params["prop"]
                         if prop > 0 and adj_hw > 0:
-                            n_s = int(np.ceil((z_hw ** 2 * prop * (1 - prop)) / (adj_hw ** 2)))
+                            n_s = int(
+                                np.ceil((z_hw**2 * prop * (1 - prop)) / (adj_hw**2))
+                            )
                         else:
                             n_s = None
                     if n_s is not None:
@@ -6651,11 +7809,15 @@ def render_power_calculator(params):
         except Exception:
             n_s = None
         if n_s is not None and n_s > 0 and n_s < 100000:
-            sens_data.append({
-                "Effect Size Multiplier": f"{mult:.1f}×",
-                "Adjusted Effect": f"{adj_es:.3f}" if mult != 1.0 else f"{adj_es:.3f} (baseline)",
-                "Required N": n_s,
-            })
+            sens_data.append(
+                {
+                    "Effect Size Multiplier": f"{mult:.1f}×",
+                    "Adjusted Effect": (
+                        f"{adj_es:.3f}" if mult != 1.0 else f"{adj_es:.3f} (baseline)"
+                    ),
+                    "Required N": n_s,
+                }
+            )
 
     if sens_data:
         st.dataframe(pd.DataFrame(sens_data), use_container_width=True, hide_index=True)
@@ -6713,7 +7875,9 @@ def render_power_calculator(params):
 
     # --- What-If Scenario Explorer ---
     st.subheader("🔍 What-If Scenario Explorer")
-    st.caption("Explore how sample size changes across different combinations of power and effect size.")
+    st.caption(
+        "Explore how sample size changes across different combinations of power and effect size."
+    )
 
     whatif_powers = [0.70, 0.80, 0.90]
     whatif_mults = [0.5, 0.75, 1.0, 1.25, 1.5]
@@ -6726,9 +7890,22 @@ def render_power_calculator(params):
         for w_mult in whatif_mults:
             try:
                 w_n = n_total_raw if n_total_raw else n_total
-                if atype in ("one_mean", "paired", "correlation", "chisq",
-                              "precision", "kappa", "pilot", "cox", "roc_auc"):
-                    w_n = int(np.ceil(w_n / max(w_mult, 0.1) * (n_total_raw / max(n_total, 1))))
+                if atype in (
+                    "one_mean",
+                    "paired",
+                    "correlation",
+                    "chisq",
+                    "precision",
+                    "kappa",
+                    "pilot",
+                    "cox",
+                    "roc_auc",
+                ):
+                    w_n = int(
+                        np.ceil(
+                            w_n / max(w_mult, 0.1) * (n_total_raw / max(n_total, 1))
+                        )
+                    )
                     if dropout_rate > 0:
                         w_n = int(np.ceil(w_n / (1 - dropout_rate)))
                 else:
@@ -6741,15 +7918,17 @@ def render_power_calculator(params):
         heatmap_data.append(row)
 
     if any(any(r is not None for r in row) for row in heatmap_data):
-        fig_heat = go.Figure(data=go.Heatmap(
-            z=heatmap_data,
-            x=[f"{m:.2f}×" for m in whatif_mults],
-            y=[f"Power = {p:.0%}" for p in whatif_powers],
-            text=[[str(v) if v else "—" for v in row] for row in heatmap_data],
-            texttemplate="%{text}",
-            colorscale="Blues",
-            hovertemplate="Power: %{y}<br>Effect Size: %{x}<br>N: %{text}<extra></extra>",
-        ))
+        fig_heat = go.Figure(
+            data=go.Heatmap(
+                z=heatmap_data,
+                x=[f"{m:.2f}×" for m in whatif_mults],
+                y=[f"Power = {p:.0%}" for p in whatif_powers],
+                text=[[str(v) if v else "—" for v in row] for row in heatmap_data],
+                texttemplate="%{text}",
+                colorscale="Blues",
+                hovertemplate="Power: %{y}<br>Effect Size: %{x}<br>N: %{text}<extra></extra>",
+            )
+        )
         fig_heat.update_layout(
             template="plotly_dark",
             height=250,
@@ -6757,11 +7936,15 @@ def render_power_calculator(params):
             yaxis_title="",
         )
         st.plotly_chart(fig_heat, use_container_width=True)
-        st.caption("Cells show required N at each power × effect size combination. Adjust your design assumptions accordingly.")
+        st.caption(
+            "Cells show required N at each power × effect size combination. Adjust your design assumptions accordingly."
+        )
 
     # --- Sample Size Justification ---
     st.subheader("📝 Sample Size Justification")
-    st.caption("Copy the text below for your grant application, IRB submission, or research protocol.")
+    st.caption(
+        "Copy the text below for your grant application, IRB submission, or research protocol."
+    )
 
     if n_per_group is not None:
         if isinstance(n_per_group, tuple):
