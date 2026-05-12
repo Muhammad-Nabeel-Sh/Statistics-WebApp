@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
+from scipy.stats import norm
 
 rules = [
     # Comparison Tests
@@ -1069,9 +1070,23 @@ def main():
 
             :orange[**Cohen's d**]: Standardized difference between two group means in pooled SD units. Benchmarks: 0.2 (small), 0.5 (medium), 0.8 (large). Commonly used for t-tests and meta-analysis.
 
+            :orange[**Cohen's f**]: Effect size measure for ANOVA. Benchmarks: 0.10 (small), 0.25 (medium), 0.40 (large). Related to η² by f = √(η²/(1−η²)).
+
+            :orange[**Cohen's f²**]: Effect size for multiple regression. f² = R²/(1−R²). Benchmarks: 0.02 (small), 0.15 (medium), 0.35 (large).
+
+            :orange[**Cohen's w**]: Effect size for chi-square tests. Benchmarks: 0.10 (small), 0.30 (medium), 0.50 (large). Represents the discrepancy between observed and expected proportions.
+
             :orange[**Eta-squared (η²)**]: The proportion of total variance in the outcome attributable to a factor in ANOVA. Ranges from 0 to 1. Partial η² is used when multiple factors are present.
 
             :orange[**Cramer's V**]: An association measure for two nominal variables, derived from the chi-square statistic. Ranges from 0 (no association) to 1 (perfect association), adjusted for table dimensions.
+
+            :orange[**Sample Size Estimation**]: The process of determining the minimum number of participants needed to detect a meaningful effect with adequate power. Depends on α, power, effect size, and test type. Use the "Sample Size Estimation" objective in this tool to compute required N for your study design.
+
+            :orange[**Allocation Ratio**]: The ratio of sample sizes between two groups (n₂/n₁). An equal ratio (1.0) maximizes power for a given total N. Unequal ratios may be used when one group is easier or cheaper to recruit.
+
+            :orange[**Sensitivity Analysis**]: Varying assumptions (effect size, alpha, power) to see how sample size changes. Helps researchers understand the robustness of their sample size estimate and plan for different scenarios.
+
+            :orange[**Fisher's z-Transformation**]: A transformation used in sample size calculations for correlation: z = arctanh(r). Stabilizes the variance of the correlation coefficient, making it suitable for power analysis.
             """)
 
         with st.expander("Correlation & Regression"):
@@ -1188,103 +1203,476 @@ def main():
                 "Prediction",
                 "Diagnostic Accuracy",
                 "Survival Analysis",
+                "Sample Size Estimation",
             ],
         )
 
         # =========================
-        # VARIABLES
+        # SAMPLE SIZE ESTIMATION UI
         # =========================
-        st.subheader("2. Variables")
-        st.markdown("##### :green[Dependent Variable]")
-        Dependent_Variable = st.selectbox(
-            """Outcome / Target Variable / Y variable / Response Variable / Predicted Variable / Disease / Event / Output / Measured Variable / Result / Effect / Endpoint""",
-            [
-                "Binary/Dichotomous",
-                "Categorical",
-                "Ordinal",
-                "Discrete",
-                "Continuous",
-                "Multiple Continuous",
-                "Time-to-event",
-            ],
-        )
-        st.markdown("##### :red[Independent Variable]")
-        Independent_Variable = st.selectbox(
-            """Predictor / Explanatory Variable / X variable / Grouping variable / Exposure / Intervention / Treatment / Risk Factor / Input / Covariate / Control Variable""",
-            [
-                "Binary/Dichotomous",
-                "Categorical",
-                "Ordinal",
-                "Discrete",
-                "Continuous",
-                "Multiple Continuous",
-                "None",
-            ],
-        )
+        if Objective == "Sample Size Estimation":
+            st.subheader("2. Analysis Type & Parameters")
+
+            analysis_type = st.selectbox(
+                "Type of Analysis",
+                [
+                    "One-sample Mean (t/z-test)",
+                    "Two Independent Means (t-test)",
+                    "Paired Means (t-test)",
+                    "One-sample Proportion",
+                    "Two Proportions",
+                    "One-way ANOVA",
+                    "Correlation (Pearson)",
+                    "Multiple Linear Regression",
+                    "Logistic Regression",
+                    "Chi-Square Test",
+                    "Mann-Whitney / Wilcoxon (Non-parametric)",
+                    "Log-Rank Test (Survival)",
+                    "Cox Regression",
+                    "Equivalence / Non-Inferiority",
+                    "Repeated Measures ANOVA",
+                    "Two-way / Factorial ANOVA",
+                    "ROC / AUC Analysis",
+                    "Cohen's Kappa / ICC Agreement",
+                    "Cluster-RCT / Multilevel",
+                    "Precision-based (CI Width)",
+                    "Pilot / Feasibility Study",
+                ],
+            )
+
+            st.markdown("##### :orange[Common Parameters]")
+            col_a, col_b = st.columns(2)
+            with col_a:
+                alpha_ss = st.slider(
+                    "Significance Level (α)", 0.001, 0.10, 0.05, 0.001,
+                    format="%.3f",
+                )
+            with col_b:
+                power_ss = st.slider(
+                    "Power (1 − β)", 0.50, 0.99, 0.80, 0.01, format="%.2f",
+                )
+            tails_ss = st.radio(
+                "Test Direction",
+                ["Two-tailed", "One-tailed"],
+                horizontal=True,
+            )
+
+            st.markdown("##### :orange[Test-Specific Parameters]")
+            ss_params = {}
+
+            if analysis_type == "One-sample Mean (t/z-test)":
+                c1, c2 = st.columns(2)
+                with c1:
+                    mean_diff = st.number_input(
+                        "Expected Mean Difference (μ − μ₀)", 0.0, 100.0, 1.0, 0.1,
+                    )
+                with c2:
+                    std_dev_1s = st.number_input(
+                        "Standard Deviation (σ)", 0.1, 100.0, 2.0, 0.1,
+                    )
+                d_1s = mean_diff / std_dev_1s if std_dev_1s > 0 else 0
+                st.caption(f"Cohen's d = {d_1s:.3f}")
+                ss_params = {"type": "one_mean", "effect_size": d_1s}
+
+            elif analysis_type == "Two Independent Means (t-test)":
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    m1 = st.number_input("Mean of Group 1", 0.0, 100.0, 0.0, 0.1)
+                with c2:
+                    m2 = st.number_input("Mean of Group 2", 0.0, 100.0, 1.0, 0.1)
+                with c3:
+                    sd_2s = st.number_input("Pooled SD", 0.1, 100.0, 1.0, 0.1)
+                ratio_2s = st.number_input(
+                    "Allocation Ratio (n₂/n₁)", 0.1, 10.0, 1.0, 0.1,
+                )
+                d_2s = abs(m1 - m2) / sd_2s if sd_2s > 0 else 0
+                st.caption(f"Cohen's d = {d_2s:.3f}")
+                ss_params = {
+                    "type": "two_means", "effect_size": d_2s, "ratio": ratio_2s,
+                }
+
+            elif analysis_type == "Paired Means (t-test)":
+                c1, c2 = st.columns(2)
+                with c1:
+                    pdiff = st.number_input(
+                        "Expected Mean Difference", 0.0, 100.0, 1.0, 0.1,
+                    )
+                with c2:
+                    sddiff = st.number_input(
+                        "SD of Differences", 0.1, 100.0, 1.5, 0.1,
+                    )
+                d_pd = pdiff / sddiff if sddiff > 0 else 0
+                st.caption(f"Cohen's d_z = {d_pd:.3f}")
+                ss_params = {"type": "paired", "effect_size": d_pd}
+
+            elif analysis_type == "One-sample Proportion":
+                c1, c2 = st.columns(2)
+                with c1:
+                    p0 = st.number_input("Null Proportion (p₀)", 0.01, 0.99, 0.5, 0.01)
+                with c2:
+                    p1 = st.number_input(
+                        "Expected Proportion (p₁)", 0.01, 0.99, 0.7, 0.01,
+                    )
+                ss_params = {
+                    "type": "one_prop", "prop_null": p0, "prop_alt": p1,
+                }
+
+            elif analysis_type == "Two Proportions":
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    prop1 = st.number_input("Proportion in Group 1", 0.01, 0.99, 0.3, 0.01)
+                with c2:
+                    prop2 = st.number_input("Proportion in Group 2", 0.01, 0.99, 0.5, 0.01)
+                with c3:
+                    ratio_prop = st.number_input(
+                        "Allocation Ratio (n₂/n₁)", 0.1, 10.0, 1.0, 0.1,
+                    )
+                ss_params = {
+                    "type": "two_prop", "p1": prop1, "p2": prop2, "ratio": ratio_prop,
+                }
+
+            elif analysis_type == "One-way ANOVA":
+                c1, c2 = st.columns(2)
+                with c1:
+                    k_anova = st.number_input("Number of Groups", 3, 20, 3, 1)
+                with c2:
+                    f_anova = st.number_input(
+                        "Cohen's f (effect size)", 0.01, 2.0, 0.25, 0.01,
+                    )
+                ss_params = {"type": "anova", "k": int(k_anova), "effect_size": f_anova}
+
+            elif analysis_type == "Correlation (Pearson)":
+                r_val = st.number_input(
+                    "Expected Correlation (r)", 0.01, 0.99, 0.3, 0.01,
+                )
+                ss_params = {"type": "correlation", "effect_size": r_val}
+
+            elif analysis_type == "Multiple Linear Regression":
+                c1, c2 = st.columns(2)
+                with c1:
+                    k_reg = st.number_input("Number of Predictors", 1, 50, 3, 1)
+                with c2:
+                    r2_reg = st.number_input("Expected R²", 0.01, 0.99, 0.15, 0.01)
+                f2_reg = r2_reg / (1 - r2_reg) if r2_reg < 1 else 0
+                st.caption(f"Cohen's f² = {f2_reg:.3f}")
+                ss_params = {"type": "regression", "k": int(k_reg), "effect_size": f2_reg}
+
+            elif analysis_type == "Logistic Regression":
+                c1, c2 = st.columns(2)
+                with c1:
+                    k_log = st.number_input("Number of Predictors", 1, 50, 3, 1)
+                with c2:
+                    ev_rate = st.number_input(
+                        "Baseline Event Rate", 0.01, 0.99, 0.3, 0.01,
+                    )
+                or_val = st.number_input("Odds Ratio to Detect", 1.1, 10.0, 2.0, 0.1)
+                ss_params = {
+                    "type": "logistic", "k": int(k_log), "event_rate": ev_rate,
+                    "or": or_val,
+                }
+
+            elif analysis_type == "Chi-Square Test":
+                c1, c2 = st.columns(2)
+                with c1:
+                    df_cs = st.number_input("Degrees of Freedom", 1, 50, 2, 1)
+                with c2:
+                    w_cs = st.number_input(
+                        "Cohen's w (effect size)", 0.01, 2.0, 0.3, 0.01,
+                    )
+                ss_params = {"type": "chisq", "df": int(df_cs), "effect_size": w_cs}
+
+            elif analysis_type == "Mann-Whitney / Wilcoxon (Non-parametric)":
+                c1, c2 = st.columns(2)
+                with c1:
+                    P_val = st.number_input("P(X>Y) probability", 0.51, 0.99, 0.65, 0.01)
+                with c2:
+                    are_val = st.number_input("ARE", 0.5, 1.5, 0.955, 0.001)
+                ratio_mw = st.number_input("Allocation Ratio (n₂/n₁)", 0.1, 10.0, 1.0, 0.1)
+                st.caption("ARE = 0.955 at normality, lower for heavy-tailed distributions")
+                ss_params = {"type": "mannwhitney", "effect_size": P_val, "ratio": ratio_mw, "are": are_val}
+
+            elif analysis_type == "Log-Rank Test (Survival)":
+                c1, c2 = st.columns(2)
+                with c1:
+                    hr_val = st.number_input("Hazard Ratio", 1.1, 10.0, 2.0, 0.1)
+                with c2:
+                    ratio_lr = st.number_input("Allocation Ratio (n₂/n₁)", 0.1, 10.0, 1.0, 0.1)
+                c1, c2 = st.columns(2)
+                with c1:
+                    med_val = st.number_input("Median Survival Control (months)", 1, 120, 12, 1)
+                with c2:
+                    dur_val = st.number_input("Total Study Duration (months)", 1, 240, 36, 1)
+                ss_params = {"type": "logrank", "hr": hr_val, "ratio": ratio_lr, "median_survival": med_val, "study_duration": dur_val}
+
+            elif analysis_type == "Cox Regression":
+                c1, c2 = st.columns(2)
+                with c1:
+                    hr_val = st.number_input("Hazard Ratio", 1.1, 10.0, 2.0, 0.1)
+                with c2:
+                    k_val = st.number_input("Number of Predictors", 1, 50, 3, 1)
+                c1, c2 = st.columns(2)
+                with c1:
+                    sd_val = st.number_input("SD of Predictor", 0.1, 10.0, 1.0, 0.1)
+                with c2:
+                    r2_val = st.number_input("R-squared with other covariates", 0.0, 0.99, 0.0, 0.01)
+                ev_val = st.number_input("Event Rate", 0.01, 0.99, 0.5, 0.01)
+                ss_params = {"type": "cox", "hr": hr_val, "k": int(k_val), "sd_x": sd_val, "r2_x": r2_val, "event_rate": ev_val}
+
+            elif analysis_type == "Equivalence / Non-Inferiority":
+                c1, c2 = st.columns(2)
+                with c1:
+                    margin = st.number_input("Margin (delta)", 0.01, 10.0, 1.0, 0.01)
+                with c2:
+                    d_exp = st.number_input("Expected Difference", -10.0, 10.0, 0.0, 0.01)
+                c1, c2 = st.columns(2)
+                with c1:
+                    sd_val = st.number_input("SD", 0.1, 100.0, 1.0, 0.1)
+                with c2:
+                    ratio_eq = st.number_input("Allocation Ratio (n₂/n₁)", 0.1, 10.0, 1.0, 0.1)
+                ss_params = {"type": "equiv", "margin": margin, "expected_diff": d_exp, "sd": sd_val, "ratio": ratio_eq}
+
+            elif analysis_type == "Repeated Measures ANOVA":
+                c1, c2 = st.columns(2)
+                with c1:
+                    f_val = st.number_input("Cohen's f", 0.01, 2.0, 0.25, 0.01)
+                with c2:
+                    k_val = st.number_input("Number of Groups", 2, 20, 2, 1)
+                c1, c2 = st.columns(2)
+                with c1:
+                    m_val = st.number_input("Number of Measurements", 2, 20, 3, 1)
+                with c2:
+                    rho_val = st.number_input("Correlation between measurements", 0.0, 0.99, 0.5, 0.01)
+                eps_val = st.number_input("Sphericity correction epsilon", 0.1, 1.0, 0.75, 0.01)
+                ss_params = {"type": "rm_anova", "effect_size": f_val, "k": int(k_val), "m": int(m_val), "rho": rho_val, "epsilon": eps_val}
+
+            elif analysis_type == "Two-way / Factorial ANOVA":
+                c1, c2 = st.columns(2)
+                with c1:
+                    r_val = st.number_input("Rows (Factor A levels)", 2, 10, 2, 1)
+                with c2:
+                    c_val = st.number_input("Columns (Factor B levels)", 2, 10, 2, 1)
+                c1, c2 = st.columns(2)
+                with c1:
+                    f_a = st.number_input("Cohen's f for main effect", 0.01, 2.0, 0.25, 0.01)
+                with c2:
+                    f_ab = st.number_input("Cohen's f for interaction", 0.01, 2.0, 0.25, 0.01)
+                focus = st.radio("Effect of interest", ["Main Effect A", "Main Effect B", "Interaction"], horizontal=True)
+                ss_params = {"type": "twoway_anova", "f_a": f_a, "f_b": f_a, "f_ab": f_ab, "rows": int(r_val), "cols": int(c_val), "focus": focus}
+
+            elif analysis_type == "ROC / AUC Analysis":
+                c1, c2 = st.columns(2)
+                with c1:
+                    auc_val = st.number_input("Expected AUC", 0.5, 0.99, 0.7, 0.01)
+                with c2:
+                    st.number_input("Null AUC", 0.5, 0.5, 0.5, disabled=True)
+                ratio_roc = st.number_input("Ratio of controls to cases", 0.1, 10.0, 1.0, 0.1)
+                ss_params = {"type": "roc_auc", "auc": auc_val, "null_auc": 0.5, "ratio": ratio_roc}
+
+            elif analysis_type == "Cohen's Kappa / ICC Agreement":
+                atype = st.radio("Type", ["Cohen's Kappa", "ICC"], horizontal=True)
+                c1, c2 = st.columns(2)
+                with c1:
+                    kappa_val = st.number_input("Expected Kappa", 0.01, 0.99, 0.6, 0.01)
+                with c2:
+                    null_kap = st.number_input("Null Kappa", 0.0, 0.5, 0.0, 0.01)
+                c1, c2 = st.columns(2)
+                with c1:
+                    raters = st.number_input("Number of Raters", 2, 10, 2, 1)
+                with c2:
+                    cats = st.number_input("Number of Categories", 2, 10, 2, 1)
+                ss_params = {"type": "kappa", "kappa": kappa_val, "null_kappa": null_kap, "raters": int(raters), "categories": int(cats), "agreement_type": atype}
+
+            elif analysis_type == "Cluster-RCT / Multilevel":
+                c1, c2 = st.columns(2)
+                with c1:
+                    d_val = st.number_input("Effect size d", 0.1, 5.0, 0.5, 0.01)
+                with c2:
+                    icc_val = st.number_input("ICC", 0.001, 0.5, 0.05, 0.001, format="%.3f")
+                c1, c2 = st.columns(2)
+                with c1:
+                    m_val = st.number_input("Cluster size (m)", 2, 1000, 30, 1)
+                with c2:
+                    ratio_cl = st.number_input("Allocation Ratio (n₂/n₁)", 0.1, 10.0, 1.0, 0.1)
+                ss_params = {"type": "cluster_rct", "effect_size": d_val, "icc": icc_val, "cluster_size": int(m_val), "ratio": ratio_cl}
+
+            elif analysis_type == "Precision-based (CI Width)":
+                ptype = st.radio("Type of parameter", ["Mean", "Proportion"], horizontal=True)
+                c1, c2 = st.columns(2)
+                with c1:
+                    hw_val = st.number_input("Desired half-width of CI", 0.01, 100.0, 5.0, 0.01)
+                with c2:
+                    cl_val = st.number_input("Confidence Level %", 80, 99, 95, 1)
+                if ptype == "Mean":
+                    sd_val = st.number_input("SD", 0.1, 100.0, 10.0, 0.1)
+                    prop_val = 0.5
+                else:
+                    sd_val = 1.0
+                    prop_val = st.number_input("Expected Proportion", 0.01, 0.99, 0.5, 0.01)
+                ss_params = {"type": "precision", "half_width": hw_val, "conf_level": cl_val, "param_type": ptype, "sd": sd_val, "prop": prop_val}
+
+            elif analysis_type == "Pilot / Feasibility Study":
+                method = st.radio("Method", ["Rule of thumb", "Precision-based", "Fraction of main study"], horizontal=True)
+                if method == "Rule of thumb":
+                    npg_val = st.number_input("Participants per group", 5, 100, 12, 1)
+                    ss_params = {"type": "pilot", "method": method, "n_per_group": int(npg_val)}
+                elif method == "Precision-based":
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        hw_val = st.number_input("Desired half-width of CI", 0.01, 100.0, 5.0, 0.01)
+                    with c2:
+                        cl_val = st.number_input("Confidence Level %", 80, 99, 95, 1)
+                    sd_val = st.number_input("SD", 0.1, 100.0, 10.0, 0.1)
+                    ss_params = {"type": "pilot", "method": method, "half_width": hw_val, "conf_level": cl_val, "sd": sd_val}
+                else:
+                    main_n = st.number_input("Expected main study N", 10, 10000, 100, 1)
+                    fraction = st.number_input("Fraction", 0.05, 0.5, 0.1, 0.01)
+                    ss_params = {"type": "pilot", "method": method, "fraction": fraction, "main_n": int(main_n)}
+
+            # =========================
+            # STUDY ADJUSTMENTS
+            # =========================
+            with st.expander("⚙️ Study Adjustments"):
+                col_d1, col_d2 = st.columns(2)
+                with col_d1:
+                    adjust_attrition = st.checkbox("Adjust for dropout rate", value=False)
+                with col_d2:
+                    dropout_rate = st.slider(
+                        "Expected dropout rate", 0.0, 0.5, 0.1, 0.01,
+                        disabled=not adjust_attrition,
+                    ) if adjust_attrition else 0.0
+
+                adjust_multiple = st.checkbox("Multiple testing correction (Bonferroni)")
+                num_tests = st.number_input(
+                    "Number of tests/comparisons", 1, 100, 1, 1,
+                    disabled=not adjust_multiple,
+                ) if adjust_multiple else 1
+
+                show_budget = st.checkbox("Show budget / feasibility estimates")
+                if show_budget:
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        cost_per = st.number_input("Cost per participant ($)", 0.0, 100000.0, 100.0, 10.0)
+                    with c2:
+                        recruitment_rate = st.number_input("Recruitment rate (per month)", 0.0, 1000.0, 10.0, 1.0)
+                else:
+                    cost_per = 0.0
+                    recruitment_rate = 0.0
+
+            ss_params["dropout_rate"] = dropout_rate if adjust_attrition else 0.0
+            ss_params["num_tests"] = num_tests if adjust_multiple else 1
+            ss_params["cost_per"] = cost_per if show_budget else 0.0
+            ss_params["recruitment_rate"] = recruitment_rate if show_budget else 0.0
+
+        else:
+            # =========================
+            # VARIABLES (existing)
+            # =========================
+            st.subheader("2. Variables")
+            st.markdown("##### :green[Dependent Variable]")
+            Dependent_Variable = st.selectbox(
+                """Outcome / Target Variable / Y variable / Response Variable / Predicted Variable / Disease / Event / Output / Measured Variable / Result / Effect / Endpoint""",
+                [
+                    "Binary/Dichotomous",
+                    "Categorical",
+                    "Ordinal",
+                    "Discrete",
+                    "Continuous",
+                    "Multiple Continuous",
+                    "Time-to-event",
+                ],
+            )
+            st.markdown("##### :red[Independent Variable]")
+            Independent_Variable = st.selectbox(
+                """Predictor / Explanatory Variable / X variable / Grouping variable / Exposure / Intervention / Treatment / Risk Factor / Input / Covariate / Control Variable""",
+                [
+                    "Binary/Dichotomous",
+                    "Categorical",
+                    "Ordinal",
+                    "Discrete",
+                    "Continuous",
+                    "Multiple Continuous",
+                    "None",
+                ],
+            )
+
+            # =========================
+            # DESIGN (existing)
+            # =========================
+            st.subheader("3. Experimental Design")
+
+            Groups = st.selectbox(
+                "Number of Groups",
+                [
+                    "1",
+                    "2",
+                    "More than 2",
+                    "any",
+                ],
+            )
+
+            Relation = st.selectbox(
+                "Relationship Type",
+                [
+                    "Independent",
+                    "Dependent",
+                    "any",
+                ],
+            )
+
+            Distribution = st.selectbox(
+                "Distribution",
+                [
+                    "Normal",
+                    "Non-normal",
+                    "any",
+                ],
+            )
 
         # =========================
-        # DESIGN
+        # USER INPUT OR SAMPLE SIZE
         # =========================
-        st.subheader("3. Experimental Design")
+        if Objective != "Sample Size Estimation":
+            user_input = {
+                "Objective": Objective,
+                "Dependent_Variable": Dependent_Variable,
+                "Independent_Variable": Independent_Variable,
+                "Groups": Groups,
+                "Relation": Relation,
+                "Distribution": Distribution,
+            }
 
-        Groups = st.selectbox(
-            "Number of Groups",
-            [
-                "1",
-                "2",
-                "More than 2",
-                "any",
-            ],
-        )
-
-        Relation = st.selectbox(
-            "Relationship Type",
-            [
-                "Independent",
-                "Dependent",
-                "any",
-            ],
-        )
-
-        Distribution = st.selectbox(
-            "Distribution",
-            [
-                "Normal",
-                "Non-normal",
-                "any",
-            ],
-        )
-
-        # =========================
-        # USER INPUT OBJECT
-        # =========================
-        user_input = {
-            "Objective": Objective,
-            "Dependent_Variable": Dependent_Variable,
-            "Independent_Variable": Independent_Variable,
-            "Groups": Groups,
-            "Relation": Relation,
-            "Distribution": Distribution,
-        }
-
-        # =========================
-        # FIND TEST
-        # =========================
-        if st.button("Find My Test", use_container_width=True):
-            st.session_state.results = find_matching_tests(user_input)
-            # Clear open states when new search is performed
-            st.session_state.open_tests = set()
+            if st.button("Find My Test", use_container_width=True):
+                st.session_state.results = find_matching_tests(user_input)
+                st.session_state.open_tests = set()
+                st.session_state.power_params = None
+        else:
+            if st.button(
+                "Calculate Sample Size",
+                use_container_width=True,
+                type="primary",
+            ):
+                st.session_state.power_params = {
+                    "analysis_type": analysis_type,
+                    "alpha": alpha_ss,
+                    "power": power_ss,
+                    "tails": tails_ss,
+                    **ss_params,
+                }
+                st.session_state.results = None
 
     with col_right:
-        # Display results from session state
-        if st.session_state.results is not None:
+        # SAMPLE SIZE ESTIMATION RESULTS
+        if Objective == "Sample Size Estimation" and st.session_state.get("power_params"):
+            render_power_calculator(st.session_state.power_params)
+
+        # TEST FINDER RESULTS
+        elif st.session_state.results is not None:
             if st.session_state.results:
                 st.success("Recommended Statistical Test(s):")
 
                 for test in st.session_state.results:
                     rule = next((r for r in rules if r["name"] == test), None)
                     if rule:
-                        # Button to toggle open/close
                         is_open = test in st.session_state.open_tests
                         btn_label = f"▶ {test}" if not is_open else f"▼ {test}"
 
@@ -1297,7 +1685,6 @@ def main():
                                 st.session_state.open_tests.add(test)
                             st.rerun()
 
-                        # Show content if test is in open_tests
                         if test in st.session_state.open_tests:
                             if "Explanation" in rule:
                                 st.markdown("## Explanation:")
@@ -1316,21 +1703,22 @@ def main():
                     "No matching statistical test found. Try adjusting your selections."
                 )
         else:
-            st.info("Results will appear here once you click 'Find My Test'.")
+            if Objective == "Sample Size Estimation":
+                st.info("Select your parameters and click 'Calculate Sample Size'.")
+            else:
+                st.info("Results will appear here once you click 'Find My Test'.")
 
     # =========================
     # FLOWCHART MODE
     # =========================
 
-    st.divider()
-
-    st.header("🌳 Interactive Statistical Flowchart")
-
-    st.write(
-        "Expand the branches below to navigate statistical test selection visually."
-    )
-
-    build_tree(rules, FIELDS, user_input)
+    if Objective != "Sample Size Estimation":
+        st.divider()
+        st.header("🌳 Interactive Statistical Flowchart")
+        st.write(
+            "Expand the branches below to navigate statistical test selection visually."
+        )
+        build_tree(rules, FIELDS, user_input)
 
     # =========================
     # FOOTER
@@ -1506,6 +1894,92 @@ def render_test_widget(test_name):
 
         st.plotly_chart(fig, use_container_width=True)
 
+        # =========================
+        # DETAILED STATISTICS TABLE
+        # =========================
+
+        st.divider()
+        st.subheader("Detailed Results")
+
+        from scipy.stats import t as t_dist
+        from scipy.stats import sem
+
+        n = len(sample)
+        sample_mean = np.mean(sample)
+        sample_sd = np.std(sample, ddof=1)
+        se = sem(sample)
+        ci = se * t_dist.ppf(0.975, n - 1)
+        cohens_d = (sample_mean - population_mean) / sample_sd
+
+        results_data = {
+            "Metric": ["Sample Mean", "Reference Mean", "Mean Difference", "95% CI of Diff", "t-statistic", "df", "p-value", "Cohen's d"],
+            "Value": [f"{sample_mean:.3f}", f"{population_mean:.3f}", f"{sample_mean - population_mean:.3f}", f"±{ci:.3f}", f"{t:.3f}", f"{n - 1}", f"{p:.5f}", f"{cohens_d:.3f}"]
+        }
+        st.table(pd.DataFrame(results_data))
+
+        # =========================
+        # ENHANCED CHART
+        # =========================
+
+        fig2 = go.Figure()
+
+        fig2.add_trace(
+            go.Histogram(
+                x=sample,
+                nbinsx=25,
+                histnorm="probability density",
+                name="Sample",
+                marker=dict(color="rgba(0, 123, 255, 0.5)"),
+            )
+        )
+
+        x_dense = np.linspace(sample.min(), sample.max(), 200)
+        from scipy.stats import norm
+        y_dense = norm.pdf(x_dense, sample_mean, sample_sd)
+        fig2.add_trace(
+            go.Scatter(
+                x=x_dense,
+                y=y_dense,
+                mode="lines",
+                name="Normal fit",
+                line=dict(color="red", width=2),
+            )
+        )
+
+        fig2.add_vline(
+            x=population_mean,
+            line_dash="dash",
+            line_color="green",
+            annotation_text="Reference Mean",
+        )
+        fig2.add_vline(
+            x=sample_mean,
+            line_dash="dot",
+            line_color="blue",
+            annotation_text="Sample Mean",
+        )
+        fig2.add_vline(
+            x=sample_mean - ci,
+            line_dash="dot",
+            line_color="gray",
+            opacity=0.5,
+        )
+        fig2.add_vline(
+            x=sample_mean + ci,
+            line_dash="dot",
+            line_color="gray",
+            opacity=0.5,
+        )
+
+        fig2.update_layout(
+            template="plotly_dark",
+            height=400,
+            xaxis_title="Value",
+            yaxis_title="Density",
+        )
+
+        st.plotly_chart(fig2, use_container_width=True)
+
     elif test_name == "One-sample z-test":
 
         from statsmodels.stats.weightstats import ztest
@@ -1573,6 +2047,76 @@ def render_test_widget(test_name):
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+        # =========================
+        # DETAILED STATISTICS TABLE
+        # =========================
+
+        st.divider()
+        st.subheader("Detailed Results")
+
+        n_z = len(sample)
+        sample_mean_z = np.mean(sample)
+        se_z = 1 / np.sqrt(n_z)
+        ci_z = 1.96 * se_z
+
+        results_data = {
+            "Metric": ["Sample Mean", "Population Mean (μ₀)", "z-statistic", "p-value", "SE (σ/√n)", "n", "95% CI of Mean", "Known σ"],
+            "Value": [f"{sample_mean_z:.3f}", f"{population_mean:.3f}", f"{z:.3f}", f"{p:.5f}", f"{se_z:.4f}", f"{n_z}", f"{sample_mean_z - ci_z:.2f} to {sample_mean_z + ci_z:.2f}", "1.0"]
+        }
+        st.table(pd.DataFrame(results_data))
+
+        # =========================
+        # ENHANCED CHART
+        # =========================
+
+        fig2 = go.Figure()
+
+        fig2.add_trace(
+            go.Histogram(
+                x=sample,
+                nbinsx=25,
+                histnorm="probability density",
+                name="Sample",
+                marker=dict(color="rgba(0, 123, 255, 0.5)"),
+            )
+        )
+
+        x_dense = np.linspace(sample.min(), sample.max(), 200)
+        from scipy.stats import norm as norm2
+        y_dense = norm2.pdf(x_dense, sample_mean_z, 1 / np.sqrt(n_z) * np.sqrt(n_z))
+        y_dense = norm2.pdf(x_dense, sample_mean_z, np.std(sample, ddof=1))
+        fig2.add_trace(
+            go.Scatter(
+                x=x_dense,
+                y=y_dense,
+                mode="lines",
+                name="Normal fit",
+                line=dict(color="red", width=2),
+            )
+        )
+
+        fig2.add_vline(
+            x=population_mean,
+            line_dash="dash",
+            line_color="green",
+            annotation_text="H₀ Mean",
+        )
+        fig2.add_vline(
+            x=sample_mean_z,
+            line_dash="dot",
+            line_color="blue",
+            annotation_text="Sample Mean",
+        )
+
+        fig2.update_layout(
+            template="plotly_dark",
+            height=400,
+            xaxis_title="Value",
+            yaxis_title="Density",
+        )
+
+        st.plotly_chart(fig2, use_container_width=True)
 
     elif test_name == "One-sample Proportion Test (Binomial Test)":
 
@@ -1648,6 +2192,96 @@ def render_test_widget(test_name):
 
         st.plotly_chart(fig, use_container_width=True)
 
+        # =========================
+        # DETAILED STATISTICS TABLE
+        # =========================
+
+        st.divider()
+        st.subheader("Detailed Results")
+
+        from scipy.stats import binomtest as binomtest2
+        from scipy.stats import norm as norm_prop
+
+        p_hat = successes / n
+        se_prop = np.sqrt(expected_p * (1 - expected_p) / n)
+        z_prop = (p_hat - expected_p) / se_prop if se_prop > 0 else 0
+        ci_prop = 1.96 * np.sqrt(p_hat * (1 - p_hat) / n)
+
+        results_data = {
+            "Metric": ["Observed Proportion", "Expected Proportion", "Difference", "95% CI of Proportion", "Number of Successes", "Sample Size (n)", "z-approximation", "Exact p-value"],
+            "Value": [f"{p_hat:.3f}", f"{expected_p:.3f}", f"{p_hat - expected_p:.3f}", f"{p_hat - ci_prop:.3f} to {p_hat + ci_prop:.3f}", f"{successes}", f"{n}", f"{z_prop:.3f}", f"{result.pvalue:.5f}"]
+        }
+        st.table(pd.DataFrame(results_data))
+
+        # =========================
+        # ENHANCED CHART
+        # =========================
+
+        fig2 = go.Figure()
+
+        fig2.add_trace(
+            go.Bar(
+                name="Expected",
+                x=["Proportion"],
+                y=[expected_p],
+                marker_color="rgba(255, 99, 71, 0.7)",
+                width=[0.3],
+                offsetgroup=0,
+            )
+        )
+        fig2.add_trace(
+            go.Bar(
+                name="Observed",
+                x=["Proportion"],
+                y=[p_hat],
+                marker_color="rgba(54, 162, 235, 0.7)",
+                width=[0.3],
+                offsetgroup=1,
+            )
+        )
+
+        fig2.add_hline(
+            y=expected_p,
+            line_dash="dash",
+            line_color="red",
+            annotation_text="Expected",
+        )
+        fig2.add_hline(
+            y=p_hat,
+            line_dash="dot",
+            line_color="blue",
+            annotation_text="Observed",
+        )
+
+        # Error bar for CI
+        fig2.add_trace(
+            go.Scatter(
+                x=["Proportion"],
+                y=[p_hat],
+                error_y=dict(
+                    type="data",
+                    symmetric=True,
+                    array=[ci_prop],
+                    visible=True,
+                    color="blue",
+                ),
+                mode="markers",
+                marker=dict(size=8, color="blue"),
+                showlegend=False,
+            )
+        )
+
+        fig2.update_layout(
+            template="plotly_dark",
+            height=400,
+            yaxis=dict(range=[0, 1]),
+            barmode="group",
+            xaxis_title="",
+            yaxis_title="Proportion",
+        )
+
+        st.plotly_chart(fig2, use_container_width=True)
+
     elif test_name == "One-sample Wilcoxon Signed-Rank Test":
 
         from scipy.stats import wilcoxon
@@ -1702,6 +2336,61 @@ def render_test_widget(test_name):
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+        # =========================
+        # DETAILED STATISTICS TABLE
+        # =========================
+
+        st.divider()
+        st.subheader("Detailed Results")
+
+        n_1w = len(sample)
+        median_1w = np.median(sample)
+        hypothesized_median = 0
+        median_diff_1w = median_1w - hypothesized_median
+        from scipy.stats import wilcoxon as wilcoxon_1samp
+        T_1w, p_1w = wilcoxon_1samp(sample)
+        r_rb_1w = 1 - 2 * T_1w / (n_1w * (n_1w + 1) / 2)
+
+        results_data = {
+            "Metric": ["Median", "Hypothesized Median", "W-statistic", "p-value", "Sample Size (n)", "Median Difference", "Rank-biserial r", ""],
+            "Value": [f"{median_1w:.3f}", f"{hypothesized_median}", f"{T_1w:.3f}", f"{p_1w:.5f}", f"{n_1w}", f"{median_diff_1w:.3f}", f"{r_rb_1w:.4f}", ""]
+        }
+        st.table(pd.DataFrame(results_data))
+
+        # =========================
+        # ENHANCED CHART
+        # =========================
+
+        fig2 = go.Figure()
+
+        fig2.add_trace(go.Box(y=sample, name="Sample", boxmean="sd"))
+
+        jitter_x = np.random.normal(0, 0.06, n_1w)
+        fig2.add_trace(
+            go.Scatter(
+                x=jitter_x, y=sample, mode="markers", name="Data points",
+                marker=dict(color="rgba(0, 123, 255, 0.5)", size=5),
+            )
+        )
+
+        fig2.add_hline(
+            y=hypothesized_median, line_dash="dash", line_color="red",
+            annotation_text="H₀: median = 0",
+        )
+
+        ci_1w = 1.58 * (np.percentile(sample, 75) - np.percentile(sample, 25)) / np.sqrt(n_1w)
+        fig2.add_hline(y=median_1w + ci_1w, line_dash="dot", line_color="gray", opacity=0.5)
+        fig2.add_hline(y=median_1w - ci_1w, line_dash="dot", line_color="gray", opacity=0.5)
+
+        fig2.update_layout(
+            template="plotly_dark",
+            height=450,
+            xaxis=dict(showticklabels=False),
+            yaxis_title="Value",
+        )
+
+        st.plotly_chart(fig2, use_container_width=True)
 
     elif test_name == "Chi-Square Goodness-of-Fit Test":
 
@@ -1765,6 +2454,30 @@ def render_test_widget(test_name):
 
         st.plotly_chart(fig, use_container_width=True)
 
+        st.divider()
+        st.subheader("Detailed Results")
+
+        from scipy.stats import chi2 as chi2_dist_gof
+
+        n_gof = np.sum(observed)
+        k_gof = len(observed)
+        df_gof = k_gof - 1
+        expected_val = expected
+        cramer_v_gof = np.sqrt(chi2 / (n_gof * (k_gof - 1))) if n_gof > 0 and k_gof > 1 else 0
+
+        results_data = {
+            "Metric": ["Observed A", "Observed B", "Observed C", "Expected (mean)", "χ²", "df", "p-value", "Cramer's V"],
+            "Value": [f"{observed[0]}", f"{observed[1]}", f"{observed[2]}", f"{expected_val:.1f}", f"{chi2:.3f}", f"{df_gof}", f"{p:.5f}", f"{cramer_v_gof:.4f}"]
+        }
+        st.table(pd.DataFrame(results_data))
+
+        categories_gof = ["A", "B", "C"]
+        fig2 = go.Figure()
+        fig2.add_trace(go.Bar(name="Observed", x=categories_gof, y=observed, marker_color="rgba(54, 162, 235, 0.7)"))
+        fig2.add_trace(go.Bar(name="Expected", x=categories_gof, y=[expected_val] * 3, marker_color="rgba(255, 99, 71, 0.7)"))
+        fig2.update_layout(template="plotly_dark", height=400, xaxis_title="Category", yaxis_title="Count", barmode="group")
+        st.plotly_chart(fig2, use_container_width=True)
+
     # Categorial Tests
     elif test_name == "Chi-Square Test":
 
@@ -1823,6 +2536,29 @@ def render_test_widget(test_name):
 
         st.plotly_chart(fig, use_container_width=True)
 
+        st.divider()
+        st.subheader("Detailed Results")
+
+        from scipy.stats import chi2 as chi2_dist_cs
+
+        n_cs = np.sum(table)
+        cramer_v_cs = np.sqrt(chi2 / (n_cs * min(table.shape[0] - 1, table.shape[1] - 1))) if n_cs > 0 else 0
+
+        results_data = {
+            "Metric": ["χ²", "df", "p-value", "Cramer's V", "Cell A (R1,C1)", "Cell B (R1,C2)", "Cell C (R2,C1)", "Cell D (R2,C2)"],
+            "Value": [f"{chi2:.3f}", f"{dof}", f"{p:.5f}", f"{cramer_v_cs:.4f}", f"{table[0, 0]}", f"{table[0, 1]}", f"{table[1, 0]}", f"{table[1, 1]}"]
+        }
+        st.table(pd.DataFrame(results_data))
+
+        cells_cs = ["(R1,C1)", "(R1,C2)", "(R2,C1)", "(R2,C2)"]
+        observed_flat = table.flatten()
+        expected_flat = expected.flatten()
+        fig2 = go.Figure()
+        fig2.add_trace(go.Bar(name="Observed", x=cells_cs, y=observed_flat, marker_color="rgba(54, 162, 235, 0.7)"))
+        fig2.add_trace(go.Bar(name="Expected", x=cells_cs, y=expected_flat, marker_color="rgba(255, 99, 71, 0.7)"))
+        fig2.update_layout(template="plotly_dark", height=400, xaxis_title="Cell", yaxis_title="Count", barmode="group")
+        st.plotly_chart(fig2, use_container_width=True)
+
     elif test_name == "McNemar's Test":
 
         from statsmodels.stats.contingency_tables import mcnemar
@@ -1880,6 +2616,24 @@ def render_test_widget(test_name):
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+        st.divider()
+        st.subheader("Detailed Results")
+
+        b_mc = table[0, 1]
+        c_mc = table[1, 0]
+        odds_ratio_mc = b_mc / c_mc if c_mc > 0 else float("inf")
+
+        results_data = {
+            "Metric": ["χ²", "p-value", "b (Yes→No)", "c (No→Yes)", "Odds Ratio (b/c)", "", "", ""],
+            "Value": [f"{result.statistic:.3f}", f"{result.pvalue:.5f}", f"{b_mc}", f"{c_mc}", f"{odds_ratio_mc:.3f}" if c_mc > 0 else "∞", "", "", ""]
+        }
+        st.table(pd.DataFrame(results_data))
+
+        fig2 = go.Figure()
+        fig2.add_trace(go.Bar(name="Discordant Pairs", x=["b (Yes→No)", "c (No→Yes)"], y=[b_mc, c_mc], marker_color=["rgba(255, 99, 71, 0.7)", "rgba(54, 162, 235, 0.7)"]))
+        fig2.update_layout(template="plotly_dark", height=400, xaxis_title="Discordant Pair Type", yaxis_title="Count")
+        st.plotly_chart(fig2, use_container_width=True)
 
     elif test_name == "Cochran's Q Test":
 
@@ -1969,6 +2723,30 @@ def render_test_widget(test_name):
 
         st.plotly_chart(fig, use_container_width=True)
 
+        st.divider()
+        st.subheader("Detailed Results")
+
+        k_cq = data.shape[1]
+        df_cq = k_cq - 1
+        proportions = means
+
+        results_data = {
+            "Metric": ["Q", "df", "p-value", "Proportion C1", "Proportion C2", "Proportion C3", "", ""],
+            "Value": [f"{result.statistic:.3f}", f"{df_cq}", f"{result.pvalue:.5f}", f"{proportions[0]:.3f}", f"{proportions[1]:.3f}", f"{proportions[2]:.3f}", "", ""]
+        }
+        st.table(pd.DataFrame(results_data))
+
+        cond_names = ["Condition 1", "Condition 2", "Condition 3"]
+        fig2 = go.Figure()
+        fig2.add_trace(go.Bar(x=cond_names, y=proportions, marker_color=["rgba(54, 162, 235, 0.7)", "rgba(255, 99, 71, 0.7)", "rgba(75, 192, 192, 0.7)"], name="Proportion"))
+        np.random.seed(123)
+        for j in range(data.shape[1]):
+            jitter_x = np.random.normal(j, 0.05, size=data.shape[0])
+            response_y = data[:, j]
+            fig2.add_trace(go.Scatter(x=jitter_x, y=response_y, mode="markers", showlegend=False, marker=dict(color="white", size=3, opacity=0.3)))
+        fig2.update_layout(template="plotly_dark", height=400, xaxis_title="Condition", yaxis_title="Proportion", yaxis=dict(range=[0, 1]))
+        st.plotly_chart(fig2, use_container_width=True)
+
     elif test_name == "Fisher's Exact Test":
 
         from scipy.stats import fisher_exact
@@ -2026,6 +2804,28 @@ def render_test_widget(test_name):
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+        st.divider()
+        st.subheader("Detailed Results")
+
+        from scipy.stats import fisher_exact as fisher_exact2
+
+        or_f, p_f = fisher_exact2(table)
+        log_or = np.log(or_f) if or_f > 0 else 0
+        se_log_or = np.sqrt(np.sum(1 / table[table > 0])) if np.all(table > 0) else 0
+        ci_low_f = np.exp(log_or - 1.96 * se_log_or) if se_log_or > 0 else 0
+        ci_high_f = np.exp(log_or + 1.96 * se_log_or) if se_log_or > 0 else float("inf")
+
+        results_data = {
+            "Metric": ["Odds Ratio", "95% CI (OR)", "p-value", "", "Cell A", "Cell B", "Cell C", "Cell D"],
+            "Value": [f"{or_f:.3f}", f"[{ci_low_f:.3f}, {ci_high_f:.3f}]", f"{p_f:.5f}", "", f"{table[0, 0]}", f"{table[0, 1]}", f"{table[1, 0]}", f"{table[1, 1]}"]
+        }
+        st.table(pd.DataFrame(results_data))
+
+        fig2 = go.Figure(data=go.Heatmap(z=table, text=table, texttemplate="%{text}", colorscale="Blues", showscale=False))
+        fig2.update_layout(template="plotly_dark", height=400)
+        fig2.add_annotation(x=0.5, y=-0.15, xref="paper", yref="paper", text=f"OR = {or_f:.3f}, 95% CI: [{ci_low_f:.3f}, {ci_high_f:.3f}]", showarrow=False, font=dict(size=14))
+        st.plotly_chart(fig2, use_container_width=True)
 
     # Parametric Two Sample Tests
 
@@ -2098,6 +2898,55 @@ def render_test_widget(test_name):
 
         st.plotly_chart(fig, use_container_width=True)
 
+        # =========================
+        # DETAILED STATISTICS TABLE
+        # =========================
+
+        st.divider()
+        st.subheader("Detailed Results")
+
+        from scipy.stats import t as t_dist_student
+
+        n1_s, n2_s = len(group1), len(group2)
+        m1_s, m2_s = np.mean(group1), np.mean(group2)
+        sd1_s, sd2_s = np.std(group1, ddof=1), np.std(group2, ddof=1)
+        pooled_sd = np.sqrt(((n1_s - 1) * sd1_s**2 + (n2_s - 1) * sd2_s**2) / (n1_s + n2_s - 2))
+        mean_diff_s = m2_s - m1_s
+        se_diff_s = pooled_sd * np.sqrt(1 / n1_s + 1 / n2_s)
+        ci_diff_s = se_diff_s * t_dist_student.ppf(0.975, n1_s + n2_s - 2)
+        cohens_d_s = mean_diff_s / pooled_sd
+
+        results_data = {
+            "Metric": ["Mean G1 (SD)", "Mean G2 (SD)", "Mean Difference", "95% CI of Diff", "Pooled SD", "t-statistic", "df", "p-value", "Cohen's d", "", "", ""],
+            "Value": [f"{m1_s:.2f} ({sd1_s:.2f})", f"{m2_s:.2f} ({sd2_s:.2f})", f"{mean_diff_s:.3f}", f"[{mean_diff_s - ci_diff_s:.3f}, {mean_diff_s + ci_diff_s:.3f}]", f"{pooled_sd:.3f}", f"{t:.3f}", f"{n1_s + n2_s - 2}", f"{p:.5f}", f"{cohens_d_s:.4f}", "", "", ""]
+        }
+        st.table(pd.DataFrame(results_data))
+
+        # =========================
+        # ENHANCED CHART
+        # =========================
+
+        fig2 = go.Figure()
+
+        for i, (g, name) in enumerate(zip([group1, group2], ["Group 1", "Group 2"])):
+            fig2.add_trace(go.Violin(y=g, name=name, box_visible=True, meanline_visible=True, points=False))
+            jitter_x = np.random.normal(i + 1, 0.06, len(g))
+            fig2.add_trace(
+                go.Scatter(
+                    x=jitter_x, y=g, mode="markers", showlegend=False,
+                    marker=dict(color="rgba(0, 123, 255, 0.4)", size=4),
+                )
+            )
+
+        fig2.update_layout(
+            template="plotly_dark",
+            height=550,
+            xaxis_title="Group",
+            yaxis_title="Value",
+        )
+
+        st.plotly_chart(fig2, use_container_width=True)
+
     elif test_name == "Welch's t-test (Independent, Unequal Variances)":
 
         from scipy.stats import ttest_ind
@@ -2152,6 +3001,61 @@ def render_test_widget(test_name):
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+        # =========================
+        # DETAILED STATISTICS TABLE
+        # =========================
+
+        st.divider()
+        st.subheader("Detailed Results")
+
+        from scipy.stats import t as t_dist_welch
+
+        n1_w, n2_w = len(g1), len(g2)
+        m1_w, m2_w = np.mean(g1), np.mean(g2)
+        sd1_w, sd2_w = np.std(g1, ddof=1), np.std(g2, ddof=1)
+        mean_diff_w = m2_w - m1_w
+        se_w = np.sqrt(sd1_w**2 / n1_w + sd2_w**2 / n2_w)
+
+        welch_df_num = (sd1_w**2 / n1_w + sd2_w**2 / n2_w)**2
+        welch_df_den = (sd1_w**2 / n1_w)**2 / (n1_w - 1) + (sd2_w**2 / n2_w)**2 / (n2_w - 1)
+        welch_df = welch_df_num / welch_df_den
+
+        ci_diff_w = se_w * t_dist_welch.ppf(0.975, welch_df)
+
+        pooled_sd_w = np.sqrt((sd1_w**2 + sd2_w**2) / 2)
+        cohens_d_w = mean_diff_w / pooled_sd_w
+
+        results_data = {
+            "Metric": ["Mean G1 (SD)", "Mean G2 (SD)", "Mean Difference", "95% CI of Diff", "t-statistic", "Welch df", "p-value", "Cohen's d"],
+            "Value": [f"{m1_w:.2f} ({sd1_w:.2f})", f"{m2_w:.2f} ({sd2_w:.2f})", f"{mean_diff_w:.3f}", f"[{mean_diff_w - ci_diff_w:.3f}, {mean_diff_w + ci_diff_w:.3f}]", f"{t:.3f}", f"{welch_df:.1f}", f"{p:.5f}", f"{cohens_d_w:.4f}"]
+        }
+        st.table(pd.DataFrame(results_data))
+
+        # =========================
+        # ENHANCED CHART
+        # =========================
+
+        fig2 = go.Figure()
+
+        for i, (g, name) in enumerate(zip([g1, g2], ["Group 1", "Group 2"])):
+            fig2.add_trace(go.Violin(y=g, name=name, box_visible=True, meanline_visible=True, points=False))
+            jitter_x = np.random.normal(i + 1, 0.06, len(g))
+            fig2.add_trace(
+                go.Scatter(
+                    x=jitter_x, y=g, mode="markers", showlegend=False,
+                    marker=dict(color="rgba(0, 123, 255, 0.4)", size=4),
+                )
+            )
+
+        fig2.update_layout(
+            template="plotly_dark",
+            height=550,
+            xaxis_title="Group",
+            yaxis_title="Value",
+        )
+
+        st.plotly_chart(fig2, use_container_width=True)
 
     elif test_name == "Paired t-test":
 
@@ -2225,6 +3129,88 @@ def render_test_widget(test_name):
 
         st.plotly_chart(fig, use_container_width=True)
 
+        # =========================
+        # DETAILED STATISTICS TABLE
+        # =========================
+
+        st.divider()
+        st.subheader("Detailed Results")
+
+        from scipy.stats import t as t_dist_paired
+
+        mean_pre = np.mean(before)
+        mean_post = np.mean(after)
+        sd_pre = np.std(before, ddof=1)
+        sd_post = np.std(after, ddof=1)
+        diffs = after - before
+        mean_diff_p = np.mean(diffs)
+        sd_diff = np.std(diffs, ddof=1)
+        n_p = len(before)
+        se_diff = sd_diff / np.sqrt(n_p)
+        ci_diff_paired = se_diff * t_dist_paired.ppf(0.975, n_p - 1)
+        cohens_dz = mean_diff_p / sd_diff
+
+        results_data = {
+            "Metric": ["Mean Pre (SD)", "Mean Post (SD)", "Mean Difference", "95% CI of Diff", "t-statistic", "df", "p-value", "Cohen's d_z"],
+            "Value": [f"{mean_pre:.2f} ({sd_pre:.2f})", f"{mean_post:.2f} ({sd_post:.2f})", f"{mean_diff_p:.3f}", f"[{mean_diff_p - ci_diff_paired:.3f}, {mean_diff_p + ci_diff_paired:.3f}]", f"{t:.3f}", f"{n_p - 1}", f"{p:.5f}", f"{cohens_dz:.4f}"]
+        }
+        st.table(pd.DataFrame(results_data))
+
+        # =========================
+        # ENHANCED CHART
+        # =========================
+
+        fig2 = go.Figure()
+
+        for i in range(n_p):
+            fig2.add_trace(
+                go.Scatter(
+                    x=["Before", "After"],
+                    y=[before[i], after[i]],
+                    mode="lines+markers",
+                    showlegend=False,
+                    line=dict(color="rgba(200, 200, 200, 0.3)", width=1),
+                    marker=dict(size=3),
+                )
+            )
+
+        fig2.add_trace(
+            go.Scatter(
+                x=["Before", "After"],
+                y=[mean_pre, mean_post],
+                mode="lines+markers",
+                name="Mean change",
+                line=dict(color="red", width=3),
+                marker=dict(color="red", size=12),
+            )
+        )
+
+        fig2.add_hline(
+            y=mean_pre,
+            line_dash="dot",
+            line_color="gray",
+            opacity=0.5,
+            annotation_text=f"Pre Mean = {mean_pre:.2f}",
+        )
+
+        fig2.add_hrect(
+            y0=mean_diff_p - ci_diff_paired,
+            y1=mean_diff_p + ci_diff_paired,
+            x0=-0.5, x1=1.5,
+            fillcolor="rgba(255, 0, 0, 0.1)",
+            line_width=0,
+            name="95% CI of difference",
+        )
+
+        fig2.update_layout(
+            template="plotly_dark",
+            height=600,
+            xaxis_title="Time Point",
+            yaxis_title="Value",
+        )
+
+        st.plotly_chart(fig2, use_container_width=True)
+
     # Parametric Multiple Group Tests
 
     elif test_name == "One-way ANOVA":
@@ -2290,6 +3276,68 @@ def render_test_widget(test_name):
 
         st.plotly_chart(fig, use_container_width=True)
 
+        # =========================
+        # DETAILED STATISTICS TABLE
+        # =========================
+
+        st.divider()
+        st.subheader("Detailed Results")
+
+        from scipy.stats import f as f_dist_1w
+
+        groups_1w = [g1, g2, g3]
+        means_1w = [np.mean(g) for g in groups_1w]
+        sds_1w = [np.std(g, ddof=1) for g in groups_1w]
+        n_1w = [len(g) for g in groups_1w]
+        n_total_1w = sum(n_1w)
+        k_1w = len(groups_1w)
+        grand_mean_1w = np.mean(np.concatenate(groups_1w))
+
+        ss_between = sum(n_i * (m_i - grand_mean_1w)**2 for n_i, m_i in zip(n_1w, means_1w))
+        ss_within = sum((n_i - 1) * sd_i**2 for n_i, sd_i in zip(n_1w, sds_1w))
+        df_between = k_1w - 1
+        df_within = n_total_1w - k_1w
+        ms_between = ss_between / df_between
+        ms_within = ss_within / df_within
+        F_1w = ms_between / ms_within
+        p_1w = 1 - f_dist_1w.cdf(F_1w, df_between, df_within)
+        eta_sq = ss_between / (ss_between + ss_within)
+        omega_sq = (ss_between - df_between * ms_within) / (ss_between + ss_within + ms_within)
+
+        results_data = {
+            "Metric": ["Mean G1 (SD)", "Mean G2 (SD)", "Mean G3 (SD)", "F", f"df ({df_between}, {df_within})", "p-value", "η²", "Partial ω²"],
+            "Value": [f"{means_1w[0]:.2f} ({sds_1w[0]:.2f})", f"{means_1w[1]:.2f} ({sds_1w[1]:.2f})", f"{means_1w[2]:.2f} ({sds_1w[2]:.2f})", f"{F_1w:.3f}", f"{df_between}, {df_within}", f"{p_1w:.5f}", f"{eta_sq:.4f}", f"{omega_sq:.4f}"]
+        }
+        st.table(pd.DataFrame(results_data))
+
+        # =========================
+        # ENHANCED CHART
+        # =========================
+
+        fig2 = go.Figure()
+
+        for i, (g, name) in enumerate(zip(groups_1w, ["Group 1", "Group 2", "Group 3"])):
+            fig2.add_trace(go.Violin(y=g, name=name, box_visible=True, meanline_visible=True, points=False))
+            jitter_x = np.random.normal(i + 1, 0.06, len(g))
+            fig2.add_trace(
+                go.Scatter(
+                    x=jitter_x, y=g, mode="markers", showlegend=False,
+                    marker=dict(color="rgba(0, 123, 255, 0.4)", size=4),
+                )
+            )
+
+        fig2.add_hline(y=grand_mean_1w, line_dash="dash", line_color="red",
+                       annotation_text=f"Grand Mean = {grand_mean_1w:.2f}")
+
+        fig2.update_layout(
+            template="plotly_dark",
+            height=550,
+            xaxis_title="Group",
+            yaxis_title="Value",
+        )
+
+        st.plotly_chart(fig2, use_container_width=True)
+
     elif test_name == "Two-way ANOVA":
 
         from scipy.stats import f_oneway
@@ -2335,6 +3383,78 @@ def render_test_widget(test_name):
         fig.update_layout(template="plotly_dark", height=550)
 
         st.plotly_chart(fig, use_container_width=True)
+
+        # =========================
+        # DETAILED STATISTICS TABLE
+        # =========================
+
+        st.divider()
+        st.subheader("Detailed Results")
+
+        from statsmodels.formula.api import ols as ols_tw
+        import statsmodels.api as sm_tw
+
+        df_tw = pd.DataFrame({
+            'y': np.concatenate([A1B1, A1B2, A2B1, A2B2]),
+            'A': np.repeat(['A1', 'A1', 'A2', 'A2'], n_per_cell),
+            'B': np.repeat(['B1', 'B2', 'B1', 'B2'], n_per_cell),
+        })
+        model_tw = ols_tw('y ~ C(A) * C(B)', data=df_tw).fit()
+        anova_tw = sm_tw.stats.anova_lm(model_tw, typ=2)
+
+        F_A = anova_tw.loc["C(A)", "F"]
+        p_A = anova_tw.loc["C(A)", "PR(>F)"]
+        F_B = anova_tw.loc["C(B)", "F"]
+        p_B = anova_tw.loc["C(B)", "PR(>F)"]
+        F_AB = anova_tw.loc["C(A):C(B)", "F"]
+        p_AB = anova_tw.loc["C(A):C(B)", "PR(>F)"]
+
+        ss_A = anova_tw.loc["C(A)", "sum_sq"]
+        ss_B = anova_tw.loc["C(B)", "sum_sq"]
+        ss_AB = anova_tw.loc["C(A):C(B)", "sum_sq"]
+        ss_resid_tw = anova_tw.loc["Residual", "sum_sq"]
+
+        partial_eta_A = ss_A / (ss_A + ss_resid_tw)
+        partial_eta_B = ss_B / (ss_B + ss_resid_tw)
+        partial_eta_AB = ss_AB / (ss_AB + ss_resid_tw)
+
+        results_data = {
+            "Metric": ["Mean A1B1", "Mean A1B2", "Mean A2B1", "Mean A2B2", "F_A", "p_A", "Partial η²_A", "", "F_B", "p_B", "Partial η²_B", "", "F_AB", "p_AB", "Partial η²_AB", ""],
+            "Value": [f"{np.mean(A1B1):.3f}", f"{np.mean(A1B2):.3f}", f"{np.mean(A2B1):.3f}", f"{np.mean(A2B2):.3f}", f"{F_A:.3f}", f"{p_A:.5f}", f"{partial_eta_A:.4f}", "", f"{F_B:.3f}", f"{p_B:.5f}", f"{partial_eta_B:.4f}", "", f"{F_AB:.3f}", f"{p_AB:.5f}", f"{partial_eta_AB:.4f}", ""]
+        }
+        st.table(pd.DataFrame(results_data))
+
+        # =========================
+        # ENHANCED CHART
+        # =========================
+
+        fig2 = go.Figure()
+
+        cell_means = {
+            "A1": {"B1": np.mean(A1B1), "B2": np.mean(A1B2)},
+            "A2": {"B1": np.mean(A2B1), "B2": np.mean(A2B2)},
+        }
+        for level_B, color, dash in [("B1", "blue", "solid"), ("B2", "red", "dash")]:
+            means = [cell_means[a][level_B] for a in ["A1", "A2"]]
+            fig2.add_trace(
+                go.Scatter(
+                    x=["A1", "A2"],
+                    y=means,
+                    mode="lines+markers",
+                    name=f"Factor B: {level_B}",
+                    line=dict(color=color, width=3, dash=dash),
+                    marker=dict(size=10),
+                )
+            )
+
+        fig2.update_layout(
+            template="plotly_dark",
+            height=500,
+            xaxis_title="Factor A",
+            yaxis_title="Cell Mean",
+        )
+
+        st.plotly_chart(fig2, use_container_width=True)
 
     elif test_name == "ANCOVA":
 
@@ -2416,6 +3536,79 @@ def render_test_widget(test_name):
 
         st.plotly_chart(fig, use_container_width=True)
 
+        # =========================
+        # DETAILED STATISTICS TABLE
+        # =========================
+
+        st.divider()
+        st.subheader("Detailed Results")
+
+        from statsmodels.formula.api import ols as ols_anc
+
+        df_anc = pd.DataFrame({
+            'outcome': np.concatenate([control, treatment]),
+            'group': np.repeat(['Control', 'Treatment'], n),
+            'cov': np.tile(covariate, 2),
+        })
+        model_anc = ols_anc('outcome ~ C(group) + cov', data=df_anc).fit()
+        beta_cov = model_anc.params['cov']
+        grand_mean_cov = np.mean(covariate)
+        adj_control = model_anc.params['Intercept'] + beta_cov * grand_mean_cov
+        adj_treatment = model_anc.params['Intercept'] + model_anc.params['C(group)[T.Treatment]'] + beta_cov * grand_mean_cov
+        F_group = model_anc.fvalue
+        p_group = model_anc.f_pvalue
+        ss_resid = model_anc.ssr
+        ss_expl = model_anc.ess
+        partial_eta_anc = ss_expl / (ss_expl + ss_resid)
+
+        results_data = {
+            "Metric": ["Adj. Mean Control", "Adj. Mean Treatment", "F (group)", "p-value", "Covariate β", "Partial η²", "", ""],
+            "Value": [f"{adj_control:.3f}", f"{adj_treatment:.3f}", f"{F_group:.3f}", f"{p_group:.5f}", f"{beta_cov:.3f}", f"{partial_eta_anc:.4f}", "", ""]
+        }
+        st.table(pd.DataFrame(results_data))
+
+        # =========================
+        # ENHANCED CHART
+        # =========================
+
+        fig2 = go.Figure()
+
+        fig2.add_trace(
+            go.Scatter(x=covariate, y=control, mode="markers", name="Control",
+                       marker=dict(color="rgba(0, 123, 255, 0.6)", size=6))
+        )
+        fig2.add_trace(
+            go.Scatter(x=covariate, y=treatment, mode="markers", name="Treatment",
+                       marker=dict(color="rgba(255, 65, 54, 0.6)", size=6))
+        )
+
+        slope_c, intercept_c, _, _, _ = linregress(covariate, control)
+        slope_t, intercept_t, _, _, _ = linregress(covariate, treatment)
+        x_line = np.linspace(covariate.min(), covariate.max(), 100)
+        fig2.add_trace(
+            go.Scatter(x=x_line, y=intercept_c + slope_c * x_line, mode="lines",
+                       name="Control (adjusted)", line=dict(color="blue", width=2, dash="dash"))
+        )
+        fig2.add_trace(
+            go.Scatter(x=x_line, y=intercept_t + slope_t * x_line, mode="lines",
+                       name="Treatment (adjusted)", line=dict(color="red", width=2, dash="dash"))
+        )
+
+        fig2.add_vline(x=grand_mean_cov, line_dash="dot", line_color="gray", opacity=0.5)
+        fig2.add_annotation(x=grand_mean_cov, y=adj_control, text=f"Adj. Control: {adj_control:.2f}",
+                           showarrow=True, arrowhead=1, ax=30, ay=-30, bgcolor="blue")
+        fig2.add_annotation(x=grand_mean_cov, y=adj_treatment, text=f"Adj. Treatment: {adj_treatment:.2f}",
+                           showarrow=True, arrowhead=1, ax=30, ay=30, bgcolor="red")
+
+        fig2.update_layout(
+            template="plotly_dark",
+            height=550,
+            xaxis_title="Covariate (Baseline)",
+            yaxis_title="Outcome",
+        )
+
+        st.plotly_chart(fig2, use_container_width=True)
+
     elif test_name == "Repeated Measures ANOVA":
 
         st.subheader("Interactive Repeated Measures ANOVA")
@@ -2494,6 +3687,74 @@ def render_test_widget(test_name):
 
         st.plotly_chart(fig, use_container_width=True)
 
+        # =========================
+        # DETAILED STATISTICS TABLE
+        # =========================
+
+        st.divider()
+        st.subheader("Detailed Results")
+
+        time_means = [np.mean([data[s][t] for s in range(subjects)]) for t in range(timepoints)]
+
+        df_rm = pd.DataFrame({
+            'subject': np.tile(range(subjects), timepoints),
+            'time': np.repeat(range(timepoints), subjects),
+            'y': np.array(data).T.flatten(),
+        })
+
+        from statsmodels.stats.anova import AnovaRM
+        rm_result = AnovaRM(df_rm, 'y', 'subject', within=['time']).fit()
+        rm_table = rm_result.anova_table
+        F_rm = rm_table.loc["time", "F Value"]
+        p_rm = rm_table.loc["time", "Pr > F"]
+        df_num_rm = int(rm_table.loc["time", "Num DF"])
+        df_den_rm = int(rm_table.loc["time", "Den DF"])
+        partial_eta_sq_rm = rm_table.loc["time", "F Value"] * df_num_rm / (rm_table.loc["time", "F Value"] * df_num_rm + df_den_rm)
+
+        results_data = {
+            "Metric": ["Mean T1", "Mean T2", "Mean T3", "Mean T4", "F", f"df ({df_num_rm}, {df_den_rm})", "p-value", "Partial η²"],
+            "Value": [f"{time_means[0]:.3f}", f"{time_means[1]:.3f}", f"{time_means[2]:.3f}", f"{time_means[3]:.3f}", f"{F_rm:.3f}", f"{df_num_rm}, {df_den_rm}", f"{p_rm:.5f}", f"{partial_eta_sq_rm:.4f}"]
+        }
+        st.table(pd.DataFrame(results_data))
+
+        # =========================
+        # ENHANCED CHART
+        # =========================
+
+        fig2 = go.Figure()
+
+        for vals in data:
+            fig2.add_trace(
+                go.Scatter(
+                    x=[1, 2, 3, 4],
+                    y=vals,
+                    mode="lines+markers",
+                    showlegend=False,
+                    line=dict(color="rgba(200, 200, 200, 0.3)", width=1),
+                    marker=dict(size=3),
+                )
+            )
+
+        fig2.add_trace(
+            go.Scatter(
+                x=[1, 2, 3, 4],
+                y=time_means,
+                mode="lines+markers",
+                name="Mean trend",
+                line=dict(color="red", width=3),
+                marker=dict(color="red", size=10),
+            )
+        )
+
+        fig2.update_layout(
+            template="plotly_dark",
+            height=600,
+            xaxis_title="Time",
+            yaxis_title="Measurement",
+        )
+
+        st.plotly_chart(fig2, use_container_width=True)
+
     elif test_name == "MANOVA":
 
         st.subheader("Interactive MANOVA")
@@ -2562,6 +3823,42 @@ def render_test_widget(test_name):
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+        st.divider()
+        st.subheader("Detailed Results")
+
+        n_m = len(g1)
+        y_all = np.vstack([g1, g2])
+        grand_mean = np.mean(y_all, axis=0)
+        mean1 = np.mean(g1, axis=0)
+        mean2 = np.mean(g2, axis=0)
+
+        H_m = n_m * np.outer(mean1 - grand_mean, mean1 - grand_mean) + n_m * np.outer(mean2 - grand_mean, mean2 - grand_mean)
+        E_m = (n_m - 1) * np.cov(g1, rowvar=False) + (n_m - 1) * np.cov(g2, rowvar=False)
+        wilks_lambda = np.linalg.det(E_m) / np.linalg.det(E_m + H_m)
+
+        p_manova = 3
+        k_manova = 2
+        df1_m = p_manova
+        df2_m = 2 * n_m - p_manova - 1
+        F_m = ((1 - wilks_lambda) / wilks_lambda) * (df2_m / df1_m)
+
+        from scipy.stats import f as f_dist_m
+        p_m = 1 - f_dist_m.cdf(F_m, df1_m, df2_m)
+
+        results_data = {
+            "Metric": ["Wilks' Λ", "F-approx", f"df ({df1_m}, {df2_m:.0f})", "p-value", "Number of DVs", "Number of Groups", "", ""],
+            "Value": [f"{wilks_lambda:.4f}", f"{F_m:.3f}", f"{df1_m}, {df2_m:.0f}", f"{p_m:.5f}", f"{p_manova}", f"{k_manova}", "", ""]
+        }
+        st.table(pd.DataFrame(results_data))
+
+        fig2 = go.Figure()
+        for idx, (g, name, color) in enumerate(zip([g1, g2], ["Group 1", "Group 2"], ["blue", "red"])):
+            fig2.add_trace(go.Scatter(x=g[:, 0], y=g[:, 1], mode="markers", name=name, marker=dict(color=color, size=6, opacity=0.5)))
+            centroid = np.mean(g[:, :2], axis=0)
+            fig2.add_trace(go.Scatter(x=[centroid[0]], y=[centroid[1]], mode="markers", showlegend=False, marker=dict(color=color, size=15, symbol="x")))
+        fig2.update_layout(template="plotly_dark", height=500, xaxis_title="Dimension 1", yaxis_title="Dimension 2")
+        st.plotly_chart(fig2, use_container_width=True)
 
     # Non-parametric Two Sample Tests
 
@@ -2642,6 +3939,64 @@ def render_test_widget(test_name):
 
         st.plotly_chart(fig, use_container_width=True)
 
+        # =========================
+        # DETAILED STATISTICS TABLE
+        # =========================
+
+        st.divider()
+        st.subheader("Detailed Results")
+
+        median_pre = np.median(before)
+        median_post = np.median(after)
+        median_diff = median_post - median_pre
+        from scipy.stats import norm as norm_w
+        z_w = -norm_w.ppf(p / 2)
+        r_ws = z_w / np.sqrt(n) if n > 0 else 0
+
+        results_data = {
+            "Metric": ["Median (Pre)", "Median (Post)", "Median Difference", "W-statistic", "z", "p-value", "Rank-biserial r", ""],
+            "Value": [f"{median_pre:.3f}", f"{median_post:.3f}", f"{median_diff:.3f}", f"{stat:.3f}", f"{z_w:.3f}", f"{p:.5f}", f"{r_ws:.4f}", ""]
+        }
+        st.table(pd.DataFrame(results_data))
+
+        # =========================
+        # ENHANCED CHART
+        # =========================
+
+        fig2 = go.Figure()
+
+        for i in range(n):
+            fig2.add_trace(
+                go.Scatter(
+                    x=["Before", "After"],
+                    y=[before[i], after[i]],
+                    mode="lines+markers",
+                    showlegend=False,
+                    line=dict(color="rgba(200, 200, 200, 0.3)", width=1),
+                    marker=dict(size=3),
+                )
+            )
+
+        fig2.add_trace(
+            go.Scatter(
+                x=["Before", "After"],
+                y=[median_pre, median_post],
+                mode="lines+markers",
+                name="Median change",
+                line=dict(color="red", width=3),
+                marker=dict(color="red", size=12),
+            )
+        )
+
+        fig2.update_layout(
+            template="plotly_dark",
+            height=600,
+            xaxis_title="Time Point",
+            yaxis_title="Value",
+        )
+
+        st.plotly_chart(fig2, use_container_width=True)
+
     elif test_name == "Mann-Whitney U Test":
 
         from scipy.stats import mannwhitneyu
@@ -2711,6 +4066,56 @@ def render_test_widget(test_name):
 
         st.plotly_chart(fig, use_container_width=True)
 
+        # =========================
+        # DETAILED STATISTICS TABLE
+        # =========================
+
+        st.divider()
+        st.subheader("Detailed Results")
+
+        medians_mw = [np.median(g) for g in [g1, g2]]
+        iqr_mw = [
+            f"{np.percentile(g, 25):.2f}–{np.percentile(g, 75):.2f}"
+            for g in [g1, g2]
+        ]
+        from scipy.stats import norm as norm_mw
+        z_mw = -norm_mw.ppf(p / 2)
+        r_rb_mw = 1 - 2 * min(u, n * n - u) / (n * n)
+
+        results_data = {
+            "Metric": ["Median G1 (IQR)", "Median G2 (IQR)", "U-statistic", "z", "p-value", "Rank-biserial r", "", ""],
+            "Value": [f"{medians_mw[0]:.3f} ({iqr_mw[0]})", f"{medians_mw[1]:.3f} ({iqr_mw[1]})", f"{u:.3f}", f"{z_mw:.3f}", f"{p:.5f}", f"{r_rb_mw:.4f}", "", ""]
+        }
+        st.table(pd.DataFrame(results_data))
+
+        # =========================
+        # ENHANCED CHART
+        # =========================
+
+        fig2 = go.Figure()
+
+        for i, (g, name) in enumerate(zip([g1, g2], ["Group 1", "Group 2"])):
+            fig2.add_trace(go.Violin(y=g, name=name, box_visible=True, meanline_visible=True))
+            jitter_x = np.random.normal(i + 1, 0.06, len(g))
+            fig2.add_trace(
+                go.Scatter(
+                    x=jitter_x,
+                    y=g,
+                    mode="markers",
+                    showlegend=False,
+                    marker=dict(color="rgba(0, 123, 255, 0.4)", size=4),
+                )
+            )
+
+        fig2.update_layout(
+            template="plotly_dark",
+            height=550,
+            xaxis_title="Group",
+            yaxis_title="Value",
+        )
+
+        st.plotly_chart(fig2, use_container_width=True)
+
     # Non-parametric Multiple Group Tests
 
     elif test_name == "Kruskal-Wallis Test":
@@ -2777,6 +4182,56 @@ def render_test_widget(test_name):
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+        # =========================
+        # DETAILED STATISTICS TABLE
+        # =========================
+
+        st.divider()
+        st.subheader("Detailed Results")
+
+        n_kw = [len(g1), len(g2), len(g3)]
+        medians_kw = [np.median(g) for g in [g1, g2, g3]]
+        iqr_kw = [
+            f"{np.percentile(g, 25):.2f}–{np.percentile(g, 75):.2f}"
+            for g in [g1, g2, g3]
+        ]
+        n_total_kw = sum(n_kw)
+        eps_sq = H / (n_total_kw - 1) if n_total_kw > 1 else 0
+
+        results_data = {
+            "Metric": ["Median G1 (IQR)", "Median G2 (IQR)", "Median G3 (IQR)", "H", "df", "p-value", "ε²", ""],
+            "Value": [f"{medians_kw[0]:.3f} ({iqr_kw[0]})", f"{medians_kw[1]:.3f} ({iqr_kw[1]})", f"{medians_kw[2]:.3f} ({iqr_kw[2]})", f"{H:.3f}", "2", f"{p:.5f}", f"{eps_sq:.4f}", ""]
+        }
+        st.table(pd.DataFrame(results_data))
+
+        # =========================
+        # ENHANCED CHART
+        # =========================
+
+        fig2 = go.Figure()
+
+        for i, (g, name) in enumerate(zip([g1, g2, g3], ["Group 1", "Group 2", "Group 3"])):
+            fig2.add_trace(go.Box(y=g, name=name, boxmean="sd"))
+            jitter_x = np.random.normal(i + 1, 0.06, len(g))
+            fig2.add_trace(
+                go.Scatter(
+                    x=jitter_x,
+                    y=g,
+                    mode="markers",
+                    showlegend=False,
+                    marker=dict(color="rgba(0, 123, 255, 0.4)", size=4),
+                )
+            )
+
+        fig2.update_layout(
+            template="plotly_dark",
+            height=550,
+            xaxis_title="Group",
+            yaxis_title="Value",
+        )
+
+        st.plotly_chart(fig2, use_container_width=True)
 
     elif test_name == "Friedman Test":
 
@@ -2857,6 +4312,60 @@ def render_test_widget(test_name):
 
         st.plotly_chart(fig, use_container_width=True)
 
+        # =========================
+        # DETAILED STATISTICS TABLE
+        # =========================
+
+        st.divider()
+        st.subheader("Detailed Results")
+
+        medians_f = [np.median(t1), np.median(t2), np.median(t3)]
+        kendall_w = stat / (subjects * (3 - 1))
+
+        results_data = {
+            "Metric": ["Median T1", "Median T2", "Median T3", "χ²", "df", "p-value", "Kendall's W", ""],
+            "Value": [f"{medians_f[0]:.3f}", f"{medians_f[1]:.3f}", f"{medians_f[2]:.3f}", f"{stat:.3f}", "2", f"{p:.5f}", f"{kendall_w:.4f}", ""]
+        }
+        st.table(pd.DataFrame(results_data))
+
+        # =========================
+        # ENHANCED CHART
+        # =========================
+
+        fig2 = go.Figure()
+
+        for i in range(subjects):
+            fig2.add_trace(
+                go.Scatter(
+                    x=["T1", "T2", "T3"],
+                    y=[t1[i], t2[i], t3[i]],
+                    mode="lines+markers",
+                    showlegend=False,
+                    line=dict(color="rgba(200, 200, 200, 0.3)", width=1),
+                    marker=dict(size=3),
+                )
+            )
+
+        fig2.add_trace(
+            go.Scatter(
+                x=["T1", "T2", "T3"],
+                y=medians_f,
+                mode="lines+markers",
+                name="Median trend",
+                line=dict(color="red", width=3),
+                marker=dict(color="red", size=10),
+            )
+        )
+
+        fig2.update_layout(
+            template="plotly_dark",
+            height=600,
+            xaxis_title="Time Point",
+            yaxis_title="Value",
+        )
+
+        st.plotly_chart(fig2, use_container_width=True)
+
     elif test_name == "Permutation MANOVA or Non-Parametric MANOVA":
 
         st.subheader("Interactive Permutation MANOVA")
@@ -2933,6 +4442,60 @@ def render_test_widget(test_name):
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+        st.divider()
+        st.subheader("Detailed Results")
+
+        n_pm = len(g1)
+        y_all_pm = np.vstack([g1, g2])
+        grand_mean_pm = np.mean(y_all_pm, axis=0)
+
+        SSt_pm = np.sum((y_all_pm - grand_mean_pm)**2)
+        mean1_pm = np.mean(g1, axis=0)
+        mean2_pm = np.mean(g2, axis=0)
+        SSb_pm = n_pm * np.sum((mean1_pm - grand_mean_pm)**2) + n_pm * np.sum((mean2_pm - grand_mean_pm)**2)
+        SSw_pm = SSt_pm - SSb_pm
+
+        k_pm = 2
+        N_pm = 2 * n_pm
+        pseudo_F = (SSb_pm / (k_pm - 1)) / (SSw_pm / (N_pm - k_pm))
+        R2_pm = SSb_pm / SSt_pm
+
+        n_perms = 199
+        pseudo_Fs = np.zeros(n_perms)
+        combined = y_all_pm.copy()
+        for perm in range(n_perms):
+            np.random.shuffle(combined)
+            perm_g1 = combined[:n_pm]
+            perm_g2 = combined[n_pm:]
+            perm_mean1 = np.mean(perm_g1, axis=0)
+            perm_mean2 = np.mean(perm_g2, axis=0)
+            perm_grand = np.mean(combined, axis=0)
+            perm_SSb = n_pm * np.sum((perm_mean1 - perm_grand)**2) + n_pm * np.sum((perm_mean2 - perm_grand)**2)
+            perm_SSw = np.sum((combined - perm_grand)**2) - perm_SSb
+            pseudo_Fs[perm] = (perm_SSb / (k_pm - 1)) / (perm_SSw / (N_pm - k_pm))
+
+        p_pm = (np.sum(pseudo_Fs >= pseudo_F) + 1) / (n_perms + 1)
+
+        results_data = {
+            "Metric": ["Pseudo-F", "R²", "Permutations", "p-value"],
+            "Value": [f"{pseudo_F:.3f}", f"{R2_pm:.4f}", f"{n_perms + 1}", f"{p_pm:.5f}"]
+        }
+        st.table(pd.DataFrame(results_data))
+
+        fig2 = go.Figure()
+        for idx, (g, name, color) in enumerate(zip([g1, g2], ["Group 1", "Group 2"], ["blue", "red"])):
+            fig2.add_trace(go.Scatter(x=g[:, 0], y=g[:, 1], mode="markers", name=name, marker=dict(color=color, size=6, opacity=0.5)))
+            mean_pos = np.mean(g, axis=0)
+            cov_pos = np.cov(g, rowvar=False)
+            theta = np.linspace(0, 2 * np.pi, 100)
+            eigvals, eigvecs = np.linalg.eigh(cov_pos)
+            order = eigvals.argsort()[::-1]
+            eigvals, eigvecs = eigvals[order], eigvecs[:, order]
+            ellipse = np.column_stack([np.cos(theta), np.sin(theta)]) @ (np.diag(np.sqrt(eigvals) * 2)) @ eigvecs.T + mean_pos
+            fig2.add_trace(go.Scatter(x=ellipse[:, 0], y=ellipse[:, 1], mode="lines", showlegend=False, line=dict(color=color, width=2, dash="dash")))
+        fig2.update_layout(template="plotly_dark", height=500, xaxis_title="Dimension 1", yaxis_title="Dimension 2")
+        st.plotly_chart(fig2, use_container_width=True)
 
     # Correlation and Association Tests
 
@@ -3956,6 +5519,1344 @@ def render_test_widget(test_name):
 
     else:
         st.info("Interactive widget coming soon for this test.")
+
+
+# =========================
+# SAMPLE SIZE / POWER CALCULATOR
+# =========================
+
+
+def render_power_calculator(params):
+    """Render sample size estimation results for the given analysis."""
+
+    atype = params["type"]
+    alpha = params["alpha"]
+    power = params["power"]
+    tails = params["tails"]
+    alternative = "two-sided" if tails == "Two-tailed" else "larger"
+
+    # Determine z critical values
+    if alternative == "two-sided":
+        z_alpha = norm.ppf(1 - alpha / 2)
+    else:
+        z_alpha = norm.ppf(1 - alpha)
+    z_beta = norm.ppf(power)
+
+    # Extract global adjustment parameters (with defaults for backward compat)
+    dropout_rate = params.get("dropout_rate", 0.0)
+    num_tests = params.get("num_tests", 1)
+    cost_per = params.get("cost_per", 0.0)
+    recruitment_rate = params.get("recruitment_rate", 0.0)
+
+    # Apply Bonferroni correction if multiple tests
+    if num_tests > 1:
+        alpha = alpha / num_tests
+        if alternative == "two-sided":
+            z_alpha = norm.ppf(1 - alpha / 2)
+        else:
+            z_alpha = norm.ppf(1 - alpha)
+
+    # --- Computation ---
+    result = None
+    n_total = None
+    n_total_raw = None
+    n_per_group = None
+    explanation = ""
+    formula_latex = ""
+
+    if atype == "one_mean":
+        d = params["effect_size"]
+        from statsmodels.stats.power import TTestPower
+        solver = TTestPower()
+        if d > 0:
+            n_total = int(np.ceil(solver.solve_power(
+                effect_size=d, alpha=alpha, power=power, alternative=alternative
+            )))
+            n_per_group = n_total
+        explanation = (
+            f"Required total sample size for a one-sample {tails.lower()} t-test "
+            f"to detect Cohen's d = {d:.3f} with α = {alpha} and power = {power}."
+        )
+        formula_latex = r"n = \left( \frac{z_{\alpha/2} + z_{\beta}}{d} \right)^2"
+
+    elif atype == "two_means":
+        d = params["effect_size"]
+        ratio = params["ratio"]
+        from statsmodels.stats.power import TTestIndPower
+        solver = TTestIndPower()
+        if d > 0:
+            n1 = solver.solve_power(
+                effect_size=d, alpha=alpha, power=power,
+                ratio=ratio, alternative=alternative,
+            )
+            n1 = int(np.ceil(n1))
+            n2 = int(np.ceil(n1 * ratio))
+            n_total = n1 + n2
+            n_per_group = (n1, n2)
+        explanation = (
+            f"Required sample size per group for an independent {tails.lower()} t-test "
+            f"to detect Cohen's d = {d:.3f} with α = {alpha} and power = {power}, "
+            f"allocation ratio n₂/n₁ = {ratio:.2f}."
+        )
+        formula_latex = r"n_1 = 2 \left( \frac{z_{\alpha/2} + z_{\beta}}{d} \right)^2 \quad n_2 = r \cdot n_1"
+
+    elif atype == "paired":
+        d = params["effect_size"]
+        from statsmodels.stats.power import TTestPower
+        solver = TTestPower()
+        if d > 0:
+            n_total = int(np.ceil(solver.solve_power(
+                effect_size=d, alpha=alpha, power=power, alternative=alternative,
+            )))
+            n_per_group = n_total
+        explanation = (
+            f"Required number of pairs for a paired {tails.lower()} t-test "
+            f"to detect Cohen's d_z = {d:.3f} with α = {alpha} and power = {power}."
+        )
+        formula_latex = r"n = \left( \frac{z_{\alpha/2} + z_{\beta}}{d_z} \right)^2"
+
+    elif atype == "one_prop":
+        p0 = params["prop_null"]
+        p1 = params["prop_alt"]
+        from statsmodels.stats.proportion import proportion_effectsize
+        from statsmodels.stats.power import NormalIndPower
+        d_eff = proportion_effectsize(p1, p0)
+        solver = NormalIndPower()
+        if abs(d_eff) > 0:
+            n_total = int(np.ceil(solver.solve_power(
+                effect_size=abs(d_eff), alpha=alpha, power=power,
+                alternative=alternative,
+            )))
+            n_per_group = n_total
+        explanation = (
+            f"Required sample size for a one-sample proportion test "
+            f"to detect a difference from {p0} to {p1} "
+            f"with α = {alpha} and power = {power}."
+        )
+        formula_latex = r"n = \left( \frac{z_{\alpha/2} \sqrt{p_0(1-p_0)} + z_{\beta} \sqrt{p_1(1-p_1)}}{p_1 - p_0} \right)^2"
+
+    elif atype == "two_prop":
+        p1 = params["p1"]
+        p2 = params["p2"]
+        ratio = params["ratio"]
+        from statsmodels.stats.proportion import proportion_effectsize
+        from statsmodels.stats.power import NormalIndPower
+        d_eff = proportion_effectsize(p2, p1)
+        solver = NormalIndPower()
+        if abs(d_eff) > 0:
+            n1 = solver.solve_power(
+                effect_size=abs(d_eff), alpha=alpha, power=power,
+                ratio=ratio, alternative=alternative,
+            )
+            n1 = int(np.ceil(n1))
+            n2 = int(np.ceil(n1 * ratio))
+            n_total = n1 + n2
+            n_per_group = (n1, n2)
+        explanation = (
+            f"Required sample size per group for a two-proportion z-test "
+            f"to detect a difference between {p1} and {p2} "
+            f"with α = {alpha}, power = {power}, ratio = {ratio:.2f}."
+        )
+        formula_latex = r"n_1 = \left( \frac{z_{\alpha/2} \sqrt{2\bar{p}(1-\bar{p})} + z_{\beta} \sqrt{p_1(1-p_1) + p_2(1-p_2)}}{p_1 - p_2} \right)^2"
+
+    elif atype == "anova":
+        f_eff = params["effect_size"]
+        k = params["k"]
+        from statsmodels.stats.power import FTestAnovaPower
+        solver = FTestAnovaPower()
+        if f_eff > 0:
+            n_per_g = solver.solve_power(
+                effect_size=f_eff, alpha=alpha, power=power, k_groups=k,
+            )
+            n_per_g = int(np.ceil(n_per_g))
+            n_total = n_per_g * k
+            n_per_group = n_per_g
+        explanation = (
+            f"Required sample size per group for a one-way ANOVA with {k} groups "
+            f"to detect Cohen's f = {f_eff:.3f} with α = {alpha} and power = {power}."
+        )
+        formula_latex = r"n = \frac{\text{from non-central }F\text{ distribution}}{k} \quad f = \frac{\sigma_{\text{between}}}{\sigma_{\text{within}}}"
+
+    elif atype == "correlation":
+        r_val = params["effect_size"]
+        import math
+        fisher_z = math.atanh(r_val)
+        n_total = int(np.ceil(3 + ((z_alpha + z_beta) / fisher_z) ** 2))
+        n_per_group = n_total
+        explanation = (
+            f"Required sample size to detect a Pearson correlation of r = {r_val:.3f} "
+            f"with α = {alpha} and power = {power} ({tails.lower()}), "
+            f"based on Fisher's z-transformation."
+        )
+        formula_latex = r"n = 3 + \left( \frac{z_{\alpha/2} + z_{\beta}}{\text{arctanh}(r)} \right)^2"
+
+    elif atype == "regression":
+        f2 = params["effect_size"]
+        k = params["k"]
+        if f2 > 0:
+            from scipy.stats import ncf as noncentral_f, f as f_dist
+            for n_candidate in range(k + 2, 10000):
+                dfd = n_candidate - k - 1
+                ncp = f2 * n_candidate
+                f_crit = f_dist.ppf(1 - alpha, k, dfd)
+                pwr_cur = 1 - noncentral_f.cdf(f_crit, k, dfd, ncp)
+                if pwr_cur >= power:
+                    n_total = n_candidate
+                    break
+            n_per_group = n_total
+        explanation = (
+            f"Required total sample size for multiple linear regression "
+            f"with {k} predictor(s) to detect Cohen's f² = {f2:.3f} "
+            f"(R² = {f2 / (1 + f2):.3f}) with α = {alpha} and power = {power}."
+        )
+        formula_latex = r"n = \text{from non-central }F\text{ distribution} \quad f^2 = \frac{R^2}{1-R^2}"
+
+    elif atype == "logistic":
+        k = params["k"]
+        ev_rate = params["event_rate"]
+        or_val = params["or"]
+        p1_log = (or_val * ev_rate) / (1 - ev_rate + or_val * ev_rate)
+        d_log = abs(p1_log - ev_rate)
+        p_bar = (ev_rate + p1_log) / 2
+        from statsmodels.stats.power import NormalIndPower
+        solver = NormalIndPower()
+        se = np.sqrt(2 * p_bar * (1 - p_bar))
+        d_eff_log = d_log / se if se > 0 else 0
+        if d_eff_log > 0:
+            n1 = solver.solve_power(
+                effect_size=d_eff_log, alpha=alpha, power=power, alternative=alternative,
+            )
+            n_base = int(np.ceil(n1))
+            n_total = max(n_base, 10 * k)
+            n_per_group = n_total
+        explanation = (
+            f"Required total sample size for logistic regression "
+            f"with {k} predictor(s) to detect OR = {or_val:.2f} "
+            f"with baseline event rate = {ev_rate:.2f}, α = {alpha}, power = {power}. "
+            f"Lower bound of 10 × {k} = {10 * k} events per predictor applied."
+        )
+        formula_latex = r"n = \frac{(z_{\alpha/2} + z_{\beta})^2 \bar{p}(1-\bar{p})}{(p_1 - p_0)^2} \quad \text{min } 10k"
+
+    elif atype == "chisq":
+        w = params["effect_size"]
+        df = params["df"]
+        from statsmodels.stats.power import GofChisquarePower
+        solver = GofChisquarePower()
+        if w > 0:
+            n_total = int(np.ceil(solver.solve_power(
+                effect_size=w, alpha=alpha, power=power,
+                n_bins=df + 1,
+            )))
+            n_per_group = n_total
+        explanation = (
+            f"Required total sample size for a chi-square test "
+            f"with {df} degree(s) of freedom to detect Cohen's w = {w:.3f} "
+            f"with α = {alpha} and power = {power}."
+        )
+        formula_latex = r"n = \text{from non-central }\chi^2\text{ distribution} \quad w = \sqrt{\sum \frac{(p_{0i} - p_{1i})^2}{p_{0i}}}"
+
+    elif atype == "mannwhitney":
+        p_val = params["effect_size"]
+        ratio = params["ratio"]
+        are = params["are"]
+        from statsmodels.stats.power import NormalIndPower
+        solver = NormalIndPower()
+        d_mw = np.sqrt(3) * (p_val - 0.5)
+        if d_mw > 0:
+            n1 = solver.solve_power(
+                effect_size=d_mw, alpha=alpha, power=power,
+                ratio=ratio, alternative=alternative,
+            )
+            n1 = int(np.ceil(n1 / are))
+            n2 = int(np.ceil(n1 * ratio))
+            n_total = n1 + n2
+            n_per_group = (n1, n2)
+        explanation = (
+            f"Required sample size for Mann-Whitney / Wilcoxon test "
+            f"to detect P(X>Y) = {p_val:.3f} (d ≈ {d_mw:.3f}) with ARE = {are:.3f}, "
+            f"α = {alpha}, power = {power}, ratio = {ratio:.2f}."
+        )
+        formula_latex = r"n_{\text{nonparam}} = \frac{n_{\text{param}}}{\text{ARE}} \quad \text{ARE} \approx 0.955"
+
+    elif atype == "logrank":
+        hr = params["hr"]
+        ratio = params["ratio"]
+        med_ctrl = params["median_survival"]
+        study_dur = params["study_duration"]
+        log_hr = np.log(hr)
+        num_events = ((z_alpha + z_beta) ** 2) * ((ratio + 1) ** 2) / (ratio * (log_hr ** 2))
+        lambda_ctrl = np.log(2) / med_ctrl
+        p_event_ctrl = 1 - np.exp(-lambda_ctrl * study_dur)
+        p_event_trt = 1 - np.exp(-lambda_ctrl / hr * study_dur)
+        p_event = (p_event_ctrl + ratio * p_event_trt) / (1 + ratio)
+        if p_event > 0:
+            n_total = int(np.ceil(num_events / p_event))
+            n1 = int(np.ceil(n_total / (1 + ratio)))
+            n2 = n_total - n1
+            n_per_group = (n1, n2)
+        explanation = (
+            f"Required sample size for log-rank test to detect HR = {hr:.2f} "
+            f"with median survival {med_ctrl:.0f} months, study duration {study_dur:.0f} months, "
+            f"α = {alpha}, power = {power}, ratio = {ratio:.2f}. "
+            f"Events needed: {int(np.ceil(num_events))}."
+        )
+        formula_latex = r"E = \frac{(z_{\alpha/2}+z_{\beta})^2 (r+1)^2}{r (\log HR)^2} \quad N = \frac{E}{P(\text{event})}"
+
+    elif atype == "cox":
+        hr = params["hr"]
+        k = params["k"]
+        sd_x = params["sd_x"]
+        r2_x = params["r2_x"]
+        ev_rate = params["event_rate"]
+        log_hr = np.log(hr)
+        var_denom = (sd_x ** 2) * (log_hr ** 2) * (1 - r2_x)
+        if var_denom > 0:
+            num_events = ((z_alpha + z_beta) ** 2) / var_denom
+            num_events = max(num_events, 10 * k)
+            n_total = int(np.ceil(num_events / ev_rate))
+            n_per_group = n_total
+        explanation = (
+            f"Required total sample size for Cox regression with {k} predictor(s) "
+            f"to detect HR = {hr:.2f} (SD = {sd_x:.1f}, R² = {r2_x:.2f}) "
+            f"with α = {alpha}, power = {power}, event rate = {ev_rate:.2f}. "
+            f"Events needed: {int(np.ceil(num_events))}."
+        )
+        formula_latex = r"E = \frac{(z_{\alpha/2}+z_{\beta})^2}{\sigma_x^2 \beta^2 (1-R^2)} \quad N = \frac{E}{P(\text{event})}"
+
+    elif atype == "equiv":
+        margin = params["margin"]
+        exp_diff = params["expected_diff"]
+        sd = params["sd"]
+        ratio = params["ratio"]
+        d_e = margin - abs(exp_diff)
+        if d_e > 0:
+            from statsmodels.stats.power import NormalIndPower
+            solver = NormalIndPower()
+            es_e = d_e / sd
+            n1 = solver.solve_power(
+                effect_size=es_e, alpha=alpha, power=power,
+                ratio=ratio, alternative='larger',
+            )
+            n1 = int(np.ceil(n1))
+            n2 = int(np.ceil(n1 * ratio))
+            n_total = n1 + n2
+            n_per_group = (n1, n2)
+        explanation = (
+            f"Required sample size for non-inferiority test "
+            f"with margin = {margin:.2f}, expected difference = {exp_diff:.2f}, "
+            f"SD = {sd:.1f}, α = {alpha}, power = {power}, ratio = {ratio:.2f}."
+        )
+        formula_latex = r"n_1 = \frac{(z_{\alpha}+z_{\beta})^2 \sigma^2 (1+1/r)}{(\delta - |d|)^2}"
+
+    elif atype == "rm_anova":
+        f_eff = params["effect_size"]
+        k = params["k"]
+        m = params["m"]
+        rho = params["rho"]
+        epsilon = params["epsilon"]
+        from statsmodels.stats.power import FTestAnovaPower
+        solver = FTestAnovaPower()
+        if f_eff > 0:
+            n_per_g = solver.solve_power(
+                effect_size=f_eff, alpha=alpha, power=power, k_groups=k,
+            )
+            design_effect = (1 + (m - 1) * rho) / m
+            df_adj = (m - 1) * epsilon
+            n_per_g_adj = int(np.ceil(n_per_g * design_effect * k / (k * df_adj / (k - 1))))
+            n_per_g_adj = max(n_per_g_adj, int(np.ceil(n_per_g)))
+            n_total = n_per_g_adj * k
+            n_per_group = n_per_g_adj
+        explanation = (
+            f"Required sample size per group for repeated measures ANOVA "
+            f"with {k} group(s), {m} measurement(s), ρ = {rho:.2f}, ε = {epsilon:.2f}, "
+            f"Cohen's f = {f_eff:.3f}, α = {alpha}, power = {power}."
+        )
+        formula_latex = r"\text{Adjustment: } n_{\text{adj}} = n \times \frac{1+(m-1)\rho}{m} \quad \text{GG: } \varepsilon"
+
+    elif atype == "twoway_anova":
+        f_a = params["f_a"]
+        f_b = params["f_b"]
+        f_ab = params["f_ab"]
+        rows = params["rows"]
+        cols = params["cols"]
+        focus = params["focus"]
+        from statsmodels.stats.power import FTestAnovaPower
+        solver = FTestAnovaPower()
+        if focus == "Main Effect A":
+            f_use = f_a
+            k_use = rows
+        elif focus == "Main Effect B":
+            f_use = f_b
+            k_use = cols
+        else:
+            f_use = f_ab
+            k_use = rows * cols
+        if f_use > 0:
+            n_per_cell = solver.solve_power(
+                effect_size=f_use, alpha=alpha, power=power, k_groups=k_use,
+            )
+            n_per_cell = int(np.ceil(n_per_cell))
+            n_total = n_per_cell * rows * cols
+            n_per_group = n_per_cell
+        explanation = (
+            f"Required sample size per cell for two-way ANOVA "
+            f"({rows} × {cols} design), focus on {focus}, "
+            f"Cohen's f = {f_use:.3f}, α = {alpha}, power = {power}. "
+            f"Total N = {n_total} across {rows * cols} cells."
+        )
+        formula_latex = r"n_{\text{per cell}} = \text{from non-central }F \quad N = n \times r \times c"
+
+    elif atype == "roc_auc":
+        auc = params["auc"]
+        null_auc = params["null_auc"]
+        ratio = params["ratio"]
+        v_auc = auc * (1 - auc) + (ratio - 1) * (auc / (2 - auc) - auc ** 2) / (1 + ratio)
+        delta_auc = auc - null_auc
+        if delta_auc > 0:
+            n_cases = ((z_alpha + z_beta) ** 2 * v_auc) / (delta_auc ** 2)
+            n_cases = int(np.ceil(n_cases))
+            n_controls = int(np.ceil(n_cases * ratio))
+            n_total = n_cases + n_controls
+            n_per_group = (n_cases, n_controls)
+        explanation = (
+            f"Required sample size for ROC/AUC analysis to detect AUC = {auc:.3f} "
+            f"(null = {null_auc:.1f}) with case:control ratio {ratio:.2f}, "
+            f"α = {alpha}, power = {power}."
+        )
+        formula_latex = r"n_{\text{cases}} = \frac{(z_{\alpha/2}+z_{\beta})^2 V(AUC)}{(AUC - 0.5)^2}"
+
+    elif atype == "kappa":
+        kappa = params["kappa"]
+        null_kappa = params["null_kappa"]
+        raters = params["raters"]
+        cats = params["categories"]
+        delta_k = kappa - null_kappa
+        if delta_k > 0:
+            n_total = int(np.ceil(((z_alpha + z_beta) ** 2 * null_kappa * (1 - null_kappa)) / (delta_k ** 2)))
+            n_total = max(n_total, raters * cats * 5)
+            n_per_group = n_total
+        explanation = (
+            f"Required sample size for Cohen's Kappa with {raters} rater(s), {cats} category(ies), "
+            f"expected κ = {kappa:.3f}, null κ = {null_kappa:.2f}, "
+            f"α = {alpha}, power = {power}."
+        )
+        formula_latex = r"n = \frac{(z_{\alpha/2}+z_{\beta})^2 \kappa_0(1-\kappa_0)}{(\kappa - \kappa_0)^2}"
+
+    elif atype == "cluster_rct":
+        d = params["effect_size"]
+        icc = params["icc"]
+        cluster_m = params["cluster_size"]
+        ratio = params["ratio"]
+        deff = 1 + (cluster_m - 1) * icc
+        from statsmodels.stats.power import TTestIndPower
+        solver = TTestIndPower()
+        if d > 0:
+            n1_ind = solver.solve_power(
+                effect_size=d, alpha=alpha, power=power,
+                ratio=ratio, alternative=alternative,
+            )
+            n1_ind = int(np.ceil(n1_ind))
+            n1_clust = int(np.ceil(n1_ind * deff))
+            n1_clust = int(np.ceil(n1_clust / cluster_m)) * cluster_m
+            n2_clust = int(np.ceil(n1_clust * ratio))
+            n_total = n1_clust + n2_clust
+            num_clusters_1 = int(np.ceil(n1_clust / cluster_m))
+            num_clusters_2 = int(np.ceil(n2_clust / cluster_m))
+            n_per_group = (n1_clust, n2_clust)
+        explanation = (
+            f"Required sample size for cluster RCT with ICC = {icc:.3f}, "
+            f"cluster size m = {cluster_m}, DEFF = {deff:.2f}, "
+            f"Cohen's d = {d:.3f}, α = {alpha}, power = {power}, ratio = {ratio:.2f}. "
+            f"Clusters needed: {num_clusters_1} in group 1, {num_clusters_2} in group 2."
+        )
+        formula_latex = r"N_{\text{clust}} = N_{\text{ind}} \times [1+(m-1)\rho] \quad \text{DEFF}"
+
+    elif atype == "precision":
+        half_width = params["half_width"]
+        conf_level = params["conf_level"]
+        conf_alpha = 1 - conf_level / 100
+        z_hw = norm.ppf(1 - conf_alpha / 2)
+        param_type = params["param_type"]
+        if param_type == "Mean":
+            sd = params["sd"]
+            if sd > 0 and half_width > 0:
+                n_total = int(np.ceil((z_hw * sd / half_width) ** 2))
+        else:
+            prop = params["prop"]
+            if prop > 0 and half_width > 0:
+                n_total = int(np.ceil((z_hw ** 2 * prop * (1 - prop)) / (half_width ** 2)))
+        n_total = max(n_total, 3)
+        n_per_group = n_total
+        explanation = (
+            f"Required sample size for precision-based estimation of a {param_type.lower()} "
+            f"with {conf_level:.0f}% CI half-width = {half_width:.2f}. "
+            f"σ = {sd:.2f}" if param_type == "Mean" else f"p = {prop:.3f}."
+        )
+        formula_latex = r"n = \left(\frac{z_{\alpha/2} \sigma}{w}\right)^2" if param_type == "Mean" else r"n = \frac{z_{\alpha/2}^2 p(1-p)}{w^2}"
+
+    elif atype == "pilot":
+        method = params["method"]
+        if method == "Rule of thumb":
+            n_total = params["n_per_group"]
+            n_per_group = n_total
+        elif method == "Precision-based":
+            half_width = params["half_width"]
+            conf_level = params["conf_level"]
+            conf_alpha = 1 - conf_level / 100
+            z_hw = norm.ppf(1 - conf_alpha / 2)
+            param_type = params["param_type"]
+            if param_type == "Mean":
+                sd = params["sd"]
+                if sd > 0 and half_width > 0:
+                    n_total = int(np.ceil((z_hw * sd / half_width) ** 2))
+            else:
+                prop = params["prop"]
+                if prop > 0 and half_width > 0:
+                    n_total = int(np.ceil((z_hw ** 2 * prop * (1 - prop)) / (half_width ** 2)))
+            n_total = max(n_total, 5)
+            n_per_group = n_total
+        else:
+            main_n = params["main_n"]
+            fraction = params["fraction"]
+            n_total = max(int(np.ceil(main_n * fraction)), 5)
+            n_per_group = n_total
+        explanation = (
+            f"Pilot/feasibility study sample size using '{method}' method. "
+            f"N = {n_total} per group. Recommended for estimating parameters "
+            f"for a future definitive trial."
+        )
+        formula_latex = r"n_{\text{pilot}} = \text{rule of thumb: } 12\text{/group}"
+
+    # --- Apply Attrition Adjustment ---
+    n_total_raw = n_total
+    if dropout_rate > 0 and n_total is not None:
+        n_total = int(np.ceil(n_total / (1 - dropout_rate)))
+        if isinstance(n_per_group, tuple):
+            n1_adj = int(np.ceil(n_per_group[0] / (1 - dropout_rate)))
+            n2_adj = int(np.ceil(n_per_group[1] / (1 - dropout_rate)))
+            n_per_group = (n1_adj, n2_adj)
+        elif n_per_group is not None:
+            n_per_group = int(np.ceil(n_per_group / (1 - dropout_rate)))
+
+    # --- Display Results ---
+
+    if n_total is None:
+        st.error("Effect size is too small — consider a larger effect or different design.")
+        return
+
+    st.subheader("📊 Sample Size Results")
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Total Sample Size (N)", n_total)
+    with col2:
+        if isinstance(n_per_group, tuple):
+            st.metric("Group 1 (n₁)", n_per_group[0])
+            st.metric("Group 2 (n₂)", n_per_group[1])
+        else:
+            st.metric("Per Group (n)", n_per_group)
+    with col3:
+        st.metric("Power", f"{power:.0%}")
+        st.metric("Alpha (α)", f"{alpha:.3f}")
+
+    st.info(explanation)
+
+    # --- Power Curve ---
+    st.subheader("Power Analysis Curve")
+    max_n = max(n_total * 3, 30)
+    n_range = np.arange(5, max_n + 1, 2)
+
+    from statsmodels.stats.power import TTestIndPower, TTestPower, NormalIndPower, FTestAnovaPower, GofChisquarePower
+
+    power_vals = []
+    for n in n_range:
+        try:
+            if atype == "one_mean":
+                solver = TTestPower()
+                pv = solver.solve_power(
+                    effect_size=params["effect_size"], nobs=n,
+                    alpha=alpha, alternative=alternative,
+                )
+            elif atype == "two_means":
+                solver = TTestIndPower()
+                pv = solver.solve_power(
+                    effect_size=params["effect_size"], nobs1=n,
+                    alpha=alpha, ratio=params["ratio"], alternative=alternative,
+                )
+            elif atype == "paired":
+                solver = TTestPower()
+                pv = solver.solve_power(
+                    effect_size=params["effect_size"], nobs=n,
+                    alpha=alpha, alternative=alternative,
+                )
+            elif atype == "one_prop":
+                from statsmodels.stats.proportion import proportion_effectsize
+                solver = NormalIndPower()
+                d_eff = proportion_effectsize(params["prop_alt"], params["prop_null"])
+                pv = solver.solve_power(
+                    effect_size=abs(d_eff), nobs1=n,
+                    alpha=alpha, alternative=alternative,
+                )
+            elif atype == "two_prop":
+                from statsmodels.stats.proportion import proportion_effectsize
+                solver = NormalIndPower()
+                d_eff = proportion_effectsize(params["p2"], params["p1"])
+                pv = solver.solve_power(
+                    effect_size=abs(d_eff), nobs1=n,
+                    alpha=alpha, ratio=params["ratio"], alternative=alternative,
+                )
+            elif atype == "anova":
+                solver = FTestAnovaPower()
+                pv = solver.solve_power(
+                    effect_size=params["effect_size"], nobs=n,
+                    alpha=alpha, k_groups=params["k"],
+                )
+            elif atype == "correlation":
+                import math
+                fisher_z = math.atanh(params["effect_size"])
+                z_alpha_c = norm.ppf(1 - alpha / 2) if alternative == "two-sided" else norm.ppf(1 - alpha)
+                z_beta_c = (np.sqrt(n - 3) * fisher_z) - z_alpha_c
+                pv = norm.cdf(z_beta_c)
+            elif atype == "regression":
+                from scipy.stats import ncf as noncentral_f, f as f_dist
+                k_r = params["k"]
+                dfd = n - k_r - 1
+                if dfd > 0:
+                    ncp = params["effect_size"] * n
+                    f_crit = f_dist.ppf(1 - alpha, k_r, dfd)
+                    pv = 1 - noncentral_f.cdf(f_crit, k_r, dfd, ncp)
+                else:
+                    pv = 0
+            elif atype == "logistic":
+                k = params["k"]
+                ev_rate = params["event_rate"]
+                or_val = params["or"]
+                p1_log = (or_val * ev_rate) / (1 - ev_rate + or_val * ev_rate)
+                d_log = abs(p1_log - ev_rate)
+                p_bar = (ev_rate + p1_log) / 2
+                se = np.sqrt(2 * p_bar * (1 - p_bar))
+                d_eff_log = d_log / se if se > 0 else 0
+                solver = NormalIndPower()
+                pv = solver.solve_power(
+                    effect_size=d_eff_log, nobs1=n,
+                    alpha=alpha, alternative=alternative,
+                )
+            elif atype == "chisq":
+                solver = GofChisquarePower()
+                pv = solver.solve_power(
+                    effect_size=params["effect_size"], nobs=n,
+                    alpha=alpha, n_bins=params["df"] + 1,
+                )
+            elif atype == "mannwhitney":
+                p_val = params["effect_size"]
+                ratio = params["ratio"]
+                are = params["are"]
+                d_mw = np.sqrt(3) * (p_val - 0.5)
+                if d_mw > 0:
+                    solver = NormalIndPower()
+                    pv = solver.solve_power(
+                        effect_size=d_mw, nobs1=n * are, alpha=alpha,
+                        ratio=ratio, alternative=alternative,
+                    )
+                else:
+                    pv = 0
+            elif atype == "logrank":
+                hr = params["hr"]
+                ratio = params["ratio"]
+                med_ctrl = params["median_survival"]
+                study_dur = params["study_duration"]
+                log_hr = np.log(hr)
+                lambda_ctrl = np.log(2) / med_ctrl
+                p_event_ctrl = 1 - np.exp(-lambda_ctrl * study_dur)
+                p_event_trt = 1 - np.exp(-lambda_ctrl / hr * study_dur)
+                p_event = (p_event_ctrl + ratio * p_event_trt) / (1 + ratio)
+                num_events = n * p_event
+                if log_hr != 0 and num_events > 0:
+                    z_val = abs(log_hr) * np.sqrt(num_events * ratio / ((ratio + 1) ** 2)) - z_alpha
+                    pv = norm.cdf(z_val)
+                else:
+                    pv = 0
+            elif atype == "cox":
+                hr = params["hr"]
+                sd_x = params["sd_x"]
+                r2_x = params["r2_x"]
+                ev_rate = params["event_rate"]
+                log_hr = np.log(hr)
+                num_events = n * ev_rate
+                if log_hr != 0 and num_events > 0:
+                    z_val = abs(log_hr) * sd_x * np.sqrt(num_events * (1 - r2_x)) - z_alpha
+                    pv = norm.cdf(z_val)
+                else:
+                    pv = 0
+            elif atype == "equiv":
+                margin = params["margin"]
+                exp_diff = params["expected_diff"]
+                sd = params["sd"]
+                ratio = params["ratio"]
+                d_e = margin - abs(exp_diff)
+                if d_e > 0:
+                    es_e = d_e / sd
+                    solver = NormalIndPower()
+                    pv = solver.solve_power(
+                        effect_size=es_e, nobs1=n, alpha=alpha,
+                        ratio=ratio, alternative='larger',
+                    )
+                else:
+                    pv = 0
+            elif atype == "rm_anova":
+                f_eff = params["effect_size"]
+                k = params["k"]
+                m = params["m"]
+                rho = params["rho"]
+                epsilon = params["epsilon"]
+                if f_eff > 0:
+                    solver = FTestAnovaPower()
+                    design_effect = (1 + (m - 1) * rho) / m
+                    df_adj = (m - 1) * epsilon
+                    n_indep = max(n * df_adj / (design_effect * (k - 1)), k + 1)
+                    pv = solver.solve_power(
+                        effect_size=f_eff, nobs=n_indep, alpha=alpha, k_groups=k,
+                    )
+                else:
+                    pv = 0
+            elif atype == "twoway_anova":
+                f_a = params["f_a"]
+                f_b = params["f_b"]
+                f_ab = params["f_ab"]
+                rows = params["rows"]
+                cols = params["cols"]
+                focus = params["focus"]
+                if focus == "Main Effect A":
+                    f_use = f_a
+                    k_use = rows
+                elif focus == "Main Effect B":
+                    f_use = f_b
+                    k_use = cols
+                else:
+                    f_use = f_ab
+                    k_use = rows * cols
+                if f_use > 0:
+                    solver = FTestAnovaPower()
+                    pv = solver.solve_power(
+                        effect_size=f_use, nobs=n, alpha=alpha, k_groups=k_use,
+                    )
+                else:
+                    pv = 0
+            elif atype == "roc_auc":
+                auc = params["auc"]
+                null_auc = params["null_auc"]
+                ratio = params["ratio"]
+                v_auc = auc * (1 - auc) + (ratio - 1) * (auc / (2 - auc) - auc ** 2) / (1 + ratio)
+                delta_auc = auc - null_auc
+                if delta_auc > 0:
+                    n_cases_eff = n / (1 + ratio)
+                    z_val = delta_auc * np.sqrt(n_cases_eff / v_auc) - z_alpha
+                    pv = norm.cdf(z_val)
+                else:
+                    pv = 0
+            elif atype == "kappa":
+                kappa = params["kappa"]
+                null_kappa = params["null_kappa"]
+                raters = params["raters"]
+                cats = params["categories"]
+                delta_k = kappa - null_kappa
+                if delta_k > 0:
+                    z_val = delta_k * np.sqrt(n / (null_kappa * (1 - null_kappa))) - z_alpha
+                    pv = norm.cdf(z_val)
+                else:
+                    pv = 0
+            elif atype == "cluster_rct":
+                d = params["effect_size"]
+                icc = params["icc"]
+                cluster_m = params["cluster_size"]
+                ratio = params["ratio"]
+                deff = 1 + (cluster_m - 1) * icc
+                if d > 0:
+                    n1_equiv = (n / (1 + ratio)) / deff
+                    solver = TTestIndPower()
+                    if n1_equiv > 1:
+                        pv = solver.solve_power(
+                            effect_size=d, nobs1=n1_equiv, alpha=alpha,
+                            ratio=ratio, alternative=alternative,
+                        )
+                    else:
+                        pv = 0
+                else:
+                    pv = 0
+            elif atype == "precision":
+                half_width = params["half_width"]
+                conf_level = params["conf_level"]
+                conf_alpha = 1 - conf_level / 100
+                z_hw = norm.ppf(1 - conf_alpha / 2)
+                param_type = params["param_type"]
+                if param_type == "Mean":
+                    sd = params["sd"]
+                    if sd > 0 and half_width > 0:
+                        n_req = (z_hw * sd / half_width) ** 2
+                    else:
+                        n_req = 0
+                else:
+                    prop = params["prop"]
+                    if prop > 0 and half_width > 0:
+                        n_req = (z_hw ** 2 * prop * (1 - prop)) / (half_width ** 2)
+                    else:
+                        n_req = 0
+                if n_req > 0:
+                    pv = min(n / n_req, 1.0)
+                else:
+                    pv = 0
+            elif atype == "pilot":
+                method = params["method"]
+                if method == "Rule of thumb":
+                    n_req = params["n_per_group"]
+                    pv = min(n / n_req, 1.0) if n_req > 0 else 0
+                elif method == "Precision-based":
+                    conf_level = params["conf_level"]
+                    conf_alpha = 1 - conf_level / 100
+                    z_hw = norm.ppf(1 - conf_alpha / 2)
+                    param_type = params["param_type"]
+                    if param_type == "Mean":
+                        sd = params["sd"]
+                        half_width = params["half_width"]
+                        n_req = (z_hw * sd / half_width) ** 2 if sd > 0 and half_width > 0 else 0
+                    else:
+                        prop = params["prop"]
+                        half_width = params["half_width"]
+                        n_req = (z_hw ** 2 * prop * (1 - prop)) / (half_width ** 2) if prop > 0 and half_width > 0 else 0
+                    pv = min(n / n_req, 1.0) if n_req > 0 else 0
+                else:
+                    main_n = params["main_n"]
+                    fraction = params["fraction"]
+                    n_req = max(int(np.ceil(main_n * fraction)), 5)
+                    pv = min(n / n_req, 1.0)
+            else:
+                pv = 0
+        except Exception:
+            pv = 0
+        power_vals.append(pv)
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=n_range, y=power_vals, mode="lines",
+        name="Power", line=dict(color="#00BFFF", width=3),
+    ))
+    target_power_val = params["power"]
+    fig.add_hline(
+        y=target_power_val, line_dash="dash", line_color="orange",
+        annotation_text=f"Target Power ({target_power_val:.0%})",
+    )
+    fig.add_vline(
+        x=n_total, line_dash="dot", line_color="green",
+        annotation_text=f"N = {n_total}",
+    )
+    fig.update_layout(
+        template="plotly_dark",
+        height=450,
+        xaxis_title="Sample Size (N)",
+        yaxis_title="Power (1 − β)",
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    # --- Sensitivity Table ---
+    st.subheader("Sensitivity Analysis")
+    st.caption("How required sample size changes with different effect sizes.")
+
+    effect_multipliers = [0.5, 0.67, 0.8, 1.0, 1.25, 1.5, 2.0]
+    sens_data = []
+    for mult in effect_multipliers:
+        try:
+            if atype in ("one_mean", "paired", "correlation"):
+                adj_es = params["effect_size"] * mult
+                if atype == "correlation":
+                    import math
+                    adj_es = max(min(adj_es, 0.99), 0.01)
+                    fisher_z_s = math.atanh(adj_es)
+                    n_s = int(np.ceil(3 + ((z_alpha + z_beta) / fisher_z_s) ** 2))
+                elif atype in ("one_mean", "paired"):
+                    solver = TTestPower()
+                    n_s = int(np.ceil(solver.solve_power(
+                        effect_size=adj_es, alpha=alpha, power=power,
+                        alternative=alternative,
+                    )))
+            elif atype == "two_means":
+                adj_es = params["effect_size"] * mult
+                solver = TTestIndPower()
+                n1_s = solver.solve_power(
+                    effect_size=adj_es, alpha=alpha, power=power,
+                    ratio=params["ratio"], alternative=alternative,
+                )
+                n1_s = int(np.ceil(n1_s))
+                n_s = n1_s + int(np.ceil(n1_s * params["ratio"]))
+            elif atype == "one_prop":
+                adj_es = params["prop_null"] + (params["prop_alt"] - params["prop_null"]) * mult
+                adj_es = max(min(adj_es, 0.99), 0.01)
+                from statsmodels.stats.proportion import proportion_effectsize
+                d_eff_s = proportion_effectsize(adj_es, params["prop_null"])
+                solver = NormalIndPower()
+                n_s = int(np.ceil(solver.solve_power(
+                    effect_size=abs(d_eff_s), alpha=alpha, power=power,
+                    alternative=alternative,
+                )))
+            elif atype == "two_prop":
+                adj_p2 = params["p1"] + (params["p2"] - params["p1"]) * mult
+                adj_p2 = max(min(adj_p2, 0.99), 0.01)
+                adj_es = abs(adj_p2 - params["p1"])
+                from statsmodels.stats.proportion import proportion_effectsize
+                d_eff_s = proportion_effectsize(adj_p2, params["p1"])
+                solver = NormalIndPower()
+                n1_s = solver.solve_power(
+                    effect_size=abs(d_eff_s), alpha=alpha, power=power,
+                    ratio=params["ratio"], alternative=alternative,
+                )
+                n1_s = int(np.ceil(n1_s))
+                n_s = n1_s + int(np.ceil(n1_s * params["ratio"]))
+            elif atype == "logistic":
+                adj_es = max(params["or"] ** mult, 1.01)
+                ev_rate = params["event_rate"]
+                k_log = params["k"]
+                p1_log = (adj_es * ev_rate) / (1 - ev_rate + adj_es * ev_rate)
+                d_log = abs(p1_log - ev_rate)
+                p_bar = (ev_rate + p1_log) / 2
+                se = np.sqrt(2 * p_bar * (1 - p_bar))
+                d_eff_log = d_log / se if se > 0 else 0
+                solver = NormalIndPower()
+                n_base = int(np.ceil(solver.solve_power(
+                    effect_size=d_eff_log, alpha=alpha, power=power,
+                    alternative=alternative,
+                )))
+                n_s = max(n_base, 10 * k_log)
+            elif atype == "anova":
+                adj_es = params["effect_size"] * mult
+                solver = FTestAnovaPower()
+                n_s = int(np.ceil(solver.solve_power(
+                    effect_size=adj_es, alpha=alpha, power=power,
+                    k_groups=params["k"],
+                ))) * params["k"]
+            elif atype == "regression":
+                adj_es = params["effect_size"] * mult
+                k_r = params["k"]
+                from scipy.stats import ncf as noncentral_f, f as f_dist
+                n_s = None
+                for nc in range(k_r + 2, 10000):
+                    dfd = nc - k_r - 1
+                    ncp = adj_es * nc
+                    f_crit = f_dist.ppf(1 - alpha, k_r, dfd)
+                    p_cur = 1 - noncentral_f.cdf(f_crit, k_r, dfd, ncp)
+                    if p_cur >= power:
+                        n_s = nc
+                        break
+            elif atype == "chisq":
+                adj_es = params["effect_size"] * mult
+                solver = GofChisquarePower()
+                n_s = int(np.ceil(solver.solve_power(
+                    effect_size=adj_es, alpha=alpha, power=power,
+                    n_bins=params["df"] + 1,
+                )))
+            elif atype == "mannwhitney":
+                adj_p = params["effect_size"]
+                adj_p = max(min(adj_p * mult, 0.99), 0.01)
+                adj_es = np.sqrt(3) * (adj_p - 0.5)
+                are = params["are"]
+                ratio = params["ratio"]
+                solver = NormalIndPower()
+                n1_s = solver.solve_power(
+                    effect_size=adj_es, alpha=alpha, power=power,
+                    ratio=ratio, alternative=alternative,
+                )
+                n1_s = int(np.ceil(n1_s / are))
+                n_s = n1_s + int(np.ceil(n1_s * ratio))
+            elif atype == "logrank":
+                adj_es = max(params["hr"] ** mult, 1.001)
+                ratio = params["ratio"]
+                med_ctrl = params["median_survival"]
+                study_dur = params["study_duration"]
+                log_hr = np.log(adj_es)
+                num_events = ((z_alpha + z_beta) ** 2) * ((ratio + 1) ** 2) / (ratio * (log_hr ** 2))
+                lambda_ctrl = np.log(2) / med_ctrl
+                p_event_ctrl = 1 - np.exp(-lambda_ctrl * study_dur)
+                p_event_trt = 1 - np.exp(-lambda_ctrl / adj_es * study_dur)
+                p_event = (p_event_ctrl + ratio * p_event_trt) / (1 + ratio)
+                if p_event > 0:
+                    n_s = int(np.ceil(num_events / p_event))
+                else:
+                    n_s = None
+            elif atype == "cox":
+                adj_es = max(params["hr"] ** mult, 1.001)
+                k = params["k"]
+                sd_x = params["sd_x"]
+                r2_x = params["r2_x"]
+                ev_rate = params["event_rate"]
+                log_hr = np.log(adj_es)
+                var_denom = (sd_x ** 2) * (log_hr ** 2) * (1 - r2_x)
+                if var_denom > 0:
+                    num_events = ((z_alpha + z_beta) ** 2) / var_denom
+                    num_events = max(num_events, 10 * k)
+                    n_s = int(np.ceil(num_events / ev_rate))
+                else:
+                    n_s = None
+            elif atype == "equiv":
+                adj_margin = params["margin"] * mult
+                exp_diff = params["expected_diff"]
+                sd = params["sd"]
+                ratio = params["ratio"]
+                d_e = adj_margin - abs(exp_diff)
+                adj_es = d_e / sd if d_e > 0 else 0
+                if d_e > 0:
+                    es_e = d_e / sd
+                    solver = NormalIndPower()
+                    n1_s = solver.solve_power(
+                        effect_size=es_e, alpha=alpha, power=power,
+                        ratio=ratio, alternative='larger',
+                    )
+                    n1_s = int(np.ceil(n1_s))
+                    n_s = n1_s + int(np.ceil(n1_s * ratio))
+                else:
+                    n_s = None
+            elif atype == "rm_anova":
+                adj_es = params["effect_size"] * mult
+                k = params["k"]
+                m = params["m"]
+                rho = params["rho"]
+                epsilon = params["epsilon"]
+                solver = FTestAnovaPower()
+                n_per_g = solver.solve_power(
+                    effect_size=adj_es, alpha=alpha, power=power, k_groups=k,
+                )
+                design_effect = (1 + (m - 1) * rho) / m
+                df_adj = (m - 1) * epsilon
+                n_per_g_adj = int(np.ceil(n_per_g * design_effect * k / (k * df_adj / (k - 1))))
+                n_per_g_adj = max(n_per_g_adj, int(np.ceil(n_per_g)))
+                n_s = n_per_g_adj * k
+            elif atype == "twoway_anova":
+                adj_f_a = params["f_a"] * mult
+                adj_f_b = params["f_b"] * mult
+                adj_f_ab = params["f_ab"] * mult
+                rows = params["rows"]
+                cols = params["cols"]
+                focus = params["focus"]
+                if focus == "Main Effect A":
+                    adj_es = adj_f_a
+                    k_use = rows
+                elif focus == "Main Effect B":
+                    adj_es = adj_f_b
+                    k_use = cols
+                else:
+                    adj_es = adj_f_ab
+                    k_use = rows * cols
+                solver = FTestAnovaPower()
+                n_per_cell = solver.solve_power(
+                    effect_size=adj_es, alpha=alpha, power=power, k_groups=k_use,
+                )
+                n_per_cell = int(np.ceil(n_per_cell))
+                n_s = n_per_cell * rows * cols
+            elif atype == "roc_auc":
+                auc = params["auc"]
+                adj_auc = 0.5 + (auc - 0.5) * mult
+                adj_auc = max(min(adj_auc, 0.99), 0.51)
+                null_auc = params["null_auc"]
+                ratio = params["ratio"]
+                v_auc = adj_auc * (1 - adj_auc) + (ratio - 1) * (adj_auc / (2 - adj_auc) - adj_auc ** 2) / (1 + ratio)
+                delta_auc = adj_auc - null_auc
+                adj_es = delta_auc
+                if delta_auc > 0:
+                    n_cases = ((z_alpha + z_beta) ** 2 * v_auc) / (delta_auc ** 2)
+                    n_cases = int(np.ceil(n_cases))
+                    n_controls = int(np.ceil(n_cases * ratio))
+                    n_s = n_cases + n_controls
+                else:
+                    n_s = None
+            elif atype == "kappa":
+                adj_kappa = params["kappa"]
+                adj_kappa = 0.5 + (adj_kappa - 0.5) * mult
+                adj_kappa = max(min(adj_kappa, 0.99), 0.01)
+                null_kappa = params["null_kappa"]
+                adj_kappa = max(adj_kappa, null_kappa + 0.01)
+                delta_k = adj_kappa - null_kappa
+                raters = params["raters"]
+                cats = params["categories"]
+                adj_es = delta_k
+                if delta_k > 0:
+                    n_s = int(np.ceil(((z_alpha + z_beta) ** 2 * null_kappa * (1 - null_kappa)) / (delta_k ** 2)))
+                    n_s = max(n_s, raters * cats * 5)
+                else:
+                    n_s = None
+            elif atype == "cluster_rct":
+                adj_es = params["effect_size"] * mult
+                icc = params["icc"]
+                cluster_m = params["cluster_size"]
+                ratio = params["ratio"]
+                deff = 1 + (cluster_m - 1) * icc
+                solver = TTestIndPower()
+                n1_ind = solver.solve_power(
+                    effect_size=adj_es, alpha=alpha, power=power,
+                    ratio=ratio, alternative=alternative,
+                )
+                n1_ind = int(np.ceil(n1_ind))
+                n1_clust = int(np.ceil(n1_ind * deff))
+                n1_clust = int(np.ceil(n1_clust / cluster_m)) * cluster_m
+                n2_clust = int(np.ceil(n1_clust * ratio))
+                n_s = n1_clust + n2_clust
+            elif atype == "precision":
+                adj_hw = params["half_width"] * mult
+                conf_level = params["conf_level"]
+                conf_alpha = 1 - conf_level / 100
+                z_hw = norm.ppf(1 - conf_alpha / 2)
+                param_type = params["param_type"]
+                adj_es = adj_hw
+                if param_type == "Mean":
+                    sd = params["sd"]
+                    if sd > 0 and adj_hw > 0:
+                        n_s = int(np.ceil((z_hw * sd / adj_hw) ** 2))
+                    else:
+                        n_s = None
+                else:
+                    prop = params["prop"]
+                    if prop > 0 and adj_hw > 0:
+                        n_s = int(np.ceil((z_hw ** 2 * prop * (1 - prop)) / (adj_hw ** 2)))
+                    else:
+                        n_s = None
+                if n_s is not None:
+                    n_s = max(n_s, 3)
+            elif atype == "pilot":
+                method = params["method"]
+                adj_es = mult
+                if method == "Rule of thumb":
+                    n_s = int(np.ceil(params["n_per_group"] / max(mult, 0.1)))
+                elif method == "Precision-based":
+                    conf_level = params["conf_level"]
+                    conf_alpha = 1 - conf_level / 100
+                    z_hw = norm.ppf(1 - conf_alpha / 2)
+                    param_type = params["param_type"]
+                    adj_hw = params["half_width"] * mult
+                    if param_type == "Mean":
+                        sd = params["sd"]
+                        if sd > 0 and adj_hw > 0:
+                            n_s = int(np.ceil((z_hw * sd / adj_hw) ** 2))
+                        else:
+                            n_s = None
+                    else:
+                        prop = params["prop"]
+                        if prop > 0 and adj_hw > 0:
+                            n_s = int(np.ceil((z_hw ** 2 * prop * (1 - prop)) / (adj_hw ** 2)))
+                        else:
+                            n_s = None
+                    if n_s is not None:
+                        n_s = max(n_s, 5)
+                else:
+                    main_n = params["main_n"]
+                    fraction = params["fraction"]
+                    n_s = max(int(np.ceil(main_n * fraction / max(mult, 0.1))), 5)
+            else:
+                n_s = None
+        except Exception:
+            n_s = None
+        if n_s is not None and n_s > 0 and n_s < 100000:
+            sens_data.append({
+                "Effect Size Multiplier": f"{mult:.1f}×",
+                "Adjusted Effect": f"{adj_es:.3f}" if mult != 1.0 else f"{adj_es:.3f} (baseline)",
+                "Required N": n_s,
+            })
+
+    if sens_data:
+        st.dataframe(pd.DataFrame(sens_data), use_container_width=True, hide_index=True)
+
+    # --- Formula ---
+    with st.expander("📐 Formula Used"):
+        st.latex(formula_latex)
+
+    # --- Interpretation Guide ---
+    with st.expander("📖 How to Interpret These Results"):
+        if n_per_group is not None:
+            if isinstance(n_per_group, tuple):
+                n1, n2 = n_per_group
+                st.markdown(f"""
+                - You need **at least {n1} participants in Group 1** and **{n2} in Group 2**.
+                - **Total**: {n_total} participants.
+                - This assumes α = {alpha}, power = {power:.0%}, and your estimated effect size.
+                - Use the **Power Curve** above to see how N affects your study's power.
+                - The **Sensitivity Table** shows how N changes with different effect sizes.
+                """)
+            else:
+                st.markdown(f"""
+                - You need **at least {n_per_group} participants per group** (total N = {n_total}).
+                - This assumes α = {alpha}, power = {power:.0%}, and your estimated effect size.
+                - Use the **Power Curve** above to see how N affects your study's power.
+                - The **Sensitivity Table** shows how N changes with different effect sizes.
+                """)
+        st.warning(
+            "**Disclaimer**: Sample size estimation is based on statistical assumptions. "
+            "Always consult a biostatistician and consider practical constraints (budget, "
+            "dropout rates, feasibility) when finalizing your study size."
+        )
+
+    # --- Budget & Feasibility ---
+    if cost_per > 0 and n_total is not None:
+        st.subheader("💰 Budget & Feasibility")
+        total_cost = n_total * cost_per
+        col_b1, col_b2, col_b3 = st.columns(3)
+        with col_b1:
+            st.metric("Total Study Cost", f"${total_cost:,.0f}")
+        with col_b2:
+            st.metric("Cost per Participant", f"${cost_per:,.0f}")
+        with col_b3:
+            if recruitment_rate > 0:
+                months = int(np.ceil(n_total / recruitment_rate))
+                st.metric("Est. Recruitment Duration", f"{months} months")
+            else:
+                st.metric("Recruitment Rate", "Not specified")
+
+        if dropout_rate > 0 and n_total_raw is not None:
+            st.caption(
+                f"Base N = {n_total_raw}, adjusted for {dropout_rate:.0%} dropout → {n_total}. "
+                f"Extra cost due to dropout: ${(n_total - n_total_raw) * cost_per:,.0f}."
+            )
+
+    # --- What-If Scenario Explorer ---
+    st.subheader("🔍 What-If Scenario Explorer")
+    st.caption("Explore how sample size changes across different combinations of power and effect size.")
+
+    whatif_powers = [0.70, 0.80, 0.90]
+    whatif_mults = [0.5, 0.75, 1.0, 1.25, 1.5]
+
+    # Compute a heatmap: rows = power, cols = effect multiplier
+    heatmap_data = []
+    for w_power in whatif_powers:
+        w_z_beta = norm.ppf(w_power)
+        row = []
+        for w_mult in whatif_mults:
+            try:
+                w_n = n_total_raw if n_total_raw else n_total
+                if atype in ("one_mean", "paired", "correlation", "chisq",
+                              "precision", "kappa", "pilot", "cox", "roc_auc"):
+                    w_n = int(np.ceil(w_n / max(w_mult, 0.1) * (n_total_raw / max(n_total, 1))))
+                    if dropout_rate > 0:
+                        w_n = int(np.ceil(w_n / (1 - dropout_rate)))
+                else:
+                    w_n = int(np.ceil(w_n / max(w_mult, 0.1)))
+                    if dropout_rate > 0:
+                        w_n = int(np.ceil(w_n / (1 - dropout_rate)))
+            except Exception:
+                w_n = None
+            row.append(w_n if w_n and w_n < 1000000 else None)
+        heatmap_data.append(row)
+
+    if any(any(r is not None for r in row) for row in heatmap_data):
+        fig_heat = go.Figure(data=go.Heatmap(
+            z=heatmap_data,
+            x=[f"{m:.2f}×" for m in whatif_mults],
+            y=[f"Power = {p:.0%}" for p in whatif_powers],
+            text=[[str(v) if v else "—" for v in row] for row in heatmap_data],
+            texttemplate="%{text}",
+            colorscale="Blues",
+            hovertemplate="Power: %{y}<br>Effect Size: %{x}<br>N: %{text}<extra></extra>",
+        ))
+        fig_heat.update_layout(
+            template="plotly_dark",
+            height=250,
+            xaxis_title="Effect Size Multiplier",
+            yaxis_title="",
+        )
+        st.plotly_chart(fig_heat, use_container_width=True)
+        st.caption("Cells show required N at each power × effect size combination. Adjust your design assumptions accordingly.")
+
+    # --- Sample Size Justification ---
+    st.subheader("📝 Sample Size Justification")
+    st.caption("Copy the text below for your grant application, IRB submission, or research protocol.")
+
+    if n_per_group is not None:
+        if isinstance(n_per_group, tuple):
+            n1, n2 = n_per_group
+            justification = (
+                f"A sample size of {n1} in Group 1 and {n2} in Group 2 "
+                f"(total N = {n_total}) was determined to provide {power:.0%} power "
+                f"at a significance level of α = {alpha * num_tests:.3f} "
+            )
+            if num_tests > 1:
+                justification += f"(Bonferroni-adjusted for {num_tests} comparisons, per-test α = {alpha:.4f}) "
+            justification += (
+                f"to detect the anticipated effect size. "
+                f"Sample size estimation was performed using a {tails.lower()} {explanation.split('to detect')[0].strip().lower()}. "
+            )
+            if dropout_rate > 0:
+                justification += (
+                    f"To account for an anticipated dropout rate of {dropout_rate:.0%}, "
+                    f"the required sample was inflated from {n_total_raw} to {n_total} participants. "
+                )
+            justification += "All calculations were performed using the Statistical Test Finder application."
+        else:
+            justification = (
+                f"A sample size of {n_per_group} per group (total N = {n_total}) "
+                f"was determined to provide {power:.0%} power at a significance level of α = {alpha * num_tests:.3f} "
+            )
+            if num_tests > 1:
+                justification += f"(Bonferroni-adjusted for {num_tests} comparisons, per-test α = {alpha:.4f}) "
+            justification += (
+                f"to detect the anticipated effect size. "
+                f"Sample size estimation was performed using a {tails.lower()} {explanation.split('to detect')[0].strip().lower()}. "
+            )
+            if dropout_rate > 0:
+                justification += (
+                    f"To account for an anticipated dropout rate of {dropout_rate:.0%}, "
+                    f"the required sample was inflated from {n_total_raw} to {n_total} participants. "
+                )
+            justification += "All calculations were performed using the Statistical Test Finder application."
+    else:
+        justification = f"A sample size of {n_total} participants was determined to provide {power:.0%} power at α = {alpha * num_tests:.3f}. All calculations were performed using the Statistical Test Finder application."
+
+    st.text(justification)
+
+    # --- Key References ---
+    with st.expander("📚 Key References"):
+        st.markdown("""
+        **General Sample Size & Power:**
+        - Cohen, J. (1988). *Statistical Power Analysis for the Behavioral Sciences* (2nd ed.). Lawrence Erlbaum Associates.
+        - Faul, F., Erdfelder, E., Lang, A.-G., & Buchner, A. (2007). G*Power 3: A flexible statistical power analysis program. *Behavior Research Methods*, 39(2), 175–191.
+
+        **Means & t-tests:**
+        - Julious, S. A. (2004). Sample sizes for clinical trials with normal data. *Statistics in Medicine*, 23(12), 1921–1986.
+
+        **Proportions:**
+        - Fleiss, J. L., Levin, B., & Paik, M. C. (2003). *Statistical Methods for Rates and Proportions* (3rd ed.). Wiley.
+
+        **ANOVA & F-tests:**
+        - Cohen, J. (1988). *Statistical Power Analysis for the Behavioral Sciences* (2nd ed.). Lawrence Erlbaum Associates.
+
+        **Regression:**
+        - Green, S. B. (1991). How many subjects does it take to do a regression analysis? *Multivariate Behavioral Research*, 26(3), 499–510.
+        - Hsieh, F. Y., Bloch, D. A., & Larsen, M. D. (1998). A simple method of sample size calculation for linear and logistic regression. *Statistics in Medicine*, 17(14), 1623–1634.
+
+        **Correlation:**
+        - Fisher, R. A. (1915). Frequency distribution of the values of the correlation coefficient in samples from an indefinitely large population. *Biometrika*, 10(4), 507–521.
+
+        **Survival Analysis:**
+        - Schoenfeld, D. (1983). Sample-size formula for the proportional-hazards regression model. *Biometrics*, 39(2), 499–503.
+        - Freedman, L. S. (1982). Tables of the number of patients required in clinical trials using the logrank test. *Statistics in Medicine*, 1(2), 121–129.
+
+        **Non-parametric Tests:**
+        - Lehmann, E. L. (2006). *Nonparametrics: Statistical Methods Based on Ranks*. Springer.
+
+        **Equivalence / Non-Inferiority:**
+        - Blackwelder, W. C. (1982). "Proving the null hypothesis" in clinical trials. *Controlled Clinical Trials*, 3(4), 345–353.
+
+        **Cluster-RCT:**
+        - Donner, A., & Klar, N. (2000). *Design and Analysis of Cluster Randomization Trials in Health Research*. Arnold.
+
+        **Repeated Measures:**
+        - Greenhouse, S. W., & Geisser, S. (1959). On methods in the analysis of profile data. *Psychometrika*, 24(2), 95–112.
+
+        **ROC / AUC:**
+        - Obuchowski, N. A. (1994). Sample size calculations in studies of test accuracy. *Statistical Methods in Medical Research*, 7(4), 371–392.
+
+        **Kappa / Agreement:**
+        - Cantor, A. B. (1996). Sample-size calculations for Cohen's kappa. *Psychological Methods*, 1(2), 150–153.
+
+        **Pilot Studies:**
+        - Julious, S. A. (2005). Sample size of 12 per group rule of thumb for a pilot study. *Pharmaceutical Statistics*, 4(4), 287–291.
+        - Whitehead, A. L., et al. (2016). Estimating the sample size for a pilot randomised trial to minimise the overall trial sample size. *Journal of Clinical Epidemiology*, 71, 23–29.
+
+        **Multiple Testing:**
+        - Bonferroni, C. E. (1936). Teoria statistica delle classi e calcolo delle probabilità. *Pubblicazioni del R Istituto Superiore di Scienze Economiche e Commerciali di Firenze*, 8, 3–62.
+        """)
 
 
 # =========================
