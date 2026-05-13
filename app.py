@@ -5,6 +5,33 @@ import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from scipy.stats import norm
 
+# Mapping from test finder rule names to sample size estimation analysis types
+TEST_TO_SS_TYPE = {
+    "One-sample t-test": "One-sample Mean (t/z-test)",
+    "One-sample z-test": "One-sample Mean (t/z-test)",
+    "Student's t-test (Independent)": "Two Independent Means (t-test)",
+    "Welch's t-test (unequal variances)": "Two Independent Means (t-test)",
+    "Paired t-test": "Paired Means (t-test)",
+    "One-sample Proportion Test (Binomial Test)": "One-sample Proportion",
+    "Two Proportion Z-test": "Two Proportions",
+    "One-way ANOVA": "One-way ANOVA",
+    "Pearson Correlation": "Correlation (Pearson)",
+    "Multiple Linear Regression": "Multiple Linear Regression",
+    "Logistic Regression": "Logistic Regression",
+    "Chi-Square Test of Independence": "Chi-Square Test",
+    "Chi-Square Goodness of Fit Test": "Chi-Square Test",
+    "Mann-Whitney U Test": "Mann-Whitney / Wilcoxon (Non-parametric)",
+    "One-sample Wilcoxon Signed-Rank Test": "Wilcoxon Signed-Rank (paired)",
+    "Log-Rank Test (Survival)": "Log-Rank Test (Survival)",
+    "Cox Regression": "Cox Regression",
+    "Kruskal-Wallis Test": "Kruskal-Wallis Test",
+    "Friedman Test": "Friedman Test",
+    "McNemar's Test": "McNemar's Test",
+    "Fisher's Exact Test": "Fisher's Exact Test",
+    "MANOVA": "MANOVA (Multivariate ANOVA)",
+    "Permutation MANOVA": "MANOVA (Multivariate ANOVA)",
+}
+
 rules = [
     # Comparison Tests
     {
@@ -1195,17 +1222,18 @@ def main():
         # =========================
         st.subheader("1. Research Objective")
 
-        Objective = st.selectbox(
-            "What is your goal?",
-            [
-                "Comparison",
-                "Association/Correlation",
-                "Prediction",
-                "Diagnostic Accuracy",
-                "Survival Analysis",
-                "Sample Size Estimation",
-            ],
+        obj_opts = [
+            "Comparison",
+            "Association/Correlation",
+            "Prediction",
+            "Diagnostic Accuracy",
+            "Survival Analysis",
+            "Sample Size Estimation",
+        ]
+        default_obj_idx = obj_opts.index(
+            st.session_state.pop("ss_pending_obj", "Comparison")
         )
+        Objective = st.selectbox("What is your goal?", obj_opts, index=default_obj_idx)
 
         # =========================
         # SAMPLE SIZE ESTIMATION UI
@@ -1213,38 +1241,41 @@ def main():
         if Objective == "Sample Size Estimation":
             st.subheader("2. Analysis Type & Parameters")
 
+            ss_at_opts = [
+                "One-sample Mean (t/z-test)",
+                "Two Independent Means (t-test)",
+                "Paired Means (t-test)",
+                "One-sample Proportion",
+                "Two Proportions",
+                "One-way ANOVA",
+                "Correlation (Pearson)",
+                "Multiple Linear Regression",
+                "Logistic Regression",
+                "Chi-Square Test",
+                "Mann-Whitney / Wilcoxon (Non-parametric)",
+                "Log-Rank Test (Survival)",
+                "Cox Regression",
+                "Equivalence / Non-Inferiority",
+                "Repeated Measures ANOVA",
+                "Two-way / Factorial ANOVA",
+                "ROC / AUC Analysis",
+                "Cohen's Kappa / ICC Agreement",
+                "Cluster-RCT / Multilevel",
+                "Precision-based (CI Width)",
+                "Pilot / Feasibility Study",
+                "Wilcoxon Signed-Rank (paired)",
+                "Kruskal-Wallis Test",
+                "Friedman Test",
+                "McNemar's Test",
+                "Fisher's Exact Test",
+                "MANOVA (Multivariate ANOVA)",
+                "Binomial Exact Test",
+            ]
+            default_at_idx = ss_at_opts.index(
+                st.session_state.pop("ss_pending_at", ss_at_opts[0])
+            )
             analysis_type = st.selectbox(
-                "Type of Analysis",
-                [
-                    "One-sample Mean (t/z-test)",
-                    "Two Independent Means (t-test)",
-                    "Paired Means (t-test)",
-                    "One-sample Proportion",
-                    "Two Proportions",
-                    "One-way ANOVA",
-                    "Correlation (Pearson)",
-                    "Multiple Linear Regression",
-                    "Logistic Regression",
-                    "Chi-Square Test",
-                    "Mann-Whitney / Wilcoxon (Non-parametric)",
-                    "Log-Rank Test (Survival)",
-                    "Cox Regression",
-                    "Equivalence / Non-Inferiority",
-                    "Repeated Measures ANOVA",
-                    "Two-way / Factorial ANOVA",
-                    "ROC / AUC Analysis",
-                    "Cohen's Kappa / ICC Agreement",
-                    "Cluster-RCT / Multilevel",
-                    "Precision-based (CI Width)",
-                    "Pilot / Feasibility Study",
-                    "Wilcoxon Signed-Rank (paired)",
-                    "Kruskal-Wallis Test",
-                    "Friedman Test",
-                    "McNemar's Test",
-                    "Fisher's Exact Test",
-                    "MANOVA (Multivariate ANOVA)",
-                    "Binomial Exact Test",
-                ],
+                "Type of Analysis", ss_at_opts, index=default_at_idx
             )
 
             st.markdown("##### :orange[Common Parameters]")
@@ -1865,6 +1896,39 @@ def main():
                     )
                 ss_params = {"type": "binomial", "p0": p0_bin, "p1": p1_bin}
 
+            # Apply effect size converter value if present
+            conv_es = st.session_state.pop("converted_es", None)
+            conv_type = st.session_state.pop("converted_type", None)
+            if conv_es is not None and conv_type is not None:
+                atype_key = ss_params.get("type", "")
+                if conv_type == "d" and atype_key in (
+                    "one_mean",
+                    "two_means",
+                    "paired",
+                    "cluster_rct",
+                ):
+                    ss_params["effect_size"] = conv_es
+                elif conv_type == "r" and atype_key == "correlation":
+                    ss_params["effect_size"] = conv_es
+                elif conv_type == "f" and atype_key in (
+                    "anova",
+                    "rm_anova",
+                    "twoway_anova",
+                    "kruskal",
+                ):
+                    ss_params["effect_size"] = conv_es
+                elif conv_type == "f2" and atype_key == "regression":
+                    ss_params["effect_size"] = conv_es
+                elif conv_type == "or" and atype_key == "logistic":
+                    ss_params["or"] = conv_es
+                elif conv_type == "w" and atype_key == "chisq":
+                    ss_params["effect_size"] = conv_es
+                elif conv_type == "d" and atype_key == "wilcoxon_sr":
+                    from scipy.stats import norm
+
+                    p_conv = 0.5 + conv_es / (2 * np.sqrt(3))
+                    ss_params["effect_size"] = max(0.51, min(0.99, p_conv))
+
             # =========================
             # STUDY ADJUSTMENTS
             # =========================
@@ -1923,6 +1987,137 @@ def main():
             ss_params["num_tests"] = num_tests if adjust_multiple else 1
             ss_params["cost_per"] = cost_per if show_budget else 0.0
             ss_params["recruitment_rate"] = recruitment_rate if show_budget else 0.0
+
+            # =========================
+            # EFFECT SIZE CONVERTER
+            # =========================
+            with st.expander("📐 Effect Size Converter"):
+                st.caption(
+                    "Convert between common effect size measures. Click Apply to use the converted value."
+                )
+                conv_tab = st.radio(
+                    "Conversion",
+                    [
+                        "Means → d",
+                        "d ↔ r",
+                        "d ↔ OR",
+                        "η² ↔ f",
+                        "R² ↔ f²",
+                        "2×2 Table → w/OR",
+                    ],
+                    horizontal=True,
+                    label_visibility="collapsed",
+                )
+                import math as cmath
+
+                if conv_tab == "Means → d":
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        m1_c = st.number_input(
+                            "Mean 1", 0.0, 100.0, 0.0, 0.1, key="conv_m1"
+                        )
+                        m2_c = st.number_input(
+                            "Mean 2", 0.0, 100.0, 1.0, 0.1, key="conv_m2"
+                        )
+                    with c2:
+                        sd_c = st.number_input(
+                            "Pooled SD", 0.1, 100.0, 1.0, 0.1, key="conv_sd"
+                        )
+                    d_c = abs(m1_c - m2_c) / sd_c if sd_c > 0 else 0
+                    st.metric("Cohen's d", f"{d_c:.4f}")
+                    if st.button("Apply d to current test", key="apply_d_means"):
+                        st.session_state.converted_es = d_c
+                        st.session_state.converted_type = "d"
+                        st.rerun()
+                elif conv_tab == "d ↔ r":
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        d_c = st.number_input(
+                            "Cohen's d", 0.01, 10.0, 0.5, 0.01, key="conv_dr_d"
+                        )
+                    r_c = d_c / cmath.sqrt(d_c**2 + 4)
+                    c2.metric("Correlation r", f"{r_c:.4f}")
+                    if st.button("Apply r to Correlation test", key="apply_dr"):
+                        st.session_state.converted_es = r_c
+                        st.session_state.converted_type = "r"
+                        st.rerun()
+                elif conv_tab == "d ↔ OR":
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        d_c = st.number_input(
+                            "Cohen's d", 0.01, 10.0, 0.5, 0.01, key="conv_do_d"
+                        )
+                    or_c = cmath.exp(d_c * cmath.pi / cmath.sqrt(3))
+                    c2.metric("Odds Ratio", f"{or_c:.4f}")
+                    if st.button("Apply OR to Logistic Regression", key="apply_do"):
+                        st.session_state.converted_es = or_c
+                        st.session_state.converted_type = "or"
+                        st.rerun()
+                elif conv_tab == "η² ↔ f":
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        eta2 = st.number_input(
+                            "η²", 0.001, 0.99, 0.06, 0.001, key="conv_eta"
+                        )
+                    f_c = cmath.sqrt(eta2 / (1 - eta2))
+                    c2.metric("Cohen's f", f"{f_c:.4f}")
+                    if st.button("Apply f to ANOVA tests", key="apply_eta"):
+                        st.session_state.converted_es = f_c
+                        st.session_state.converted_type = "f"
+                        st.rerun()
+                elif conv_tab == "R² ↔ f²":
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        r2_c = st.number_input(
+                            "R²", 0.001, 0.99, 0.15, 0.001, key="conv_r2"
+                        )
+                    f2_c = r2_c / (1 - r2_c) if r2_c < 1 else 0
+                    c2.metric("Cohen's f²", f"{f2_c:.4f}")
+                    if st.button("Apply f² to Regression test", key="apply_r2"):
+                        st.session_state.converted_es = f2_c
+                        st.session_state.converted_type = "f2"
+                        st.rerun()
+                elif conv_tab == "2×2 Table → w/OR":
+                    c1, c2, c3, c4 = st.columns(4)
+                    with c1:
+                        a_t = st.number_input("Cell a", 0, 1000, 30, 1, key="conv_a")
+                    with c2:
+                        b_t = st.number_input("Cell b", 0, 1000, 20, 1, key="conv_b")
+                    with c3:
+                        c_t = st.number_input("Cell c", 0, 1000, 20, 1, key="conv_c")
+                    with c4:
+                        d_t = st.number_input("Cell d", 0, 1000, 30, 1, key="conv_d")
+                    n_t = a_t + b_t + c_t + d_t
+                    if n_t > 0:
+                        p_exp = (a_t + c_t) / n_t
+                        p_nexp = (b_t + d_t) / n_t
+                        prop_diff = (
+                            abs(a_t / (a_t + b_t) - c_t / (c_t + d_t))
+                            if (a_t + b_t) > 0 and (c_t + d_t) > 0
+                            else 0
+                        )
+                        or_t = (
+                            (a_t * d_t) / (b_t * c_t) if b_t > 0 and c_t > 0 else None
+                        )
+                        chi2_t = (
+                            n_t
+                            * (abs(a_t * d_t - b_t * c_t) - n_t / 2) ** 2
+                            / ((a_t + b_t) * (c_t + d_t) * (a_t + c_t) * (b_t + d_t))
+                            if all(
+                                x > 0
+                                for x in [a_t + b_t, c_t + d_t, a_t + c_t, b_t + d_t]
+                            )
+                            else 0
+                        )
+                        w_t = cmath.sqrt(chi2_t / n_t) if n_t > 0 else 0
+                        c1, c2 = st.columns(2)
+                        c1.metric("Cohen's w", f"{w_t:.4f}")
+                        if or_t:
+                            c2.metric("Odds Ratio", f"{or_t:.4f}")
+                        if st.button("Apply w to Chi-Square test", key="apply_2x2"):
+                            st.session_state.converted_es = w_t
+                            st.session_state.converted_type = "w"
+                            st.rerun()
 
         else:
             # =========================
@@ -2059,6 +2254,19 @@ def main():
                                 st.markdown("## Formula:")
                                 render_latex(rule["Formula"])
                             render_test_widget(test)
+                            ss_type = TEST_TO_SS_TYPE.get(test)
+                            if ss_type:
+                                if st.button(
+                                    f"📐 Estimate sample size for this test",
+                                    key=f"ss_link_{test}",
+                                ):
+                                    st.session_state.ss_pending_obj = (
+                                        "Sample Size Estimation"
+                                    )
+                                    st.session_state.ss_pending_at = ss_type
+                                    st.session_state.results = None
+                                    st.session_state.power_params = None
+                                    st.rerun()
                             st.markdown("---")
 
             else:
@@ -9272,8 +9480,113 @@ def render_power_calculator(params):
     # --- Sample Size Justification ---
     st.subheader("📝 Sample Size Justification")
     st.caption(
-        "Copy the text below for your grant application, IRB submission, or research protocol."
+        "Copy the full protocol below for your grant application, IRB submission, or research protocol."
     )
+
+    from datetime import datetime
+
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+    atype_label = {
+        "one_mean": "One-sample Mean t/z-test",
+        "two_means": "Two Independent Means t-test",
+        "paired": "Paired Means t-test",
+        "one_prop": "One-sample Proportion",
+        "two_prop": "Two Proportions",
+        "anova": "One-way ANOVA",
+        "correlation": "Pearson Correlation",
+        "regression": "Multiple Linear Regression",
+        "logistic": "Logistic Regression",
+        "chisq": "Chi-Square Test",
+        "mannwhitney": "Mann-Whitney / Wilcoxon (Non-parametric)",
+        "logrank": "Log-Rank Test (Survival)",
+        "cox": "Cox Regression",
+        "equiv": "Equivalence / Non-Inferiority",
+        "rm_anova": "Repeated Measures ANOVA",
+        "twoway_anova": "Two-way / Factorial ANOVA",
+        "roc_auc": "ROC / AUC Analysis",
+        "kappa": "Cohen's Kappa / ICC Agreement",
+        "cluster_rct": "Cluster-RCT / Multilevel",
+        "precision": "Precision-based (CI Width)",
+        "pilot": "Pilot / Feasibility Study",
+        "wilcoxon_sr": "Wilcoxon Signed-Rank (paired)",
+        "kruskal": "Kruskal-Wallis Test",
+        "friedman": "Friedman Test",
+        "mcnemar": "McNemar's Test",
+        "fisher": "Fisher's Exact Test",
+        "manova": "MANOVA (Multivariate ANOVA)",
+        "binomial": "Binomial Exact Test",
+    }
+
+    if n_per_group is not None:
+        n_desc = (
+            f"{n_per_group} per group"
+            if not isinstance(n_per_group, tuple)
+            else f"{n_per_group[0]} (Group 1) and {n_per_group[1]} (Group 2)"
+        )
+        protocol = f"""SAMPLE SIZE ESTIMATION PROTOCOL
+Generated: {now_str}
+Application: Statistical Test Finder (opencode.ai)
+
+Analysis: {atype_label.get(atype, atype)}
+Direction: {tails.lower()}
+Significance Level (α): {alpha * num_tests:.4f}"""
+        if num_tests > 1:
+            protocol += f" (Bonferroni-adjusted from {alpha * num_tests:.4f}, {num_tests} comparisons)"
+        protocol += f"""
+Statistical Power (1−β): {power:.0%}
+Effect Size: {params.get('effect_size', params.get('or', params.get('w', 'N/A'))):.4f}
+"""
+        if isinstance(n_per_group, tuple):
+            protocol += f"""Allocation Ratio (n₂/n₁): {n_per_group[1] / n_per_group[0]:.2f}
+"""
+        protocol += f"""
+Required Sample Size: {n_desc}
+Total N: {n_total}"""
+        if dropout_rate > 0 and n_total_raw is not None and n_total_raw != n_total:
+            protocol += f"""
+Dropout Rate: {dropout_rate:.0%}
+Raw N (pre-dropout): {n_total_raw}
+Adjusted N (post-dropout): {n_total}
+"""
+        else:
+            protocol += "\n"
+        if cost_per > 0:
+            protocol += f"\nEstimated Study Cost: ${n_total * cost_per:,.0f}"
+            if recruitment_rate > 0:
+                protocol += f"\nEst. Recruitment Duration: {int(np.ceil(n_total / recruitment_rate))} months"
+            protocol += "\n"
+    else:
+        protocol = f"""SAMPLE SIZE ESTIMATION PROTOCOL
+Generated: {now_str}
+Application: Statistical Test Finder (opencode.ai)
+
+Analysis: {atype_label.get(atype, atype)}
+Direction: {tails.lower()}
+Significance Level (α): {alpha * num_tests:.4f}
+Statistical Power (1−β): {power:.0%}
+Effect Size: {params.get('effect_size', 'N/A'):.4f}
+Required Total N: {n_total}
+"""
+
+    fields_str = []
+    for k, v in params.items():
+        if k in (
+            "type",
+            "alpha",
+            "power",
+            "tails",
+            "dropout_rate",
+            "num_tests",
+            "cost_per",
+            "recruitment_rate",
+        ):
+            continue
+        fields_str.append(f"  {k}: {v}")
+    if fields_str:
+        protocol += "\nFull Parameters:\n" + "\n".join(fields_str) + "\n"
+
+    protocol += "\n--- Generated by Statistical Test Finder ---"
 
     if n_per_group is not None:
         if isinstance(n_per_group, tuple):
@@ -9316,6 +9629,14 @@ def render_power_calculator(params):
         justification = f"A sample size of {n_total} participants was determined to provide {power:.0%} power at α = {alpha * num_tests:.3f}. All calculations were performed using the Statistical Test Finder application."
 
     st.text(justification)
+
+    st.divider()
+    with st.expander("📄 Full Protocol Text"):
+        st.text_area(
+            ":orange[Full Protocol (select all, Ctrl+C / Cmd+C to copy)]",
+            protocol,
+            height=350,
+        )
 
     # --- Key References ---
     with st.expander("📚 Key References"):
