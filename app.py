@@ -10180,6 +10180,8 @@ def render_power_calculator(params):
         "simulation": "Simulation-based Power (Monte Carlo)",
     }
 
+    es_val = params.get('effect_size', params.get('or', params.get('w', params.get('f2', params.get('f', 'N/A')))))
+    es_str = f"{es_val:.4f}" if isinstance(es_val, (int, float, np.integer, np.floating)) else str(es_val)
     if n_per_group is not None:
         n_desc = (
             f"{n_per_group} per group"
@@ -10197,7 +10199,7 @@ Significance Level (α): {alpha * num_tests:.4f}"""
             protocol += f" ({mc_method}-adjusted from {alpha_raw:.4f}, {num_tests} comparisons)"
         protocol += f"""
 Statistical Power (1−β): {power:.0%}
-Effect Size: {params.get('effect_size', params.get('or', params.get('w', 'N/A'))):.4f}
+Effect Size: {es_str}
 """
         if isinstance(n_per_group, tuple):
             protocol += f"""Allocation Ratio (n₂/n₁): {n_per_group[1] / n_per_group[0]:.2f}
@@ -10227,7 +10229,7 @@ Analysis: {atype_label.get(atype, atype)}
 Direction: {tails.lower()}
 Significance Level (α): {alpha * num_tests:.4f}
 Statistical Power (1−β): {power:.0%}
-Effect Size: {params.get('effect_size', 'N/A'):.4f}
+Effect Size: {es_str}
 Required Total N: {n_total}
 """
 
