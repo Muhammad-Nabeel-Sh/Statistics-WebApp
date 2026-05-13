@@ -1270,6 +1270,7 @@ def main():
                 "Fisher's Exact Test",
                 "MANOVA (Multivariate ANOVA)",
                 "Binomial Exact Test",
+                "Simulation-based Power (Monte Carlo)",
             ]
             default_at_idx = ss_at_opts.index(
                 st.session_state.pop("ss_pending_at", ss_at_opts[0])
@@ -1901,6 +1902,11 @@ def main():
                     k_man = st.number_input("Number of Groups", 2, 20, 3, 1)
                 with c2:
                     dv_man = st.number_input("Number of DVs", 2, 20, 3, 1)
+                manova_test = st.selectbox(
+                    "Test statistic",
+                    ["Pillai's Trace", "Wilks' Lambda", "Hotelling-Lawley Trace", "Roy's Largest Root"],
+                    help="Pillai: most robust, recommended. Wilks: traditional. Hotelling: more power when assumptions met. Roy: most powerful when one dimension dominates.",
+                )
                 c1, c2 = st.columns(2)
                 with c1:
                     f2_man = st.number_input(
@@ -1917,6 +1923,7 @@ def main():
                     "dv": int(dv_man),
                     "f2": f2_man,
                     "rho": corr_man,
+                    "manova_test": manova_test,
                 }
 
             elif analysis_type == "Binomial Exact Test":
@@ -1930,6 +1937,48 @@ def main():
                         "Expected proportion (π₁)", 0.01, 0.99, 0.7, 0.01
                     )
                 ss_params = {"type": "binomial", "p0": p0_bin, "p1": p1_bin}
+
+            elif analysis_type == "Simulation-based Power (Monte Carlo)":
+                sim_test = st.selectbox(
+                    "Statistical test to simulate",
+                    ["Independent t-test (pooled)", "Welch's t-test", "Mann-Whitney U test", "Two-proportion z-test"],
+                )
+                n_sim = st.number_input("Number of simulations", 100, 10000, 1000, 100, help="Higher = more precise but slower.")
+                if sim_test in ("Independent t-test (pooled)", "Welch's t-test", "Mann-Whitney U test"):
+                    c1, c2, c3 = st.columns(3)
+                    with c1:
+                        mu1_s = st.number_input("Mean of Group 1", -100.0, 100.0, 0.0, 0.1)
+                    with c2:
+                        mu2_s = st.number_input("Mean of Group 2", -100.0, 100.0, 0.5, 0.1)
+                    with c3:
+                        sd_s = st.number_input("SD (both groups)", 0.1, 100.0, 1.0, 0.1)
+                    n_per_s = st.number_input("N per group", 5, 5000, 50, 5)
+                    dist_type = st.radio(
+                        "Distribution shape",
+                        ["Normal", "Skewed (Exponential)", "Heavy-tailed (Uniform)"],
+                        horizontal=True,
+                        help="Normal = standard normal. Exponential = skewed right. Uniform = light tails.",
+                    )
+                    ss_params = {
+                        "type": "simulation",
+                        "sim_test": sim_test,
+                        "n_sim": int(n_sim),
+                        "mu1": mu1_s, "mu2": mu2_s,
+                        "sd": sd_s,
+                        "n_per": int(n_per_s),
+                        "dist": dist_type,
+                    }
+                else:
+                    p1_s = st.number_input("Proportion in Group 1", 0.01, 0.99, 0.3, 0.01)
+                    p2_s = st.number_input("Proportion in Group 2", 0.01, 0.99, 0.5, 0.01)
+                    n_per_s = st.number_input("N per group", 5, 5000, 100, 5)
+                    ss_params = {
+                        "type": "simulation",
+                        "sim_test": sim_test,
+                        "n_sim": int(n_sim),
+                        "p1_s": p1_s, "p2_s": p2_s,
+                        "n_per": int(n_per_s),
+                    }
 
             # Apply effect size converter value if present
             conv_es = st.session_state.pop("converted_es", None)
@@ -1988,20 +2037,24 @@ def main():
                     )
 
                 adjust_multiple = st.checkbox(
-                    "Multiple testing correction (Bonferroni)"
+                    "Multiple testing correction"
                 )
-                num_tests = (
-                    st.number_input(
+                if adjust_multiple:
+                    mc_method = st.selectbox(
+                        "Correction method",
+                        ["Bonferroni", "Holm-Bonferroni", "Benjamini-Hochberg (FDR)"],
+                        help="Bonferroni: α/m (most conservative). Holm: sequential Bonferroni. BH-FDR: controls false discovery rate (less conservative).",
+                    )
+                    num_tests = st.number_input(
                         "Number of tests/comparisons",
                         1,
                         100,
                         1,
                         1,
-                        disabled=not adjust_multiple,
                     )
-                    if adjust_multiple
-                    else 1
-                )
+                else:
+                    mc_method = "None"
+                    num_tests = 1
 
                 show_budget = st.checkbox("Show budget / feasibility estimates")
                 if show_budget:
@@ -2020,6 +2073,7 @@ def main():
 
             ss_params["dropout_rate"] = dropout_rate if adjust_attrition else 0.0
             ss_params["num_tests"] = num_tests if adjust_multiple else 1
+            ss_params["mc_method"] = mc_method
             ss_params["cost_per"] = cost_per if show_budget else 0.0
             ss_params["recruitment_rate"] = recruitment_rate if show_budget else 0.0
 
@@ -2039,6 +2093,7 @@ def main():
                         "η² ↔ f",
                         "R² ↔ f²",
                         "2×2 Table → w/OR",
+                        "P(X>Y) ↔ d / Cliff's δ",
                     ],
                     horizontal=True,
                     label_visibility="collapsed",
@@ -2152,6 +2207,41 @@ def main():
                         if st.button("Apply w to Chi-Square test", key="apply_2x2"):
                             st.session_state.converted_es = w_t
                             st.session_state.converted_type = "w"
+                            st.rerun()
+                elif conv_tab == "P(X>Y) ↔ d / Cliff's δ":
+                    conv_dir = st.radio(
+                        "Direction",
+                        ["P(X>Y) → d / Cliff's δ", "Cliff's δ → d / P(X>Y)"],
+                        horizontal=True,
+                    )
+                    if conv_dir == "P(X>Y) → d / Cliff's δ":
+                        p_xy = st.number_input(
+                            "P(X>Y) probability (common language effect size)",
+                            0.51, 0.99, 0.65, 0.01,
+                            help="Probability that a random observation from Group 1 exceeds one from Group 2.",
+                        )
+                        d_np = np.sqrt(3) * (p_xy - 0.5) * 2
+                        cliff_d = 2 * p_xy - 1
+                        c1, c2 = st.columns(2)
+                        c1.metric("Cohen's d (approx)", f"{d_np:.4f}")
+                        c2.metric("Cliff's δ / Glass r_b", f"{cliff_d:.4f}")
+                        if st.button("Apply d to Mann-Whitney/Wilcoxon", key="apply_pxy_d"):
+                            st.session_state.converted_es = d_np
+                            st.session_state.converted_type = "d"
+                            st.rerun()
+                    else:
+                        cliff_in = st.number_input(
+                            "Cliff's δ (or Glass rank-biserial r)",
+                            -1.0, 1.0, 0.3, 0.01,
+                        )
+                        p_xy_out = (cliff_in + 1) / 2
+                        d_np_out = np.sqrt(3) * cliff_in
+                        c1, c2 = st.columns(2)
+                        c1.metric("P(X>Y)", f"{p_xy_out:.4f}")
+                        c2.metric("Cohen's d (approx)", f"{d_np_out:.4f}")
+                        if st.button("Apply d to Mann-Whitney/Wilcoxon", key="apply_cliff_d"):
+                            st.session_state.converted_es = abs(d_np_out)
+                            st.session_state.converted_type = "d"
                             st.rerun()
 
         else:
@@ -6849,12 +6939,17 @@ def render_power_calculator(params):
     # Extract global adjustment parameters (with defaults for backward compat)
     dropout_rate = params.get("dropout_rate", 0.0)
     num_tests = params.get("num_tests", 1)
+    mc_method = params.get("mc_method", "None")
     cost_per = params.get("cost_per", 0.0)
     recruitment_rate = params.get("recruitment_rate", 0.0)
 
-    # Apply Bonferroni correction if multiple tests
-    if num_tests > 1:
-        alpha = alpha / num_tests
+    # Apply multiple testing correction
+    alpha_raw = alpha
+    if num_tests > 1 and mc_method != "None":
+        if mc_method == "Bonferroni" or mc_method == "Holm-Bonferroni":
+            alpha = alpha / num_tests
+        elif mc_method == "Benjamini-Hochberg (FDR)":
+            alpha = alpha * (num_tests + 1) / (2 * num_tests)
         if alternative == "two-sided":
             z_alpha = norm.ppf(1 - alpha / 2)
         else:
@@ -7588,6 +7683,7 @@ def render_power_calculator(params):
         dv = params["dv"]
         f2 = params["f2"]
         rho = params["rho"]
+        manova_test = params.get("manova_test", "Pillai's Trace")
         if f2 > 0:
             u = dv
             v_num = k - 1
@@ -7599,7 +7695,15 @@ def render_power_calculator(params):
                     continue
                 s_val = min(u, v_num)
                 df1 = u * v_num
-                df2 = s_val * (v_den - dv + 1) + 4
+                if manova_test == "Pillai's Trace":
+                    df2 = s_val * (v_den - dv + 1) + 4
+                elif manova_test == "Wilks' Lambda":
+                    t_val = max(np.sqrt((u**2 * v_num**2 - 4) / max(u**2 + v_num**2 - 5, 1)), 1)
+                    df2 = (v_den - (u - v_num + 1) / 2) * t_val - (u * v_num - 2) / 2
+                elif manova_test == "Hotelling-Lawley Trace":
+                    df2 = s_val * (v_den - dv - 1) + 4
+                else:
+                    df2 = s_val * (v_den - dv + 1) + 4
                 ncp = f2 * n_try * (1 - rho)
                 from scipy.stats import ncf as noncentral_f, f as f_dist
 
@@ -7614,7 +7718,7 @@ def render_power_calculator(params):
         explanation = (
             f"Required total sample size for MANOVA with {k} groups, {dv} dependent variables, "
             f"effect size f²(V) = {f2:.4f}, α = {alpha}, power = {power}, "
-            f"DV correlation ρ = {rho:.2f}. Based on Pillai's trace approximation."
+            f"DV correlation ρ = {rho:.2f}. Test: {manova_test}."
         )
         formula_latex = r"n \text{ from non-central } F \text{ with } df_1 = u \cdot v_{\text{num}}, \quad f^2(V) = \frac{V}{s - V}"
 
@@ -7649,6 +7753,71 @@ def render_power_calculator(params):
         )
         formula_latex = r"n = \min\{n: 1 - \Phi(\Phi^{-1}(1-\alpha/2) - \sqrt{n} d) \geq \text{power}\}"
 
+    elif atype == "simulation":
+        sim_test = params["sim_test"]
+        n_sim = params["n_sim"]
+        n_per = params["n_per"]
+        n_total = n_per * 2
+        n_per_group = (n_per, n_per)
+        alpha_sim = alpha
+        st.info(f"Running {n_sim} Monte Carlo simulations with N = {n_per} per group...")
+        progress_bar = st.progress(0)
+        rejects = 0
+        np.random.seed(42)
+        if sim_test == "Two-proportion z-test":
+            p1_s = params["p1_s"]
+            p2_s = params["p2_s"]
+            for i in range(n_sim):
+                x1 = np.random.binomial(1, p1_s, n_per)
+                x2 = np.random.binomial(1, p2_s, n_per)
+                from scipy.stats import chi2_contingency
+                _, p_val, _, _ = chi2_contingency(pd.crosstab(
+                    pd.Series(np.concatenate([x1, x2])),
+                    pd.Series(["G1"] * n_per + ["G2"] * n_per),
+                ))
+                if p_val < alpha_sim:
+                    rejects += 1
+                if (i + 1) % max(1, n_sim // 20) == 0:
+                    progress_bar.progress((i + 1) / n_sim)
+        else:
+            mu1 = params["mu1"]
+            mu2 = params["mu2"]
+            sd = params["sd"]
+            dist = params.get("dist", "Normal")
+            for i in range(n_sim):
+                if dist == "Normal":
+                    g1 = np.random.normal(mu1, sd, n_per)
+                    g2 = np.random.normal(mu2, sd, n_per)
+                elif dist == "Skewed (Exponential)":
+                    g1 = np.random.exponential(sd, n_per) + mu1
+                    g2 = np.random.exponential(sd, n_per) + mu2
+                else:
+                    g1 = np.random.uniform(mu1 - sd * 1.732, mu1 + sd * 1.732, n_per)
+                    g2 = np.random.uniform(mu2 - sd * 1.732, mu2 + sd * 1.732, n_per)
+                from scipy.stats import ttest_ind, mannwhitneyu
+                if sim_test == "Independent t-test (pooled)":
+                    _, p_val = ttest_ind(g1, g2, equal_var=True)
+                elif sim_test == "Welch's t-test":
+                    _, p_val = ttest_ind(g1, g2, equal_var=False)
+                else:
+                    _, p_val = mannwhitneyu(g1, g2, alternative="two-sided")
+                if p_val < alpha_sim:
+                    rejects += 1
+                if (i + 1) % max(1, n_sim // 20) == 0:
+                    progress_bar.progress((i + 1) / n_sim)
+        progress_bar.empty()
+        empirical_power = rejects / n_sim
+        st.success(f"Monte Carlo simulation complete — {rejects}/{n_sim} rejections.")
+        params["_empirical_power"] = empirical_power
+        explanation = (
+            f"Monte Carlo simulation ({n_sim} iterations) using {sim_test} "
+            f"with N = {n_per} per group. "
+            f"Estimated power: {empirical_power:.1%} "
+            f"(95% CI: {max(0, empirical_power - 1.96*np.sqrt(empirical_power*(1-empirical_power)/n_sim)):.1%} – "
+            f"{min(1, empirical_power + 1.96*np.sqrt(empirical_power*(1-empirical_power)/n_sim)):.1%})."
+        )
+        formula_latex = r"\text{Power} = \frac{1}{N_{\text{sim}}} \sum_{i=1}^{N_{\text{sim}}} I(p_i < \alpha)"
+
     # --- Apply Attrition Adjustment ---
     n_total_raw = n_total
     if dropout_rate > 0 and n_total is not None:
@@ -7680,7 +7849,11 @@ def render_power_calculator(params):
         else:
             st.metric("Per Group (n)", n_per_group)
     with col3:
-        st.metric("Power", f"{power:.0%}")
+        if atype == "simulation":
+            emp_pwr = params.get("_empirical_power", 0)
+            st.metric("Empirical Power", f"{emp_pwr:.1%}")
+        else:
+            st.metric("Power", f"{power:.0%}")
         st.metric("Alpha (α)", f"{alpha:.3f}")
 
     adjustments = []
@@ -7690,7 +7863,7 @@ def render_power_calculator(params):
         )
     if num_tests > 1:
         adjustments.append(
-            f"Bonferroni-adjusted α = {alpha:.4f} (original: {alpha * num_tests:.4f}) for {num_tests} comparisons"
+            f"{mc_method} α = {alpha:.4f} (original: {alpha_raw:.4f}) for {num_tests} comparisons"
         )
     if adjustments:
         st.caption(" | ".join(adjustments))
@@ -7715,6 +7888,10 @@ def render_power_calculator(params):
             margin=dict(t=40, b=10, l=10, r=10),
         )
         st.plotly_chart(fig_pie, use_container_width=True)
+
+    if atype == "simulation":
+        st.info("Power curve and sensitivity plots use parametric formulas and are not available for Monte Carlo simulation. Change N above and re-run to test different sample sizes.")
+        return
 
     # --- Power Curve ---
     st.subheader("Power Analysis Curve")
@@ -8169,6 +8346,7 @@ def render_power_calculator(params):
                     dv = params["dv"]
                     f2 = params["f2"]
                     rho = params["rho"]
+                    manova_test = params.get("manova_test", "Pillai's Trace")
                     if f2 > 0:
                         u = dv
                         v_num = k - 1
@@ -8176,7 +8354,15 @@ def render_power_calculator(params):
                         if v_den > 0:
                             s_val = min(u, v_num)
                             df1 = u * v_num
-                            df2 = s_val * (v_den - dv + 1) + 4
+                            if manova_test == "Pillai's Trace":
+                                df2 = s_val * (v_den - dv + 1) + 4
+                            elif manova_test == "Wilks' Lambda":
+                                t_val = max(np.sqrt((u**2 * v_num**2 - 4) / max(u**2 + v_num**2 - 5, 1)), 1)
+                                df2 = (v_den - (u - v_num + 1) / 2) * t_val - (u * v_num - 2) / 2
+                            elif manova_test == "Hotelling-Lawley Trace":
+                                df2 = s_val * (v_den - dv - 1) + 4
+                            else:
+                                df2 = s_val * (v_den - dv + 1) + 4
                             ncp = f2 * n * (1 - rho)
                             from scipy.stats import ncf as noncentral_f, f as f_dist
 
@@ -8946,6 +9132,7 @@ def render_power_calculator(params):
                 rho = params["rho"]
                 adj_f2 = f2 * mult
                 adj_es = adj_f2
+                manova_test = params.get("manova_test", "Pillai's Trace")
                 if adj_f2 > 0:
                     u = dv
                     v_num = k - 1
@@ -8956,7 +9143,15 @@ def render_power_calculator(params):
                             continue
                         s_val = min(u, v_num)
                         df1 = u * v_num
-                        df2 = s_val * (v_den - dv + 1) + 4
+                        if manova_test == "Pillai's Trace":
+                            df2 = s_val * (v_den - dv + 1) + 4
+                        elif manova_test == "Wilks' Lambda":
+                            t_val = max(np.sqrt((u**2 * v_num**2 - 4) / max(u**2 + v_num**2 - 5, 1)), 1)
+                            df2 = (v_den - (u - v_num + 1) / 2) * t_val - (u * v_num - 2) / 2
+                        elif manova_test == "Hotelling-Lawley Trace":
+                            df2 = s_val * (v_den - dv - 1) + 4
+                        else:
+                            df2 = s_val * (v_den - dv + 1) + 4
                         ncp = adj_f2 * n_try * (1 - rho)
                         from scipy.stats import ncf as noncentral_f, f as f_dist
 
@@ -9588,6 +9783,7 @@ def render_power_calculator(params):
                     f2 = params["f2"]
                     rho = params["rho"]
                     adj_f2 = f2 * w_mult
+                    manova_test = params.get("manova_test", "Pillai's Trace")
                     if adj_f2 > 0:
                         u = dv
                         v_num = k - 1
@@ -9598,10 +9794,17 @@ def render_power_calculator(params):
                                 continue
                             s_val = min(u, v_num)
                             df1 = u * v_num
-                            df2 = s_val * (v_den - dv + 1) + 4
+                            if manova_test == "Pillai's Trace":
+                                df2 = s_val * (v_den - dv + 1) + 4
+                            elif manova_test == "Wilks' Lambda":
+                                t_val = max(np.sqrt((u**2 * v_num**2 - 4) / max(u**2 + v_num**2 - 5, 1)), 1)
+                                df2 = (v_den - (u - v_num + 1) / 2) * t_val - (u * v_num - 2) / 2
+                            elif manova_test == "Hotelling-Lawley Trace":
+                                df2 = s_val * (v_den - dv - 1) + 4
+                            else:
+                                df2 = s_val * (v_den - dv + 1) + 4
                             ncp = adj_f2 * n_try * (1 - rho)
                             from scipy.stats import ncf as noncentral_f, f as f_dist
-
                             f_crit = f_dist.ppf(1 - alpha, df1, df2)
                             p_cur = 1 - noncentral_f.cdf(f_crit, df1, df2, ncp)
                             if p_cur >= w_power:
@@ -9974,6 +10177,7 @@ def render_power_calculator(params):
         "fisher": "Fisher's Exact Test",
         "manova": "MANOVA (Multivariate ANOVA)",
         "binomial": "Binomial Exact Test",
+        "simulation": "Simulation-based Power (Monte Carlo)",
     }
 
     if n_per_group is not None:
@@ -9990,7 +10194,7 @@ Analysis: {atype_label.get(atype, atype)}
 Direction: {tails.lower()}
 Significance Level (α): {alpha * num_tests:.4f}"""
         if num_tests > 1:
-            protocol += f" (Bonferroni-adjusted from {alpha * num_tests:.4f}, {num_tests} comparisons)"
+            protocol += f" ({mc_method}-adjusted from {alpha_raw:.4f}, {num_tests} comparisons)"
         protocol += f"""
 Statistical Power (1−β): {power:.0%}
 Effect Size: {params.get('effect_size', params.get('or', params.get('w', 'N/A'))):.4f}
@@ -10055,7 +10259,7 @@ Required Total N: {n_total}
                 f"at a significance level of α = {alpha * num_tests:.3f} "
             )
             if num_tests > 1:
-                justification += f"(Bonferroni-adjusted for {num_tests} comparisons, per-test α = {alpha:.4f}) "
+                justification += f"({mc_method}-adjusted for {num_tests} comparisons, per-test α = {alpha:.4f}) "
             justification += (
                 f"to detect the anticipated effect size. "
                 f"Sample size estimation was performed using a {tails.lower()} {explanation.split('to detect')[0].strip().lower()}. "
@@ -10072,7 +10276,7 @@ Required Total N: {n_total}
                 f"was determined to provide {power:.0%} power at a significance level of α = {alpha * num_tests:.3f} "
             )
             if num_tests > 1:
-                justification += f"(Bonferroni-adjusted for {num_tests} comparisons, per-test α = {alpha:.4f}) "
+                justification += f"({mc_method}-adjusted for {num_tests} comparisons, per-test α = {alpha:.4f}) "
             justification += (
                 f"to detect the anticipated effect size. "
                 f"Sample size estimation was performed using a {tails.lower()} {explanation.split('to detect')[0].strip().lower()}. "
