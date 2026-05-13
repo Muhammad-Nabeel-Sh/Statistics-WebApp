@@ -1571,19 +1571,34 @@ def main():
                 }
 
             elif analysis_type == "Equivalence / Non-Inferiority":
+                equiv_param_type = st.radio(
+                    "Parameter type", ["Mean", "Proportion"], horizontal=True
+                )
                 c1, c2 = st.columns(2)
                 with c1:
-                    margin = st.number_input("Margin (delta)", 0.01, 10.0, 1.0, 0.01)
+                    margin = st.number_input("Margin (delta)", 0.001, 10.0, 1.0, 0.001)
                 with c2:
                     d_exp = st.number_input(
                         "Expected Difference", -10.0, 10.0, 0.0, 0.01
                     )
                 c1, c2 = st.columns(2)
+                p1_eq = 0.5
+                p2_eq = 0.5
                 with c1:
-                    sd_val = st.number_input("SD", 0.1, 100.0, 1.0, 0.1)
+                    if equiv_param_type == "Mean":
+                        sd_val = st.number_input("SD", 0.1, 100.0, 1.0, 0.1)
+                    else:
+                        p1_eq = st.number_input(
+                            "Expected proportion (Group 1)", 0.01, 0.99, 0.2, 0.01
+                        )
+                        sd_val = 1.0
                 with c2:
                     ratio_eq = st.number_input(
                         "Allocation Ratio (n₂/n₁)", 0.1, 10.0, 1.0, 0.1
+                    )
+                if equiv_param_type == "Proportion":
+                    p2_eq = st.number_input(
+                        "Expected proportion (Group 2)", 0.01, 0.99, 0.2, 0.01
                     )
                 ss_params = {
                     "type": "equiv",
@@ -1591,6 +1606,9 @@ def main():
                     "expected_diff": d_exp,
                     "sd": sd_val,
                     "ratio": ratio_eq,
+                    "equiv_param_type": equiv_param_type,
+                    "p1_eq": p1_eq,
+                    "p2_eq": p2_eq,
                 }
 
             elif analysis_type == "Repeated Measures ANOVA":
@@ -1625,13 +1643,17 @@ def main():
                     r_val = st.number_input("Rows (Factor A levels)", 2, 10, 2, 1)
                 with c2:
                     c_val = st.number_input("Columns (Factor B levels)", 2, 10, 2, 1)
-                c1, c2 = st.columns(2)
+                c1, c2, c3 = st.columns(3)
                 with c1:
                     f_a = st.number_input(
-                        "Cohen's f for main effect", 0.01, 2.0, 0.25, 0.01
+                        "Cohen's f for Factor A", 0.01, 2.0, 0.25, 0.01
                     )
                     st.caption("Small: 0.10 | Medium: 0.25 | Large: 0.40")
                 with c2:
+                    f_b = st.number_input(
+                        "Cohen's f for Factor B", 0.01, 2.0, 0.25, 0.01
+                    )
+                with c3:
                     f_ab = st.number_input(
                         "Cohen's f for interaction", 0.01, 2.0, 0.25, 0.01
                     )
@@ -1643,7 +1665,7 @@ def main():
                 ss_params = {
                     "type": "twoway_anova",
                     "f_a": f_a,
-                    "f_b": f_a,
+                    "f_b": f_b,
                     "f_ab": f_ab,
                     "rows": int(r_val),
                     "cols": int(c_val),
@@ -1809,7 +1831,13 @@ def main():
                         "Cohen's f (effect size)", 0.01, 2.0, 0.25, 0.01
                     )
                     st.caption("Small: 0.10 | Medium: 0.25 | Large: 0.40")
-                ss_params = {"type": "kruskal", "k": int(k_kw), "effect_size": f_kw}
+                are_kw = st.number_input(
+                    "ARE vs ANOVA (asymptotic relative efficiency)",
+                    0.15, 1.5, 0.955, 0.001,
+                    help="ARE = 0.955 at normality, lower for heavy-tailed distributions. Inflates N by 1/ARE.",
+                )
+                st.caption(f"Effective inflation = {1/are_kw:.2f}× (N_multiplier = {1/are_kw:.3f})")
+                ss_params = {"type": "kruskal", "k": int(k_kw), "effect_size": f_kw, "are": are_kw}
 
             elif analysis_type == "Friedman Test":
                 c1, c2 = st.columns(2)
@@ -1853,11 +1881,18 @@ def main():
                     ratio_fish = st.number_input(
                         "Allocation Ratio (n₂/n₁)", 0.1, 10.0, 1.0, 0.1
                     )
+                are_fish = st.number_input(
+                    "ARE vs z-test (asymptotic relative efficiency)",
+                    0.5, 1.0, 0.833, 0.001,
+                    help="ARE ≈ 0.833 is the standard adjustment for Fisher's exact vs z-test. Lower values increase N.",
+                )
+                st.caption(f"Effective inflation = {1/are_fish:.2f}×")
                 ss_params = {
                     "type": "fisher",
                     "p1": p1_fish,
                     "p2": p2_fish,
                     "ratio": ratio_fish,
+                    "are": are_fish,
                 }
 
             elif analysis_type == "MANOVA (Multivariate ANOVA)":
@@ -7148,31 +7183,60 @@ def render_power_calculator(params):
         exp_diff = params["expected_diff"]
         sd = params["sd"]
         ratio = params["ratio"]
-        d_e = margin - abs(exp_diff)
-        if d_e > 0:
-            from statsmodels.stats.power import NormalIndPower
-
-            solver = NormalIndPower()
-            es_e = d_e / sd
-            n1 = solver.solve_power(
-                effect_size=es_e,
-                alpha=alpha,
-                power=power,
-                ratio=ratio,
-                alternative="larger",
+        equiv_type = params.get("equiv_param_type", "Mean")
+        if equiv_type == "Proportion":
+            p1_eq = params.get("p1_eq", 0.2)
+            p2_eq = params.get("p2_eq", 0.2)
+            d_prop = abs(p1_eq - p2_eq)
+            d_e = margin - d_prop
+            if d_e > 0:
+                p_bar = (p1_eq + p2_eq) / 2
+                se = np.sqrt(2 * p_bar * (1 - p_bar))
+                es_e = d_e / se if se > 0 else 0
+                from statsmodels.stats.power import NormalIndPower
+                n1 = NormalIndPower().solve_power(
+                    effect_size=es_e,
+                    alpha=alpha,
+                    power=power,
+                    ratio=ratio,
+                    alternative="larger",
+                )
+                n1 = int(np.ceil(n1))
+                n2 = int(np.ceil(n1 * ratio))
+                n_total = n1 + n2
+                n_per_group = (n1, n2)
+            explanation = (
+                f"Required sample size for non-inferiority test of proportions "
+                f"with margin = {margin:.3f}, p₁ = {p1_eq:.3f}, p₂ = {p2_eq:.3f}, "
+                f"expected difference = {d_prop:.3f}, α = {alpha}, power = {power}, ratio = {ratio:.2f}."
             )
-            n1 = int(np.ceil(n1))
-            n2 = int(np.ceil(n1 * ratio))
-            n_total = n1 + n2
-            n_per_group = (n1, n2)
-        explanation = (
-            f"Required sample size for non-inferiority test "
-            f"with margin = {margin:.2f}, expected difference = {exp_diff:.2f}, "
-            f"SD = {sd:.1f}, α = {alpha}, power = {power}, ratio = {ratio:.2f}."
-        )
-        formula_latex = (
-            r"n_1 = \frac{(z_{\alpha}+z_{\beta})^2 \sigma^2 (1+1/r)}{(\delta - |d|)^2}"
-        )
+            formula_latex = (
+                r"n_1 = \frac{(z_{\alpha}+z_{\beta})^2 \, 2\bar{p}(1-\bar{p})}{(\delta - |p_1-p_2|)^2}"
+            )
+        else:
+            d_e = margin - abs(exp_diff)
+            if d_e > 0:
+                from statsmodels.stats.power import NormalIndPower
+                es_e = d_e / sd
+                n1 = NormalIndPower().solve_power(
+                    effect_size=es_e,
+                    alpha=alpha,
+                    power=power,
+                    ratio=ratio,
+                    alternative="larger",
+                )
+                n1 = int(np.ceil(n1))
+                n2 = int(np.ceil(n1 * ratio))
+                n_total = n1 + n2
+                n_per_group = (n1, n2)
+            explanation = (
+                f"Required sample size for non-inferiority test of means "
+                f"with margin = {margin:.2f}, expected difference = {exp_diff:.2f}, "
+                f"SD = {sd:.1f}, α = {alpha}, power = {power}, ratio = {ratio:.2f}."
+            )
+            formula_latex = (
+                r"n_1 = \frac{(z_{\alpha}+z_{\beta})^2 \sigma^2 (1+1/r)}{(\delta - |d|)^2}"
+            )
 
     elif atype == "rm_anova":
         f_eff = params["effect_size"]
@@ -7322,16 +7386,28 @@ def render_power_calculator(params):
         half_width = params["half_width"]
         conf_level = params["conf_level"]
         conf_alpha = 1 - conf_level / 100
-        z_hw = norm.ppf(1 - conf_alpha / 2)
         param_type = params["param_type"]
         if param_type == "Mean":
             sd = params["sd"]
             if sd > 0 and half_width > 0:
-                n_total = int(np.ceil((z_hw * sd / half_width) ** 2))
+                from scipy.stats import t as t_dist
+                n_total = int(np.ceil((norm.ppf(1 - conf_alpha / 2) * sd / half_width) ** 2))
+                n_total = max(n_total, 3)
+                for _ in range(20):
+                    t_val = t_dist.ppf(1 - conf_alpha / 2, df=n_total - 1)
+                    n_next = int(np.ceil((t_val * sd / half_width) ** 2))
+                    n_next = max(n_next, 3)
+                    if n_next == n_total:
+                        break
+                    n_total = n_next
+            else:
+                n_total = 3
         else:
             prop = params["prop"]
             if prop > 0 and half_width > 0:
-                n_total = int(np.ceil((z_hw**2 * prop * (1 - prop)) / (half_width**2)))
+                n_total = int(np.ceil((norm.ppf(1 - conf_alpha / 2) ** 2 * prop * (1 - prop)) / (half_width**2)))
+            else:
+                n_total = 3
         n_total = max(n_total, 3)
         n_per_group = n_total
         explanation = (
@@ -7342,7 +7418,7 @@ def render_power_calculator(params):
             else f"p = {prop:.3f}."
         )
         formula_latex = (
-            r"n = \left(\frac{z_{\alpha/2} \sigma}{w}\right)^2"
+            r"n = \left(\frac{t_{\alpha/2, n-1} \sigma}{w}\right)^2"
             if param_type == "Mean"
             else r"n = \frac{z_{\alpha/2}^2 p(1-p)}{w^2}"
         )
@@ -7356,13 +7432,22 @@ def render_power_calculator(params):
             half_width = params["half_width"]
             conf_level = params["conf_level"]
             conf_alpha = 1 - conf_level / 100
-            z_hw = norm.ppf(1 - conf_alpha / 2)
             param_type = params["param_type"]
             if param_type == "Mean":
                 sd = params["sd"]
                 if sd > 0 and half_width > 0:
-                    n_total = int(np.ceil((z_hw * sd / half_width) ** 2))
+                    from scipy.stats import t as t_dist
+                    n_total = int(np.ceil((norm.ppf(1 - conf_alpha / 2) * sd / half_width) ** 2))
+                    n_total = max(n_total, 3)
+                    for _ in range(20):
+                        t_val = t_dist.ppf(1 - conf_alpha / 2, df=n_total - 1)
+                        n_next = int(np.ceil((t_val * sd / half_width) ** 2))
+                        n_next = max(n_next, 3)
+                        if n_next == n_total:
+                            break
+                        n_total = n_next
             else:
+                z_hw = norm.ppf(1 - conf_alpha / 2)
                 prop = params["prop"]
                 if prop > 0 and half_width > 0:
                     n_total = int(
@@ -7410,21 +7495,22 @@ def render_power_calculator(params):
     elif atype == "kruskal":
         f_eff = params["effect_size"]
         k = params["k"]
+        are_kw = params.get("are", 0.955)
         if f_eff > 0:
             from statsmodels.stats.power import FTestAnovaPower
 
             n_per_g = FTestAnovaPower().solve_power(
                 effect_size=f_eff, alpha=alpha, power=power, k_groups=k
             )
-            n_per_g = int(np.ceil(n_per_g * 1.15))
+            n_per_g = int(np.ceil(n_per_g / are_kw))
             n_total = n_per_g * k
             n_per_group = n_per_g
         explanation = (
             f"Required sample size per group for Kruskal-Wallis test with {k} groups "
             f"to detect Cohen's f = {f_eff:.3f} with α = {alpha}, power = {power}. "
-            f"Inflated by 15% vs ANOVA to account for efficiency loss."
+            f"Inflated by {1/are_kw:.2f}× vs ANOVA (ARE = {are_kw:.3f}) to account for efficiency loss."
         )
-        formula_latex = r"n_{\text{KW}} = 1.15 \times n_{\text{ANOVA}} \quad f = \sqrt{\frac{\sum(\bar{R}_i - \bar{R})^2}{(N(N+1)/12)}}"
+        formula_latex = r"n_{\text{KW}} = \frac{n_{\text{ANOVA}}}{\text{ARE}} \quad f = \sqrt{\frac{\sum(\bar{R}_i - \bar{R})^2}{(N(N+1)/12)}}"
 
     elif atype == "friedman":
         k = params["k"]
@@ -7470,6 +7556,7 @@ def render_power_calculator(params):
         p1 = params["p1"]
         p2 = params["p2"]
         ratio = params["ratio"]
+        are_f = params.get("are", 0.833)
         p_bar = (p1 + ratio * p2) / (1 + ratio)
         d_f = abs(p1 - p2)
         if d_f > 0 and p_bar > 0 and p_bar < 1:
@@ -7484,7 +7571,7 @@ def render_power_calculator(params):
                 ratio=ratio,
                 alternative=alternative,
             )
-            n1 = int(np.ceil(n1 * 1.20))
+            n1 = int(np.ceil(n1 / are_f))
             n2 = int(np.ceil(n1 * ratio))
             n_total = n1 + n2
             n_per_group = (n1, n2)
@@ -7492,9 +7579,9 @@ def render_power_calculator(params):
             f"Required sample size per group for Fisher's exact test ({tails.lower()}) "
             f"to detect difference between {p1:.3f} and {p2:.3f} "
             f"with α = {alpha}, power = {power}, ratio = {ratio:.2f}. "
-            f"Inflated by 20% vs z-test for exact-method efficiency."
+            f"Inflated by {1/are_f:.2f}× vs z-test (ARE = {are_f:.3f}) for exact-method efficiency."
         )
-        formula_latex = r"n_{\text{Fisher}} \approx 1.20 \times n_{\text{two-prop}} \quad \text{(exact conditional inference)}"
+        formula_latex = r"n_{\text{Fisher}} \approx \frac{n_{\text{two-prop}}}{\text{ARE}} \quad \text{(exact conditional inference)}"
 
     elif atype == "manova":
         k = params["k"]
@@ -7820,19 +7907,34 @@ def render_power_calculator(params):
                     exp_diff = params["expected_diff"]
                     sd = params["sd"]
                     ratio = params["ratio"]
-                    d_e = margin - abs(exp_diff)
-                    if d_e > 0:
-                        es_e = d_e / sd
-                        solver = NormalIndPower()
-                        pv = solver.solve_power(
-                            effect_size=es_e,
-                            nobs1=n,
-                            alpha=alpha,
-                            ratio=ratio,
-                            alternative="larger",
-                        )
+                    equiv_type = params.get("equiv_param_type", "Mean")
+                    if equiv_type == "Proportion":
+                        p1_eq = params.get("p1_eq", 0.2)
+                        p2_eq = params.get("p2_eq", 0.2)
+                        d_prop = abs(p1_eq - p2_eq)
+                        d_e = margin - d_prop
+                        if d_e > 0:
+                            p_bar = (p1_eq + p2_eq) / 2
+                            se = np.sqrt(2 * p_bar * (1 - p_bar))
+                            es_e = d_e / se if se > 0 else 0
+                            solver = NormalIndPower()
+                            pv = solver.solve_power(
+                                effect_size=es_e, nobs1=n,
+                                alpha=alpha, ratio=ratio, alternative="larger",
+                            )
+                        else:
+                            pv = 0
                     else:
-                        pv = 0
+                        d_e = margin - abs(exp_diff)
+                        if d_e > 0:
+                            es_e = d_e / sd
+                            solver = NormalIndPower()
+                            pv = solver.solve_power(
+                                effect_size=es_e, nobs1=n,
+                                alpha=alpha, ratio=ratio, alternative="larger",
+                            )
+                        else:
+                            pv = 0
                 elif atype == "rm_anova":
                     f_eff = params["effect_size"]
                     k = params["k"]
@@ -7931,16 +8033,23 @@ def render_power_calculator(params):
                     half_width = params["half_width"]
                     conf_level = params["conf_level"]
                     conf_alpha = 1 - conf_level / 100
-                    z_hw = norm.ppf(1 - conf_alpha / 2)
                     param_type = params["param_type"]
                     if param_type == "Mean":
                         sd = params["sd"]
                         if sd > 0 and half_width > 0:
-                            n_req = (z_hw * sd / half_width) ** 2
+                            from scipy.stats import t as t_dist
+                            n_req = max((norm.ppf(1 - conf_alpha / 2) * sd / half_width) ** 2, 3)
+                            for _ in range(20):
+                                t_val = t_dist.ppf(1 - conf_alpha / 2, df=int(n_req) - 1)
+                                n_next = (t_val * sd / half_width) ** 2
+                                if abs(n_next - n_req) < 0.5:
+                                    break
+                                n_req = max(n_next, 3)
                         else:
                             n_req = 0
                     else:
                         prop = params["prop"]
+                        z_hw = norm.ppf(1 - conf_alpha / 2)
                         if prop > 0 and half_width > 0:
                             n_req = (z_hw**2 * prop * (1 - prop)) / (half_width**2)
                         else:
@@ -7957,17 +8066,23 @@ def render_power_calculator(params):
                     elif method == "Precision-based":
                         conf_level = params["conf_level"]
                         conf_alpha = 1 - conf_level / 100
-                        z_hw = norm.ppf(1 - conf_alpha / 2)
                         param_type = params["param_type"]
                         if param_type == "Mean":
                             sd = params["sd"]
                             half_width = params["half_width"]
-                            n_req = (
-                                (z_hw * sd / half_width) ** 2
-                                if sd > 0 and half_width > 0
-                                else 0
-                            )
+                            if sd > 0 and half_width > 0:
+                                from scipy.stats import t as t_dist
+                                n_req = max((norm.ppf(1 - conf_alpha / 2) * sd / half_width) ** 2, 3)
+                                for _ in range(20):
+                                    t_val = t_dist.ppf(1 - conf_alpha / 2, df=int(n_req) - 1)
+                                    n_next = (t_val * sd / half_width) ** 2
+                                    if abs(n_next - n_req) < 0.5:
+                                        break
+                                    n_req = max(n_next, 3)
+                            else:
+                                n_req = 0
                         else:
+                            z_hw = norm.ppf(1 - conf_alpha / 2)
                             prop = params["prop"]
                             half_width = params["half_width"]
                             n_req = (
@@ -7998,10 +8113,11 @@ def render_power_calculator(params):
                 elif atype == "kruskal":
                     f_eff = params["effect_size"]
                     k = params["k"]
+                    are_kw = params.get("are", 0.955)
                     if f_eff > 0:
                         solver = FTestAnovaPower()
                         pv = solver.solve_power(
-                            effect_size=f_eff, nobs=n / 1.15, alpha=alpha, k_groups=k
+                            effect_size=f_eff, nobs=n * are_kw, alpha=alpha, k_groups=k
                         )
                     else:
                         pv = 0
@@ -8033,6 +8149,7 @@ def render_power_calculator(params):
                     p1 = params["p1"]
                     p2 = params["p2"]
                     ratio = params["ratio"]
+                    are_f = params.get("are", 0.833)
                     from statsmodels.stats.proportion import proportion_effectsize
 
                     d_eff = proportion_effectsize(p2, p1)
@@ -8040,7 +8157,7 @@ def render_power_calculator(params):
                         solver = NormalIndPower()
                         pv = solver.solve_power(
                             effect_size=abs(d_eff),
-                            nobs1=n / (1 + ratio) / 1.20,
+                            nobs1=n / (1 + ratio) * are_f,
                             alpha=alpha,
                             ratio=ratio,
                             alternative=alternative,
@@ -8527,22 +8644,40 @@ def render_power_calculator(params):
                 exp_diff = params["expected_diff"]
                 sd = params["sd"]
                 ratio = params["ratio"]
-                d_e = adj_margin - abs(exp_diff)
-                adj_es = d_e / sd if d_e > 0 else 0
-                if d_e > 0:
-                    es_e = d_e / sd
-                    solver = NormalIndPower()
-                    n1_s = solver.solve_power(
-                        effect_size=es_e,
-                        alpha=alpha,
-                        power=power,
-                        ratio=ratio,
-                        alternative="larger",
-                    )
-                    n1_s = int(np.ceil(n1_s))
-                    n_s = n1_s + int(np.ceil(n1_s * ratio))
+                equiv_type = params.get("equiv_param_type", "Mean")
+                if equiv_type == "Proportion":
+                    p1_eq = params.get("p1_eq", 0.2)
+                    p2_eq = params.get("p2_eq", 0.2)
+                    d_prop = abs(p1_eq - p2_eq)
+                    d_e = adj_margin - d_prop
+                    if d_e > 0:
+                        p_bar = (p1_eq + p2_eq) / 2
+                        se = np.sqrt(2 * p_bar * (1 - p_bar))
+                        es_e = d_e / se if se > 0 else 0
+                        adj_es = es_e
+                        solver = NormalIndPower()
+                        n1_s = solver.solve_power(
+                            effect_size=es_e, alpha=alpha, power=power,
+                            ratio=ratio, alternative="larger",
+                        )
+                        n1_s = int(np.ceil(n1_s))
+                        n_s = n1_s + int(np.ceil(n1_s * ratio))
+                    else:
+                        n_s = None
                 else:
-                    n_s = None
+                    d_e = adj_margin - abs(exp_diff)
+                    adj_es = d_e / sd if d_e > 0 else 0
+                    if d_e > 0:
+                        es_e = d_e / sd
+                        solver = NormalIndPower()
+                        n1_s = solver.solve_power(
+                            effect_size=es_e, alpha=alpha, power=power,
+                            ratio=ratio, alternative="larger",
+                        )
+                        n1_s = int(np.ceil(n1_s))
+                        n_s = n1_s + int(np.ceil(n1_s * ratio))
+                    else:
+                        n_s = None
             elif atype == "rm_anova":
                 adj_es = params["effect_size"] * mult
                 k = params["k"]
@@ -8649,17 +8784,26 @@ def render_power_calculator(params):
                 adj_hw = params["half_width"] * mult
                 conf_level = params["conf_level"]
                 conf_alpha = 1 - conf_level / 100
-                z_hw = norm.ppf(1 - conf_alpha / 2)
                 param_type = params["param_type"]
                 adj_es = adj_hw
                 if param_type == "Mean":
                     sd = params["sd"]
                     if sd > 0 and adj_hw > 0:
-                        n_s = int(np.ceil((z_hw * sd / adj_hw) ** 2))
+                        from scipy.stats import t as t_dist
+                        n_s = int(np.ceil((norm.ppf(1 - conf_alpha / 2) * sd / adj_hw) ** 2))
+                        n_s = max(n_s, 3)
+                        for _ in range(20):
+                            t_val = t_dist.ppf(1 - conf_alpha / 2, df=n_s - 1)
+                            n_next = int(np.ceil((t_val * sd / adj_hw) ** 2))
+                            n_next = max(n_next, 3)
+                            if n_next == n_s:
+                                break
+                            n_s = n_next
                     else:
                         n_s = None
                 else:
                     prop = params["prop"]
+                    z_hw = norm.ppf(1 - conf_alpha / 2)
                     if prop > 0 and adj_hw > 0:
                         n_s = int(np.ceil((z_hw**2 * prop * (1 - prop)) / (adj_hw**2)))
                     else:
@@ -8674,16 +8818,25 @@ def render_power_calculator(params):
                 elif method == "Precision-based":
                     conf_level = params["conf_level"]
                     conf_alpha = 1 - conf_level / 100
-                    z_hw = norm.ppf(1 - conf_alpha / 2)
                     param_type = params["param_type"]
                     adj_hw = params["half_width"] * mult
                     if param_type == "Mean":
                         sd = params["sd"]
                         if sd > 0 and adj_hw > 0:
-                            n_s = int(np.ceil((z_hw * sd / adj_hw) ** 2))
+                            from scipy.stats import t as t_dist
+                            n_s = int(np.ceil((norm.ppf(1 - conf_alpha / 2) * sd / adj_hw) ** 2))
+                            n_s = max(n_s, 3)
+                            for _ in range(20):
+                                t_val = t_dist.ppf(1 - conf_alpha / 2, df=n_s - 1)
+                                n_next = int(np.ceil((t_val * sd / adj_hw) ** 2))
+                                n_next = max(n_next, 3)
+                                if n_next == n_s:
+                                    break
+                                n_s = n_next
                         else:
                             n_s = None
                     else:
+                        z_hw = norm.ppf(1 - conf_alpha / 2)
                         prop = params["prop"]
                         if prop > 0 and adj_hw > 0:
                             n_s = int(
@@ -8720,12 +8873,13 @@ def render_power_calculator(params):
             elif atype == "kruskal":
                 adj_es = params["effect_size"] * mult
                 k = params["k"]
+                are_kw = params.get("are", 0.955)
                 if adj_es > 0:
                     solver = FTestAnovaPower()
                     n_per_g = solver.solve_power(
                         effect_size=adj_es, alpha=alpha, power=power, k_groups=k
                     )
-                    n_per_g = int(np.ceil(n_per_g * 1.15))
+                    n_per_g = int(np.ceil(n_per_g / are_kw))
                     n_s = n_per_g * k
                 else:
                     n_s = None
@@ -8765,6 +8919,7 @@ def render_power_calculator(params):
                 p1 = params["p1"]
                 p2 = params["p2"]
                 ratio = params["ratio"]
+                are_f = params.get("are", 0.833)
                 adj_p2 = p1 + (p2 - p1) * mult
                 adj_p2 = max(min(adj_p2, 0.99), 0.01)
                 adj_es = abs(adj_p2 - p1)
@@ -8780,7 +8935,7 @@ def render_power_calculator(params):
                         ratio=ratio,
                         alternative=alternative,
                     )
-                    n1 = int(np.ceil(n1 * 1.20))
+                    n1 = int(np.ceil(n1 / are_f))
                     n_s = n1 + int(np.ceil(n1 * ratio))
                 else:
                     n_s = None
@@ -9123,22 +9278,38 @@ def render_power_calculator(params):
                     exp_diff = params["expected_diff"]
                     sd = params["sd"]
                     ratio = params["ratio"]
-                    d_e = adj_margin - abs(exp_diff)
-                    if d_e > 0:
-                        es_e = d_e / sd
-                        from statsmodels.stats.power import NormalIndPower
-
-                        n1 = NormalIndPower().solve_power(
-                            effect_size=es_e,
-                            alpha=alpha,
-                            power=w_power,
-                            ratio=ratio,
-                            alternative="larger",
-                        )
-                        n1 = int(np.ceil(n1))
-                        w_n = n1 + int(np.ceil(n1 * ratio))
+                    equiv_type = params.get("equiv_param_type", "Mean")
+                    if equiv_type == "Proportion":
+                        p1_eq = params.get("p1_eq", 0.2)
+                        p2_eq = params.get("p2_eq", 0.2)
+                        d_prop = abs(p1_eq - p2_eq)
+                        d_e = adj_margin - d_prop
+                        if d_e > 0:
+                            p_bar = (p1_eq + p2_eq) / 2
+                            se = np.sqrt(2 * p_bar * (1 - p_bar))
+                            es_e = d_e / se if se > 0 else 0
+                            from statsmodels.stats.power import NormalIndPower
+                            n1 = NormalIndPower().solve_power(
+                                effect_size=es_e, alpha=alpha, power=w_power,
+                                ratio=ratio, alternative="larger",
+                            )
+                            n1 = int(np.ceil(n1))
+                            w_n = n1 + int(np.ceil(n1 * ratio))
+                        else:
+                            w_n = None
                     else:
-                        w_n = None
+                        d_e = adj_margin - abs(exp_diff)
+                        if d_e > 0:
+                            es_e = d_e / sd
+                            from statsmodels.stats.power import NormalIndPower
+                            n1 = NormalIndPower().solve_power(
+                                effect_size=es_e, alpha=alpha, power=w_power,
+                                ratio=ratio, alternative="larger",
+                            )
+                            n1 = int(np.ceil(n1))
+                            w_n = n1 + int(np.ceil(n1 * ratio))
+                        else:
+                            w_n = None
                 elif atype == "rm_anova":
                     from statsmodels.stats.power import FTestAnovaPower
 
@@ -9252,17 +9423,25 @@ def render_power_calculator(params):
                     adj_hw = params["half_width"] * w_mult
                     conf_level = params["conf_level"]
                     conf_alpha = 1 - conf_level / 100
-                    z_hw = norm.ppf(1 - conf_alpha / 2)
                     param_type = params["param_type"]
                     if param_type == "Mean":
                         sd = params["sd"]
-                        w_n = (
-                            int(np.ceil((z_hw * sd / adj_hw) ** 2))
-                            if sd > 0 and adj_hw > 0
-                            else None
-                        )
+                        if sd > 0 and adj_hw > 0:
+                            from scipy.stats import t as t_dist
+                            w_n = int(np.ceil((norm.ppf(1 - conf_alpha / 2) * sd / adj_hw) ** 2))
+                            w_n = max(w_n, 3)
+                            for _ in range(20):
+                                t_val = t_dist.ppf(1 - conf_alpha / 2, df=w_n - 1)
+                                n_next = int(np.ceil((t_val * sd / adj_hw) ** 2))
+                                n_next = max(n_next, 3)
+                                if n_next == w_n:
+                                    break
+                                w_n = n_next
+                        else:
+                            w_n = None
                     else:
                         prop = params["prop"]
+                        z_hw = norm.ppf(1 - conf_alpha / 2)
                         w_n = (
                             int(np.ceil((z_hw**2 * prop * (1 - prop)) / (adj_hw**2)))
                             if prop > 0 and adj_hw > 0
@@ -9277,17 +9456,25 @@ def render_power_calculator(params):
                     elif method == "Precision-based":
                         conf_level = params["conf_level"]
                         conf_alpha = 1 - conf_level / 100
-                        z_hw = norm.ppf(1 - conf_alpha / 2)
                         param_type = params["param_type"]
                         adj_hw = params["half_width"] * w_mult
                         if param_type == "Mean":
                             sd = params["sd"]
-                            w_n = (
-                                int(np.ceil((z_hw * sd / adj_hw) ** 2))
-                                if sd > 0 and adj_hw > 0
-                                else None
-                            )
+                            if sd > 0 and adj_hw > 0:
+                                from scipy.stats import t as t_dist
+                                w_n = int(np.ceil((norm.ppf(1 - conf_alpha / 2) * sd / adj_hw) ** 2))
+                                w_n = max(w_n, 3)
+                                for _ in range(20):
+                                    t_val = t_dist.ppf(1 - conf_alpha / 2, df=w_n - 1)
+                                    n_next = int(np.ceil((t_val * sd / adj_hw) ** 2))
+                                    n_next = max(n_next, 3)
+                                    if n_next == w_n:
+                                        break
+                                    w_n = n_next
+                            else:
+                                w_n = None
                         else:
+                            z_hw = norm.ppf(1 - conf_alpha / 2)
                             prop = params["prop"]
                             w_n = (
                                 int(
@@ -9325,13 +9512,14 @@ def render_power_calculator(params):
                 elif atype == "kruskal":
                     f_eff = params["effect_size"] * w_mult
                     k = params["k"]
+                    are_kw = params.get("are", 0.955)
                     if f_eff > 0:
                         from statsmodels.stats.power import FTestAnovaPower
 
                         n_per_g = FTestAnovaPower().solve_power(
                             effect_size=f_eff, alpha=alpha, power=w_power, k_groups=k
                         )
-                        n_per_g = int(np.ceil(n_per_g * 1.15))
+                        n_per_g = int(np.ceil(n_per_g / are_kw))
                         w_n = n_per_g * k
                     else:
                         w_n = None
@@ -9375,6 +9563,7 @@ def render_power_calculator(params):
                     p1 = params["p1"]
                     p2 = params["p2"]
                     ratio = params["ratio"]
+                    are_f = params.get("are", 0.833)
                     adj_p2 = p1 + (p2 - p1) * w_mult
                     adj_p2 = max(min(adj_p2, 0.99), 0.01)
                     from statsmodels.stats.proportion import proportion_effectsize
@@ -9389,7 +9578,7 @@ def render_power_calculator(params):
                             ratio=ratio,
                             alternative=alternative,
                         )
-                        n1 = int(np.ceil(n1 * 1.20))
+                        n1 = int(np.ceil(n1 / are_f))
                         w_n = n1 + int(np.ceil(n1 * ratio))
                     else:
                         w_n = None
@@ -9476,6 +9665,275 @@ def render_power_calculator(params):
         st.caption(
             "Cells show required N at each power × effect size combination. Adjust your design assumptions accordingly."
         )
+
+    # --- Inverse Power Analysis (Minimum Detectable Effect) ---
+    st.subheader("🎯 Sensitivity Analysis: Minimum Detectable Effect")
+    st.caption(
+        "Given a fixed sample size, what is the smallest effect size your study can detect?"
+    )
+
+    with st.expander("Enter a candidate sample size to compute the minimum detectable effect"):
+        c1, c2 = st.columns([1, 3])
+        with c1:
+            candidate_n = st.number_input(
+                "Candidate N (total)",
+                min_value=5,
+                max_value=100000,
+                value=n_total if n_total else 100,
+                step=10,
+            )
+        with c2:
+            st.caption(" ")
+        if st.button("Compute Minimum Detectable Effect", type="secondary"):
+            try:
+                from scipy.stats import t as t_dist_inv
+
+                mde = None
+                mde_label = ""
+                mde_note = ""
+
+                if atype == "one_mean":
+                    from statsmodels.stats.power import TTestPower
+                    mde = TTestPower().solve_power(
+                        effect_size=None, nobs=candidate_n, alpha=alpha, power=power, alternative=alternative
+                    )
+                    mde_label = "Cohen's d"
+                elif atype == "two_means":
+                    from statsmodels.stats.power import TTestIndPower
+                    ratio_val = params.get("ratio", 1)
+                    n1 = candidate_n / (1 + ratio_val)
+                    mde = TTestIndPower().solve_power(
+                        effect_size=None, nobs1=n1, alpha=alpha, power=power, ratio=ratio_val, alternative=alternative
+                    )
+                    mde_label = "Cohen's d"
+                elif atype == "paired":
+                    from statsmodels.stats.power import TTestPower
+                    mde = TTestPower().solve_power(
+                        effect_size=None, nobs=candidate_n, alpha=alpha, power=power, alternative=alternative
+                    )
+                    mde_label = "Cohen's d_z"
+                elif atype == "one_prop":
+                    from statsmodels.stats.power import NormalIndPower
+                    d_eff = NormalIndPower().solve_power(
+                        effect_size=None, nobs1=candidate_n, alpha=alpha, power=power, alternative=alternative
+                    )
+                    p0 = params.get("prop_null", 0.5)
+                    mde = p0 + d_eff * np.sqrt(p0 * (1 - p0))
+                    mde = max(0.01, min(0.99, mde))
+                    mde_label = "Detectable proportion p₁"
+                    mde_note = f"(null p₀ = {p0})"
+                elif atype == "two_prop":
+                    from statsmodels.stats.proportion import proportion_effectsize
+                    from statsmodels.stats.power import NormalIndPower
+                    ratio_val = params.get("ratio", 1)
+                    n1 = candidate_n / (1 + ratio_val)
+                    d_eff = NormalIndPower().solve_power(
+                        effect_size=None, nobs1=n1, alpha=alpha, power=power, ratio=ratio_val, alternative=alternative
+                    )
+                    p1_base = params.get("p1", 0.3)
+                    mde = p1_base + d_eff * np.sqrt(2 * p1_base * (1 - p1_base))
+                    mde = max(0.01, min(0.99, mde))
+                    mde_label = "Detectable proportion p₂"
+                    mde_note = f"(group 1 p₁ = {p1_base})"
+                elif atype == "anova":
+                    from statsmodels.stats.power import FTestAnovaPower
+                    k_val = params.get("k", 3)
+                    mde = FTestAnovaPower().solve_power(
+                        effect_size=None, nobs=candidate_n, alpha=alpha, power=power, k_groups=k_val
+                    )
+                    mde_label = "Cohen's f"
+                elif atype == "correlation":
+                    import math
+                    fisher_z = (norm.ppf(1 - alpha / 2 if alternative == "two-sided" else 1 - alpha) + z_beta) / np.sqrt(candidate_n - 3)
+                    mde = min(math.tanh(fisher_z), 0.99)
+                    mde_label = "Pearson r"
+                elif atype == "chisq":
+                    from statsmodels.stats.power import GofChisquarePower
+                    df_val = params.get("df", 2)
+                    mde = GofChisquarePower().solve_power(
+                        effect_size=None, nobs=candidate_n, alpha=alpha, power=power, n_bins=df_val + 1
+                    )
+                    mde_label = "Cohen's w"
+                elif atype == "mannwhitney":
+                    from statsmodels.stats.power import NormalIndPower
+                    are_val = params.get("are", 0.955)
+                    ratio_val = params.get("ratio", 1)
+                    n1_eff = candidate_n / (1 + ratio_val) * are_val
+                    d_mw = NormalIndPower().solve_power(
+                        effect_size=None, nobs1=n1_eff, alpha=alpha, power=power, ratio=ratio_val, alternative=alternative
+                    )
+                    mde = 0.5 + d_mw / np.sqrt(3)
+                    mde = max(0.51, min(0.99, mde))
+                    mde_label = "P(X>Y)"
+                elif atype == "wilcoxon_sr":
+                    from statsmodels.stats.power import NormalIndPower
+                    are_val = params.get("are", 0.955)
+                    d_z = NormalIndPower().solve_power(
+                        effect_size=None, nobs1=candidate_n * are_val, alpha=alpha, power=power, alternative=alternative
+                    )
+                    mde = 0.5 + d_z / (2 * np.sqrt(3))
+                    mde = max(0.51, min(0.99, mde))
+                    mde_label = "Pr(positive diff)"
+                elif atype == "kruskal":
+                    from statsmodels.stats.power import FTestAnovaPower
+                    are_val = params.get("are", 0.955)
+                    k_val = params.get("k", 3)
+                    mde = FTestAnovaPower().solve_power(
+                        effect_size=None, nobs=candidate_n * are_val, alpha=alpha, power=power, k_groups=k_val
+                    )
+                    mde_label = "Cohen's f"
+                elif atype == "mcnemar":
+                    p_b = params.get("p_b", 0.2)
+                    p_c = params.get("p_c", 0.4)
+                    p_disc = p_b + p_c
+                    if p_disc > 0:
+                        delta = (norm.ppf(1 - alpha / 2 if alternative == "two-sided" else 1 - alpha) + z_beta) * np.sqrt(p_disc / candidate_n)
+                        mde = max(delta, 0.01)
+                        mde_label = "|p_b − p_c|"
+                elif atype == "fisher":
+                    from statsmodels.stats.proportion import proportion_effectsize
+                    from statsmodels.stats.power import NormalIndPower
+                    are_val = params.get("are", 0.833)
+                    ratio_val = params.get("ratio", 1)
+                    p1_base = params.get("p1", 0.3)
+                    n1 = candidate_n / (1 + ratio_val) * are_val
+                    d_eff = NormalIndPower().solve_power(
+                        effect_size=None, nobs1=n1, alpha=alpha, power=power, ratio=ratio_val, alternative=alternative
+                    )
+                    mde = p1_base + d_eff * np.sqrt(2 * p1_base * (1 - p1_base))
+                    mde = max(0.01, min(0.99, mde))
+                    mde_label = "Detectable proportion p₂"
+                elif atype == "logrank":
+                    ratio_val = params.get("ratio", 1)
+                    hr_guess = params.get("hr", 2)
+                    num_events_est = candidate_n * 0.5
+                    log_hr_min = (norm.ppf(1 - alpha / 2 if alternative == "two-sided" else 1 - alpha) + z_beta) * np.sqrt((ratio_val + 1) ** 2 / (ratio_val * num_events_est))
+                    if log_hr_min > 0:
+                        mde = np.exp(log_hr_min)
+                        mde = max(1.001, min(10.0, mde))
+                        mde_label = "Hazard Ratio (HR)"
+                        mde_note = "(approximate, depends on event probability)"
+                elif atype == "cox":
+                    sd_x = params.get("sd_x", 1)
+                    r2_x = params.get("r2_x", 0)
+                    ev_rate = params.get("event_rate", 0.5)
+                    num_events_est = candidate_n * ev_rate
+                    var_denom_inv = (norm.ppf(1 - alpha / 2 if alternative == "two-sided" else 1 - alpha) + z_beta) ** 2 / num_events_est
+                    if var_denom_inv > 0 and sd_x > 0:
+                        log_hr_min = np.sqrt(var_denom_inv / (sd_x ** 2 * (1 - r2_x)))
+                        mde = np.exp(log_hr_min)
+                        mde = max(1.001, min(10.0, mde))
+                        mde_label = "Hazard Ratio (HR)"
+                        mde_note = "(approximate)"
+                elif atype == "logistic":
+                    import math
+                    ev_rate = params.get("event_rate", 0.3)
+                    or_val = params.get("or", 2)
+                    p1_log = (or_val * ev_rate) / (1 - ev_rate + or_val * ev_rate)
+                    d_log = abs(p1_log - ev_rate)
+                    p_bar = (ev_rate + p1_log) / 2
+                    se = np.sqrt(2 * p_bar * (1 - p_bar))
+                    if se > 0:
+                        d_eff = d_log / se
+                        from statsmodels.stats.power import NormalIndPower
+                        mde_d = NormalIndPower().solve_power(
+                            effect_size=None, nobs1=candidate_n, alpha=alpha, power=power, alternative=alternative
+                        )
+                        p1_mde = ev_rate + mde_d * se
+                        p1_mde = max(0.01, min(0.99, p1_mde))
+                        mde = (p1_mde * (1 - ev_rate)) / (ev_rate * (1 - p1_mde))
+                        mde = max(1.001, min(100.0, mde))
+                        mde_label = "Odds Ratio (OR)"
+                        mde_note = "(approximate)"
+                elif atype == "regression":
+                    k_r = params.get("k", 3)
+                    from scipy.stats import ncf as noncentral_f, f as f_dist
+                    dfd = candidate_n - k_r - 1
+                    if dfd > 0:
+                        mde = None
+                        for f2_try in np.linspace(0.001, 2.0, 2000):
+                            ncp = f2_try * candidate_n
+                            f_crit = f_dist.ppf(1 - alpha, k_r, dfd)
+                            p_cur = 1 - noncentral_f.cdf(f_crit, k_r, dfd, ncp)
+                            if p_cur >= power:
+                                mde = f2_try
+                                break
+                        mde_label = "Cohen's f²"
+                    else:
+                        mde = None
+                elif atype == "binomial":
+                    p0 = params.get("p0", 0.5)
+                    from scipy.stats import binom
+                    mde = None
+                    for p1_try in np.linspace(p0 + 0.001, 0.99, 990):
+                        if alternative == "two-sided":
+                            alpha_lo = binom.ppf(alpha / 2, candidate_n, p0)
+                            alpha_hi = binom.ppf(1 - alpha / 2, candidate_n, p0)
+                            p_pow = binom.cdf(alpha_hi, candidate_n, p1_try) - binom.cdf(alpha_lo - 1, candidate_n, p1_try)
+                        elif p1_try > p0:
+                            crit = binom.ppf(1 - alpha, candidate_n, p0)
+                            p_pow = 1 - binom.cdf(crit - 1, candidate_n, p1_try)
+                        else:
+                            crit = binom.ppf(alpha, candidate_n, p0)
+                            p_pow = binom.cdf(crit, candidate_n, p1_try)
+                        if p_pow >= power:
+                            mde = p1_try
+                            break
+                    mde_label = "Detectable proportion p₁"
+                elif atype == "equiv":
+                    margin = params.get("margin", 1.0)
+                    sd = params.get("sd", 1.0)
+                    ratio_v = params.get("ratio", 1)
+                    equiv_type = params.get("equiv_param_type", "Mean")
+                    n1_eff = candidate_n / (1 + ratio_v)
+                    if n1_eff > 1:
+                        from statsmodels.stats.power import NormalIndPower
+                        es_mde = NormalIndPower().solve_power(
+                            effect_size=None, nobs1=n1_eff, alpha=alpha, power=power,
+                            ratio=ratio_v, alternative="larger",
+                        )
+                        if equiv_type == "Proportion":
+                            p_bar = (params.get("p1_eq", 0.2) + params.get("p2_eq", 0.2)) / 2
+                            se = np.sqrt(2 * p_bar * (1 - p_bar))
+                            mde = es_mde * se
+                            mde_label = "Detectable margin remaining (δ - |p₁−p₂|)"
+                        else:
+                            mde = es_mde * sd
+                            mde_label = "Detectable margin remaining (δ - |d|)"
+                elif atype == "rm_anova":
+                    from statsmodels.stats.power import FTestAnovaPower
+                    f_eff = params.get("effect_size", 0.25)
+                    k_v = params.get("k", 2)
+                    m_v = params.get("m", 3)
+                    rho_v = params.get("rho", 0.5)
+                    eps_v = params.get("epsilon", 0.75)
+                    design_effect = (1 + (m_v - 1) * rho_v) / m_v
+                    df_adj = (m_v - 1) * eps_v
+                    n_eff = candidate_n * design_effect * (k_v - 1) / (k_v * df_adj / (k_v - 1))
+                    if n_eff > k_v:
+                        mde = FTestAnovaPower().solve_power(
+                            effect_size=None, nobs=n_eff, alpha=alpha, power=power, k_groups=k_v
+                        )
+                        mde_label = "Cohen's f"
+                elif atype == "twoway_anova":
+                    from statsmodels.stats.power import FTestAnovaPower
+                    rows_v = params.get("rows", 2)
+                    cols_v = params.get("cols", 2)
+                    focus_v = params.get("focus", "Main Effect A")
+                    k_use = rows_v if focus_v == "Main Effect A" else (cols_v if focus_v == "Main Effect B" else rows_v * cols_v)
+                    n_per_cell_eff = candidate_n / (rows_v * cols_v)
+                    if n_per_cell_eff > k_use:
+                        mde = FTestAnovaPower().solve_power(
+                            effect_size=None, nobs=n_per_cell_eff, alpha=alpha, power=power, k_groups=k_use
+                        )
+                        mde_label = "Cohen's f"
+
+                if mde is not None and mde > 0:
+                    st.success(f"**Minimum detectable {mde_label}** with N = {candidate_n}: **{mde:.4f}** {mde_note}")
+                else:
+                    st.warning("Could not compute minimum detectable effect for this analysis type.")
+            except Exception as e:
+                st.error(f"Could not compute minimum detectable effect: {e}")
 
     # --- Sample Size Justification ---
     st.subheader("📝 Sample Size Justification")
