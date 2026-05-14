@@ -74,23 +74,23 @@ def histogram_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Bell shape = normal distribution\n"
-                    "• Tail on right = positive skew\n"
-                    "• Tail on left = negative skew\n"
-                    "• Gaps = potential outliers/modes\n"
-                    "• KDE = smooth density estimate")
+                    "- Bell shape = normal distribution\n"
+                    "- Tail on right = positive skew\n"
+                    "- Tail on left = negative skew\n"
+                    "- Gaps = potential outliers/modes\n"
+                    "- KDE = smooth density estimate")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Explore data distribution shape\n"
-                       "• Check for normality or skewness\n"
-                       "• Identify outliers and gaps\n"
-                       "• Compare to theoretical distributions")
+                       "- Explore data distribution shape\n"
+                       "- Check for normality or skewness\n"
+                       "- Identify outliers and gaps\n"
+                       "- Compare to theoretical distributions")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• Shapiro-Wilk (normality)\n"
-                       "• Kolmogorov-Smirnov\n"
-                       "• Anderson-Darling\n"
-                       "• t-test, ANOVA (assumptions)")
+                       "- Shapiro-Wilk (normality)\n"
+                       "- Kolmogorov-Smirnov\n"
+                       "- Anderson-Darling\n"
+                       "- t-test, ANOVA (assumptions)")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "Bin width dramatically changes appearance. "
@@ -138,22 +138,22 @@ def kde_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Peak = most common value region\n"
-                    "• Spread = variance of data\n"
-                    "• Multiple peaks = multimodal\n"
-                    "• Bandwidth controls smoothness")
+                    "- Peak = most common value region\n"
+                    "- Spread = variance of data\n"
+                    "- Multiple peaks = multimodal\n"
+                    "- Bandwidth controls smoothness")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Compare distributions smoothly\n"
-                       "• Identify modes and shape\n"
-                       "• Assess normality visually\n"
-                       "• Overlay multiple groups")
+                       "- Compare distributions smoothly\n"
+                       "- Identify modes and shape\n"
+                       "- Assess normality visually\n"
+                       "- Overlay multiple groups")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• t-test / ANOVA\n"
-                       "• Kruskal-Wallis\n"
-                       "• Kolmogorov-Smirnov\n"
-                       "• Permutation tests")
+                       "- t-test / ANOVA\n"
+                       "- Kruskal-Wallis\n"
+                       "- Kolmogorov-Smirnov\n"
+                       "- Permutation tests")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "KDE can oversmooth bimodal data with large bandwidth, "
@@ -192,23 +192,23 @@ def boxplot_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Center line = median\n"
-                    "• Box = IQR (middle 50%)\n"
-                    "• Whiskers = 1.5xIQR range\n"
-                    "• Dots = potential outliers\n"
-                    "• Non-overlapping = group diff")
+                    "- Center line = median\n"
+                    "- Box = IQR (middle 50%)\n"
+                    "- Whiskers = 1.5xIQR range\n"
+                    "- Dots = potential outliers\n"
+                    "- Non-overlapping = group diff")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Compare groups at a glance\n"
-                       "• Identify outliers visually\n"
-                       "• Assess symmetry & spread\n"
-                       "• Before parametric tests")
+                       "- Compare groups at a glance\n"
+                       "- Identify outliers visually\n"
+                       "- Assess symmetry & spread\n"
+                       "- Before parametric tests")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• t-test (2 groups)\n"
-                       "• ANOVA (3+ groups)\n"
-                       "• Mann-Whitney U\n"
-                       "• Kruskal-Wallis")
+                       "- t-test (2 groups)\n"
+                       "- ANOVA (3+ groups)\n"
+                       "- Mann-Whitney U\n"
+                       "- Kruskal-Wallis")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "Overlapping boxes do NOT guarantee non-significance. "
@@ -244,23 +244,23 @@ def violin_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Width = density of observations\n"
-                    "• Narrow sections = sparse data\n"
-                    "• Wide sections = dense data\n"
-                    "• Symmetry = normal distribution\n"
-                    "• Boxplot inside = summary stats")
+                    "- Width = density of observations\n"
+                    "- Narrow sections = sparse data\n"
+                    "- Wide sections = dense data\n"
+                    "- Symmetry = normal distribution\n"
+                    "- Boxplot inside = summary stats")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Replace boxplot for distribution shape\n"
-                       "• Detect multimodality in groups\n"
-                       "• Compare shape + spread + central tendency\n"
-                       "• Assess normality assumptions")
+                       "- Replace boxplot for distribution shape\n"
+                       "- Detect multimodality in groups\n"
+                       "- Compare shape + spread + central tendency\n"
+                       "- Assess normality assumptions")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• ANOVA\n"
-                       "• Kruskal-Wallis\n"
-                       "• Welch's t-test\n"
-                       "• Permutation test")
+                       "- ANOVA\n"
+                       "- Kruskal-Wallis\n"
+                       "- Welch's t-test\n"
+                       "- Permutation test")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "Violin plots can be misleading with very small samples "
@@ -308,23 +308,23 @@ def qq_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Points on diagonal = normal\n"
-                    "• S-curve = heavy/light tails\n"
-                    "• Curve above line = right skew\n"
-                    "• Curve below line = left skew\n"
-                    "• r near 1 approx normal")
+                    "- Points on diagonal = normal\n"
+                    "- S-curve = heavy/light tails\n"
+                    "- Curve above line = right skew\n"
+                    "- Curve below line = left skew\n"
+                    "- r near 1 approx normal")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Check normality assumption\n"
-                       "• Identify distribution shape\n"
-                       "• Detect outliers in tails\n"
-                       "• Before t-test, ANOVA, regression")
+                       "- Check normality assumption\n"
+                       "- Identify distribution shape\n"
+                       "- Detect outliers in tails\n"
+                       "- Before t-test, ANOVA, regression")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• Shapiro-Wilk\n"
-                       "• Kolmogorov-Smirnov\n"
-                       "• Anderson-Darling\n"
-                       "• D'Agostino-Pearson")
+                       "- Shapiro-Wilk\n"
+                       "- Kolmogorov-Smirnov\n"
+                       "- Anderson-Darling\n"
+                       "- D'Agostino-Pearson")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "Small samples (n < 30) produce noisy Q-Q plots that "
@@ -367,22 +367,22 @@ def grouped_bar_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Bar height = group mean\n"
-                    "• Error bars = variability\n"
-                    "• Non-overlapping = likely sig.\n"
-                    "• Pattern consistency across cats")
+                    "- Bar height = group mean\n"
+                    "- Error bars = variability\n"
+                    "- Non-overlapping = likely sig.\n"
+                    "- Pattern consistency across cats")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Compare groups across categories\n"
-                       "• Show means with uncertainty\n"
-                       "• Present descriptive results\n"
-                       "• Visualize interaction effects")
+                       "- Compare groups across categories\n"
+                       "- Show means with uncertainty\n"
+                       "- Present descriptive results\n"
+                       "- Visualize interaction effects")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• Two-way ANOVA\n"
-                       "• Welch\'s t-test\n"
-                       "• Mixed-effects models\n"
-                       "• Post-hoc comparisons")
+                       "- Two-way ANOVA\n"
+                       "- Welch\'s t-test\n"
+                       "- Mixed-effects models\n"
+                       "- Post-hoc comparisons")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "Bars should always start at zero to avoid misleading "
@@ -419,22 +419,22 @@ def error_bar_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Dot = group mean\n"
-                    "• Bar = confidence interval\n"
-                    "• Non-overlapping CIs approx p < .05\n"
-                    "• Wide CI = imprecise estimate")
+                    "- Dot = group mean\n"
+                    "- Bar = confidence interval\n"
+                    "- Non-overlapping CIs approx p < .05\n"
+                    "- Wide CI = imprecise estimate")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Show precision of estimates\n"
-                       "• Compare group means visually\n"
-                       "• Present meta-analysis results\n"
-                       "• Forest plots")
+                       "- Show precision of estimates\n"
+                       "- Compare group means visually\n"
+                       "- Present meta-analysis results\n"
+                       "- Forest plots")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• t-test\n"
-                       "• ANOVA\n"
-                       "• Welch\'s t-test\n"
-                       "• Linear regression")
+                       "- t-test\n"
+                       "- ANOVA\n"
+                       "- Welch\'s t-test\n"
+                       "- Linear regression")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "Non-overlapping 95% CIs are more conservative than "
@@ -473,23 +473,23 @@ def paired_line_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Each line = one subject\n"
-                    "• Upward = increase over time\n"
-                    "• Downward = decrease over time\n"
-                    "• Thick line = group average\n"
-                    "• Consistent direction = effect")
+                    "- Each line = one subject\n"
+                    "- Upward = increase over time\n"
+                    "- Downward = decrease over time\n"
+                    "- Thick line = group average\n"
+                    "- Consistent direction = effect")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Pre-post intervention studies\n"
-                       "• Within-subject designs\n"
-                       "• Repeated measures (2 time points)\n"
-                       "• Crossover trials")
+                       "- Pre-post intervention studies\n"
+                       "- Within-subject designs\n"
+                       "- Repeated measures (2 time points)\n"
+                       "- Crossover trials")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• Paired t-test\n"
-                       "• Wilcoxon Signed-Rank\n"
-                       "• Repeated measures ANOVA\n"
-                       "• Linear mixed models")
+                       "- Paired t-test\n"
+                       "- Wilcoxon Signed-Rank\n"
+                       "- Repeated measures ANOVA\n"
+                       "- Linear mixed models")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "Ignoring the paired nature of the data. Using an "
@@ -526,22 +526,22 @@ def boxplot_comp_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Compare medians across groups\n"
-                    "• Box overlap approx group similarity\n"
-                    "• Box size = group variability\n"
-                    "• Whisker length = tail behavior")
+                    "- Compare medians across groups\n"
+                    "- Box overlap approx group similarity\n"
+                    "- Box size = group variability\n"
+                    "- Whisker length = tail behavior")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Compare multiple groups robustly\n"
-                       "• Check equal variance assumption\n"
-                       "• Identify group-level outliers\n"
-                       "• Explore pilot data")
+                       "- Compare multiple groups robustly\n"
+                       "- Check equal variance assumption\n"
+                       "- Identify group-level outliers\n"
+                       "- Explore pilot data")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• One-way ANOVA\n"
-                       "• Welch\'s ANOVA\n"
-                       "• Kruskal-Wallis\n"
-                       "• Levene\'s test (variance)")
+                       "- One-way ANOVA\n"
+                       "- Welch\'s ANOVA\n"
+                       "- Kruskal-Wallis\n"
+                       "- Levene\'s test (variance)")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "Boxplots hide distribution shape entirely - "
@@ -588,22 +588,22 @@ def violin_comp_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Width = density of data\n"
-                    "• Shift = group difference\n"
-                    "• Shape difference = distributional diff\n"
-                    "• Box inside shows median & IQR")
+                    "- Width = density of data\n"
+                    "- Shift = group difference\n"
+                    "- Shape difference = distributional diff\n"
+                    "- Box inside shows median & IQR")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Replace boxplot for detailed comparison\n"
-                       "• Detect shape differences between groups\n"
-                       "• Assess normality & equal variance\n"
-                       "• Visualize 2-group comparisons")
+                       "- Replace boxplot for detailed comparison\n"
+                       "- Detect shape differences between groups\n"
+                       "- Assess normality & equal variance\n"
+                       "- Visualize 2-group comparisons")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• Independent t-test\n"
-                       "• Mann-Whitney U\n"
-                       "• Welch\'s t-test\n"
-                       "• Fligner-Killeen (variance)")
+                       "- Independent t-test\n"
+                       "- Mann-Whitney U\n"
+                       "- Welch\'s t-test\n"
+                       "- Fligner-Killeen (variance)")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "Violin width is often misinterpreted as frequency. "
@@ -645,23 +645,23 @@ def scatter_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Upward slope = positive r\n"
-                    "• Downward slope = negative r\n"
-                    "• Tight cluster = strong correlation\n"
-                    "• Wide scatter = weak correlation\n"
-                    "• Single outlier can change r")
+                    "- Upward slope = positive r\n"
+                    "- Downward slope = negative r\n"
+                    "- Tight cluster = strong correlation\n"
+                    "- Wide scatter = weak correlation\n"
+                    "- Single outlier can change r")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Assess relationship direction & strength\n"
-                       "• Detect outliers and non-linearity\n"
-                       "• Check homoscedasticity\n"
-                       "• Explore two continuous variables")
+                       "- Assess relationship direction & strength\n"
+                       "- Detect outliers and non-linearity\n"
+                       "- Check homoscedasticity\n"
+                       "- Explore two continuous variables")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• Pearson correlation\n"
-                       "• Spearman correlation\n"
-                       "• Linear regression\n"
-                       "• Correlation test")
+                       "- Pearson correlation\n"
+                       "- Spearman correlation\n"
+                       "- Linear regression\n"
+                       "- Correlation test")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "Correlation does NOT imply causation. "
@@ -716,23 +716,23 @@ def heatmap_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Red = positive correlation\n"
-                    "• Blue = negative correlation\n"
-                    "• Dark = strong relationship\n"
-                    "• White/light = weak relationship\n"
-                    "• Diagonal = variable with itself (r=1)")
+                    "- Red = positive correlation\n"
+                    "- Blue = negative correlation\n"
+                    "- Dark = strong relationship\n"
+                    "- White/light = weak relationship\n"
+                    "- Diagonal = variable with itself (r=1)")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Check multicollinearity\n"
-                       "• Explore many variable relationships\n"
-                       "• Identify variable clusters\n"
-                       "• Before regression / factor analysis")
+                       "- Check multicollinearity\n"
+                       "- Explore many variable relationships\n"
+                       "- Identify variable clusters\n"
+                       "- Before regression / factor analysis")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• Pearson correlation matrix\n"
-                       "• Spearman correlation matrix\n"
-                       "• Variance Inflation Factor (VIF)\n"
-                       "• Factor analysis")
+                       "- Pearson correlation matrix\n"
+                       "- Spearman correlation matrix\n"
+                       "- Variance Inflation Factor (VIF)\n"
+                       "- Factor analysis")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "Visual patterns can be misleading when variables "
@@ -769,22 +769,22 @@ def bubble_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Position = X-Y relationship\n"
-                    "• Bubble size = third variable\n"
-                    "• Color = fourth variable\n"
-                    "• Larger bubbles draw attention")
+                    "- Position = X-Y relationship\n"
+                    "- Bubble size = third variable\n"
+                    "- Color = fourth variable\n"
+                    "- Larger bubbles draw attention")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Show 3-4 variables at once\n"
-                       "• Highlight weighted importance\n"
-                       "• Population/economic data\n"
-                       "• Risk-benefit visualizations")
+                       "- Show 3-4 variables at once\n"
+                       "- Highlight weighted importance\n"
+                       "- Population/economic data\n"
+                       "- Risk-benefit visualizations")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• Weighted correlation\n"
-                       "• Multiple regression\n"
-                       "• Weighted least squares\n"
-                       "• Meta-analysis (forest plots)")
+                       "- Weighted correlation\n"
+                       "- Multiple regression\n"
+                       "- Weighted least squares\n"
+                       "- Meta-analysis (forest plots)")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "Bubble area (not diameter) should encode the third "
@@ -835,22 +835,22 @@ def monotonic_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Pearson = linear relationship\n"
-                    "• Spearman = monotonic relationship\n"
-                    "• Big diff (r vs rho) = non-linear\n"
-                    "• r near 0 but rho large = monotonic")
+                    "- Pearson = linear relationship\n"
+                    "- Spearman = monotonic relationship\n"
+                    "- Big diff (r vs rho) = non-linear\n"
+                    "- r near 0 but rho large = monotonic")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Test if relationship is linear\n"
-                       "• Choose Pearson vs Spearman\n"
-                       "• Detect non-linear patterns\n"
-                       "• Understand correlation choice")
+                       "- Test if relationship is linear\n"
+                       "- Choose Pearson vs Spearman\n"
+                       "- Detect non-linear patterns\n"
+                       "- Understand correlation choice")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• Pearson correlation\n"
-                       "• Spearman correlation\n"
-                       "• Kendall\'s tau\n"
-                       "• Distance correlation")
+                       "- Pearson correlation\n"
+                       "- Spearman correlation\n"
+                       "- Kendall\'s tau\n"
+                       "- Distance correlation")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "Pearson r near 0 does NOT mean no relationship - "
@@ -906,23 +906,23 @@ def linear_reg_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Line = best fit (minimizes residuals)\n"
-                    "• Band = 95% CI for prediction\n"
-                    "• Slope = change in Y per unit X\n"
-                    "• R-squared = prop of variance explained\n"
-                    "• p-value = test if slope != 0")
+                    "- Line = best fit (minimizes residuals)\n"
+                    "- Band = 95% CI for prediction\n"
+                    "- Slope = change in Y per unit X\n"
+                    "- R-squared = prop of variance explained\n"
+                    "- p-value = test if slope != 0")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Model continuous outcome\n"
-                       "• Estimate effect size (beta1)\n"
-                       "• Predict Y from X\n"
-                       "• Test linear relationship")
+                       "- Model continuous outcome\n"
+                       "- Estimate effect size (beta1)\n"
+                       "- Predict Y from X\n"
+                       "- Test linear relationship")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• F-test (overall model)\n"
-                       "• t-test (coefficient)\n"
-                       "• Pearson correlation\n"
-                       "• ANOVA (nested models)")
+                       "- F-test (overall model)\n"
+                       "- t-test (coefficient)\n"
+                       "- Pearson correlation\n"
+                       "- ANOVA (nested models)")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "Extrapolating beyond the observed x-range. "
@@ -968,22 +968,22 @@ def multiple_reg_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Plane = predicted Y from X1, X2\n"
-                    "• Slope along X1 = beta1 (holding X2 constant)\n"
-                    "• Slope along X2 = beta2 (holding X1 constant)\n"
-                    "• Twisted surface = interaction")
+                    "- Plane = predicted Y from X1, X2\n"
+                    "- Slope along X1 = beta1 (holding X2 constant)\n"
+                    "- Slope along X2 = beta2 (holding X1 constant)\n"
+                    "- Twisted surface = interaction")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Model multiple predictors\n"
-                       "• Control for confounders\n"
-                       "• Test interaction effects\n"
-                       "• Understand partial effects")
+                       "- Model multiple predictors\n"
+                       "- Control for confounders\n"
+                       "- Test interaction effects\n"
+                       "- Understand partial effects")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• F-test (overall model)\n"
-                       "• Partial F-test (nested models)\n"
-                       "• t-test (individual coefficients)\n"
-                       "• VIF (multicollinearity)")
+                       "- F-test (overall model)\n"
+                       "- Partial F-test (nested models)\n"
+                       "- t-test (individual coefficients)\n"
+                       "- VIF (multicollinearity)")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "Coefficients are sensitive to predictor scaling. "
@@ -1034,23 +1034,23 @@ def logistic_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• S-curve = logistic probability\n"
-                    "• Steep curve = strong predictor\n"
-                    "• Shallow curve = weak predictor\n"
-                    "• Threshold = classification cutoff\n"
-                    "• Above threshold -> predict class 1")
+                    "- S-curve = logistic probability\n"
+                    "- Steep curve = strong predictor\n"
+                    "- Shallow curve = weak predictor\n"
+                    "- Threshold = classification cutoff\n"
+                    "- Above threshold -> predict class 1")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Binary outcome prediction\n"
-                       "• Estimate odds ratios\n"
-                       "• Medical diagnosis models\n"
-                       "• Risk factor analysis")
+                       "- Binary outcome prediction\n"
+                       "- Estimate odds ratios\n"
+                       "- Medical diagnosis models\n"
+                       "- Risk factor analysis")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• Likelihood ratio test\n"
-                       "• Wald test (coefficients)\n"
-                       "• Hosmer-Lemeshow (calibration)\n"
-                       "• ROC-AUC (discrimination)")
+                       "- Likelihood ratio test\n"
+                       "- Wald test (coefficients)\n"
+                       "- Hosmer-Lemeshow (calibration)\n"
+                       "- ROC-AUC (discrimination)")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "Changing the decision threshold changes "
@@ -1103,22 +1103,22 @@ def multinomial_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Colored regions = decision zones\n"
-                    "• Boundaries = where model is uncertain\n"
-                    "• Overlap = classification difficulty\n"
-                    "• Filled area = multinomial probability")
+                    "- Colored regions = decision zones\n"
+                    "- Boundaries = where model is uncertain\n"
+                    "- Overlap = classification difficulty\n"
+                    "- Filled area = multinomial probability")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Multi-class classification\n"
-                       "• Understand decision boundaries\n"
-                       "• Compare classifier geometries\n"
-                       "• Feature space exploration")
+                       "- Multi-class classification\n"
+                       "- Understand decision boundaries\n"
+                       "- Compare classifier geometries\n"
+                       "- Feature space exploration")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• Multinomial logistic regression\n"
-                       "• MANOVA\n"
-                       "• Discriminant analysis\n"
-                       "• Classification metrics")
+                       "- Multinomial logistic regression\n"
+                       "- MANOVA\n"
+                       "- Discriminant analysis\n"
+                       "- Classification metrics")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "Linear decision boundaries (logistic regression) "
@@ -1171,22 +1171,22 @@ def ordinal_logit_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Each curve = probability of one level\n"
-                    "• Curves shift with predictor value\n"
-                    "• Non-parallel = proportional odds violation\n"
-                    "• Steep transition = strong predictor")
+                    "- Each curve = probability of one level\n"
+                    "- Curves shift with predictor value\n"
+                    "- Non-parallel = proportional odds violation\n"
+                    "- Steep transition = strong predictor")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Ordered categorical outcomes\n"
-                       "• Likert scale responses\n"
-                       "• Disease severity staging\n"
-                       "• Patient-reported outcomes")
+                       "- Ordered categorical outcomes\n"
+                       "- Likert scale responses\n"
+                       "- Disease severity staging\n"
+                       "- Patient-reported outcomes")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• Proportional odds test\n"
-                       "• Brant test (parallel regression)\n"
-                       "• Likelihood ratio test\n"
-                       "• Score test")
+                       "- Proportional odds test\n"
+                       "- Brant test (parallel regression)\n"
+                       "- Likelihood ratio test\n"
+                       "- Score test")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "The proportional odds assumption (parallel curves) "
@@ -1233,22 +1233,22 @@ def poisson_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Y-axis = count (0, 1, 2, ...)\n"
-                    "• Curve = predicted mean count\n"
-                    "• Spread increases with mean\n"
-                    "• Clustering at zero = zero-inflation")
+                    "- Y-axis = count (0, 1, 2, ...)\n"
+                    "- Curve = predicted mean count\n"
+                    "- Spread increases with mean\n"
+                    "- Clustering at zero = zero-inflation")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Modeling count outcomes\n"
-                       "• Event frequencies\n"
-                       "• Rare disease incidence\n"
-                       "• Hospital readmissions")
+                       "- Modeling count outcomes\n"
+                       "- Event frequencies\n"
+                       "- Rare disease incidence\n"
+                       "- Hospital readmissions")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• Likelihood ratio test\n"
-                       "• Wald test\n"
-                       "• Deviance goodness-of-fit\n"
-                       "• Dispersion test")
+                       "- Likelihood ratio test\n"
+                       "- Wald test\n"
+                       "- Deviance goodness-of-fit\n"
+                       "- Dispersion test")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "Poisson assumes mean = variance. If variance > mean "
@@ -1304,23 +1304,23 @@ def confusion_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Diagonal = correct predictions\n"
-                    "• Off-diagonal = errors\n"
-                    "• Top-right (FP) = Type I error\n"
-                    "• Bottom-left (FN) = Type II error\n"
-                    "• PPV depends on prevalence")
+                    "- Diagonal = correct predictions\n"
+                    "- Off-diagonal = errors\n"
+                    "- Top-right (FP) = Type I error\n"
+                    "- Bottom-left (FN) = Type II error\n"
+                    "- PPV depends on prevalence")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Evaluate binary classifiers\n"
-                       "• Compare diagnostic tests\n"
-                       "• Understand error types\n"
-                       "• Choose operating threshold")
+                       "- Evaluate binary classifiers\n"
+                       "- Compare diagnostic tests\n"
+                       "- Understand error types\n"
+                       "- Choose operating threshold")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• McNemar\'s test (paired comparison)\n"
-                       "• Cohen\'s Kappa\n"
-                       "• ROC-AUC\n"
-                       "• Diagnostic likelihood ratios")
+                       "- McNemar\'s test (paired comparison)\n"
+                       "- Cohen\'s Kappa\n"
+                       "- ROC-AUC\n"
+                       "- Diagnostic likelihood ratios")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "Accuracy is misleading with imbalanced classes. "
@@ -1383,23 +1383,23 @@ def roc_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Curve closer to top-left = better\n"
-                    "• AUC = probability correct ranking\n"
-                    "• AUC 0.5 = guessing\n"
-                    "• AUC 0.8+ = good discrimination\n"
-                    "• Star = Youden\'s optimal threshold")
+                    "- Curve closer to top-left = better\n"
+                    "- AUC = probability correct ranking\n"
+                    "- AUC 0.5 = guessing\n"
+                    "- AUC 0.8+ = good discrimination\n"
+                    "- Star = Youden\'s optimal threshold")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Compare diagnostic tests\n"
-                       "• Assess model discrimination\n"
-                       "• Choose optimal threshold\n"
-                       "• Meta-analysis of test accuracy")
+                       "- Compare diagnostic tests\n"
+                       "- Assess model discrimination\n"
+                       "- Choose optimal threshold\n"
+                       "- Meta-analysis of test accuracy")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• DeLong test (compare AUCs)\n"
-                       "• Hanley-McNeil test\n"
-                       "• Bootstrap AUC comparison\n"
-                       "• Sensitivity analysis")
+                       "- DeLong test (compare AUCs)\n"
+                       "- Hanley-McNeil test\n"
+                       "- Bootstrap AUC comparison\n"
+                       "- Sensitivity analysis")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "AUC ignores calibration - a model can have "
@@ -1452,22 +1452,22 @@ def pr_curve_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Higher curve = better\n"
-                    "• Baseline = always-predict-positive\n"
-                    "• PR better than ROC for imbalanced\n"
-                    "• AP = area under PR curve")
+                    "- Higher curve = better\n"
+                    "- Baseline = always-predict-positive\n"
+                    "- PR better than ROC for imbalanced\n"
+                    "- AP = area under PR curve")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Imbalanced classification\n"
-                       "• Rare disease detection\n"
-                       "• Fraud/anomaly detection\n"
-                       "• When PPV matters more")
+                       "- Imbalanced classification\n"
+                       "- Rare disease detection\n"
+                       "- Fraud/anomaly detection\n"
+                       "- When PPV matters more")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• Average Precision (AP)\n"
-                       "• F1 score (harmonic of P,R)\n"
-                       "• F-beta score (weighted F1)\n"
-                       "• Bootstrap PR comparison")
+                       "- Average Precision (AP)\n"
+                       "- F1 score (harmonic of P,R)\n"
+                       "- F-beta score (weighted F1)\n"
+                       "- Bootstrap PR comparison")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "PR curves from small samples are noisy and "
@@ -1522,22 +1522,22 @@ def threshold_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Blue = sensitivity (catch positives)\n"
-                    "• Red = specificity (avoid false alarms)\n"
-                    "• Tradeoff: increase one = decrease other\n"
-                    "• Green = optimal based on costs")
+                    "- Blue = sensitivity (catch positives)\n"
+                    "- Red = specificity (avoid false alarms)\n"
+                    "- Tradeoff: increase one = decrease other\n"
+                    "- Green = optimal based on costs")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Choose diagnostic cutoff\n"
-                       "• Balance sensitivity vs specificity\n"
-                       "• Incorporate cost of errors\n"
-                       "• Laboratory test thresholds")
+                       "- Choose diagnostic cutoff\n"
+                       "- Balance sensitivity vs specificity\n"
+                       "- Incorporate cost of errors\n"
+                       "- Laboratory test thresholds")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• ROC analysis\n"
-                       "• Youden\'s index\n"
-                       "• Cost-benefit analysis\n"
-                       "• Decision curve analysis")
+                       "- ROC analysis\n"
+                       "- Youden\'s index\n"
+                       "- Cost-benefit analysis\n"
+                       "- Decision curve analysis")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "Youden\'s index (max sensitivity + specificity - 1) "
@@ -1588,22 +1588,22 @@ def calibration_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Points on diagonal = perfectly calibrated\n"
-                    "• Above diagonal = underestimated probability\n"
-                    "• Below diagonal = overestimated probability\n"
-                    "• Slope < 1 = overconfident (common)")
+                    "- Points on diagonal = perfectly calibrated\n"
+                    "- Above diagonal = underestimated probability\n"
+                    "- Below diagonal = overestimated probability\n"
+                    "- Slope < 1 = overconfident (common)")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Assess probability accuracy\n"
-                       "• Check model reliability\n"
-                       "• Compare risk prediction models\n"
-                       "• Before clinical deployment")
+                       "- Assess probability accuracy\n"
+                       "- Check model reliability\n"
+                       "- Compare risk prediction models\n"
+                       "- Before clinical deployment")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• Hosmer-Lemeshow test\n"
-                       "• Brier score\n"
-                       "• Spiegelhalter z-test\n"
-                       "• Calibration intercept & slope")
+                       "- Hosmer-Lemeshow test\n"
+                       "- Brier score\n"
+                       "- Spiegelhalter z-test\n"
+                       "- Calibration intercept & slope")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "Hosmer-Lemeshow test is sensitive to binning "
@@ -1655,23 +1655,23 @@ def bland_altman_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• y = 0 line = perfect agreement\n"
-                    "• Mean diff = systematic bias\n"
-                    "• Dashed lines = limits of agreement\n"
-                    "• Fan-shape = proportional bias\n"
-                    "• 95% of points should be within limits")
+                    "- y = 0 line = perfect agreement\n"
+                    "- Mean diff = systematic bias\n"
+                    "- Dashed lines = limits of agreement\n"
+                    "- Fan-shape = proportional bias\n"
+                    "- 95% of points should be within limits")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Compare measurement methods\n"
-                       "• Assess test-retest reliability\n"
-                       "• Medical device validation\n"
-                       "• Laboratory method comparison")
+                       "- Compare measurement methods\n"
+                       "- Assess test-retest reliability\n"
+                       "- Medical device validation\n"
+                       "- Laboratory method comparison")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• Paired t-test (fixed bias)\n"
-                       "• Intraclass Correlation (ICC)\n"
-                       "• Deming regression\n"
-                       "• Passing-Bablok regression")
+                       "- Paired t-test (fixed bias)\n"
+                       "- Intraclass Correlation (ICC)\n"
+                       "- Deming regression\n"
+                       "- Passing-Bablok regression")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "Bland-Altman assesses agreement, not correlation. "
@@ -1731,23 +1731,23 @@ def kappa_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Diagonal = perfect agreement\n"
-                    "• Off-diagonal = disagreement\n"
-                    "• kappa < 0 = worse than chance\n"
-                    "• kappa 0.4-0.6 = moderate\n"
-                    "• kappa > 0.8 = near perfect")
+                    "- Diagonal = perfect agreement\n"
+                    "- Off-diagonal = disagreement\n"
+                    "- kappa < 0 = worse than chance\n"
+                    "- kappa 0.4-0.6 = moderate\n"
+                    "- kappa > 0.8 = near perfect")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Inter-rater reliability\n"
-                       "• Diagnostic agreement studies\n"
-                       "• Psychiatric diagnostic assessment\n"
-                       "• Image/scan rating agreement")
+                       "- Inter-rater reliability\n"
+                       "- Diagnostic agreement studies\n"
+                       "- Psychiatric diagnostic assessment\n"
+                       "- Image/scan rating agreement")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• Weighted Kappa (ordinal)\n"
-                       "• Fleiss\' Kappa (3+ raters)\n"
-                       "• McNemar\'s test (2x2 bias)\n"
-                       "• ICC (continuous)")
+                       "- Weighted Kappa (ordinal)\n"
+                       "- Fleiss\' Kappa (3+ raters)\n"
+                       "- McNemar\'s test (2x2 bias)\n"
+                       "- ICC (continuous)")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "Kappa is prevalence-dependent - rare categories "
@@ -1804,23 +1804,23 @@ def icc_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Each color = one subject\n"
-                    "• Lines horizontal = high ICC\n"
-                    "• Lines crossing = low ICC\n"
-                    "• Tight clustering within subject\n"
-                    "• Wide spread within subject = error")
+                    "- Each color = one subject\n"
+                    "- Lines horizontal = high ICC\n"
+                    "- Lines crossing = low ICC\n"
+                    "- Tight clustering within subject\n"
+                    "- Wide spread within subject = error")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Test-retest reliability\n"
-                       "• Inter-rater reliability (continuous)\n"
-                       "• Intra-rater reliability\n"
-                       "• Longitudinal measurement stability")
+                       "- Test-retest reliability\n"
+                       "- Inter-rater reliability (continuous)\n"
+                       "- Intra-rater reliability\n"
+                       "- Longitudinal measurement stability")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• ICC(1,1) - single rater absolute\n"
-                       "• ICC(2,1) - consistency\n"
-                       "• ICC(3,k) - average random raters\n"
-                       "• Bland-Altman (agreement)")
+                       "- ICC(1,1) - single rater absolute\n"
+                       "- ICC(2,1) - consistency\n"
+                       "- ICC(3,k) - average random raters\n"
+                       "- Bland-Altman (agreement)")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "High ICC can mask systematic bias (raters "
@@ -1888,23 +1888,23 @@ def pca_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• PCs = directions of max variance\n"
-                    "• Close points = similar profiles\n"
-                    "• Separated groups = distinct clusters\n"
-                    "• Ellipses = 95% confidence region\n"
-                    "• Axis labels show % variance explained")
+                    "- PCs = directions of max variance\n"
+                    "- Close points = similar profiles\n"
+                    "- Separated groups = distinct clusters\n"
+                    "- Ellipses = 95% confidence region\n"
+                    "- Axis labels show % variance explained")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Reduce dimensionality\n"
-                       "• Visualize high-dim data\n"
-                       "• Check for natural clusters\n"
-                       "• Exploratory data analysis")
+                       "- Reduce dimensionality\n"
+                       "- Visualize high-dim data\n"
+                       "- Check for natural clusters\n"
+                       "- Exploratory data analysis")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• MANOVA (on PCs or raw)\n"
-                       "• Factor analysis\n"
-                       "• K-means clustering\n"
-                       "• PERMANOVA")
+                       "- MANOVA (on PCs or raw)\n"
+                       "- Factor analysis\n"
+                       "- K-means clustering\n"
+                       "- PERMANOVA")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "PCA assumes linear relationships. Non-linear "
@@ -1962,23 +1962,23 @@ def manova_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Each color = one group\n"
-                    "• Distance between = group difference\n"
-                    "• Overlap = no significant difference\n"
-                    "• X marks = group centroid (mean)\n"
-                    "• Ellipsoid shape = covariance")
+                    "- Each color = one group\n"
+                    "- Distance between = group difference\n"
+                    "- Overlap = no significant difference\n"
+                    "- X marks = group centroid (mean)\n"
+                    "- Ellipsoid shape = covariance")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Compare groups on multiple DVs\n"
-                       "• Control for correlated outcomes\n"
-                       "• Multivariate experimental design\n"
-                       "• Protect against inflated Type I error")
+                       "- Compare groups on multiple DVs\n"
+                       "- Control for correlated outcomes\n"
+                       "- Multivariate experimental design\n"
+                       "- Protect against inflated Type I error")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• Pillai's Trace\n"
-                       "• Wilks' Lambda\n"
-                       "• Hotelling-Lawley Trace\n"
-                       "• Roy's Largest Root")
+                       "- Pillai's Trace\n"
+                       "- Wilks' Lambda\n"
+                       "- Hotelling-Lawley Trace\n"
+                       "- Roy's Largest Root")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "MANOVA requires multivariate normality and "
@@ -2030,23 +2030,23 @@ def cluster_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Each color = discovered cluster\n"
-                    "• X marks = cluster center\n"
-                    "• Tight clusters = well-separated\n"
-                    "• Overlap = ambiguous assignment\n"
-                    "• K-means assumes spherical clusters")
+                    "- Each color = discovered cluster\n"
+                    "- X marks = cluster center\n"
+                    "- Tight clusters = well-separated\n"
+                    "- Overlap = ambiguous assignment\n"
+                    "- K-means assumes spherical clusters")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Discover natural groupings\n"
-                       "• Segment patients/populations\n"
-                       "• Pattern recognition\n"
-                       "• Exploratory data mining")
+                       "- Discover natural groupings\n"
+                       "- Segment patients/populations\n"
+                       "- Pattern recognition\n"
+                       "- Exploratory data mining")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• Silhouette score\n"
-                       "• Elbow method (WCSS)\n"
-                       "• Gap statistic\n"
-                       "• Davies-Bouldin index")
+                       "- Silhouette score\n"
+                       "- Elbow method (WCSS)\n"
+                       "- Gap statistic\n"
+                       "- Davies-Bouldin index")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "K-means requires specifying k beforehand and "
@@ -2094,29 +2094,444 @@ def scatter3d_widget():
         col_i, col_w, col_t, col_m = st.columns(4)
         with col_i:
             st.info("**Interpretation**\n\n"
-                    "• Each axis = one variable\n"
-                    "• Position in 3D space = multi-dim profile\n"
-                    "• Clusters = groups with similar profiles\n"
-                    "• Rotation reveals different patterns\n"
-                    "• Elliptical shape = correlated variables")
+                    "- Each axis = one variable\n"
+                    "- Position in 3D space = multi-dim profile\n"
+                    "- Clusters = groups with similar profiles\n"
+                    "- Rotation reveals different patterns\n"
+                    "- Elliptical shape = correlated variables")
         with col_w:
             st.success("**When To Use**\n\n"
-                       "• Explore 3-variable relationships\n"
-                       "• Identify 3D clusters\n"
-                       "• Present multivariate patterns\n"
-                       "• Interactive data exploration")
+                       "- Explore 3-variable relationships\n"
+                       "- Identify 3D clusters\n"
+                       "- Present multivariate patterns\n"
+                       "- Interactive data exploration")
         with col_t:
             st.warning("**Associated Tests**\n\n"
-                       "• MANOVA\n"
-                       "• Multivariate regression\n"
-                       "• Canonical correlation\n"
-                       "• 3D PCA visualization")
+                       "- MANOVA\n"
+                       "- Multivariate regression\n"
+                       "- Canonical correlation\n"
+                       "- 3D PCA visualization")
         with col_m:
             st.error("**Common Mistake**\n\n"
                      "3D plots can obscure patterns depending on "
                      "viewing angle. Always rotate and view from "
                      "multiple perspectives. Pre-projected 2D views "
                      "(PCA) often reveal structure more clearly.")
+
+
+def pp_widget():
+    st.markdown("## Normal P-P Plot")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Sample Size", 20, 500, 100, key="pp_n")
+        dist_type = st.selectbox("Distribution", ["Normal", "Skewed", "Heavy-tailed", "Uniform"], key="pp_dist")
+    np.random.seed(42)
+    if dist_type == "Normal":
+        data = np.random.normal(0, 1, n)
+    elif dist_type == "Skewed":
+        data = np.random.gamma(2, 1, n)
+    elif dist_type == "Heavy-tailed":
+        data = np.random.standard_t(3, n)
+    else:
+        data = np.random.uniform(-2, 2, n)
+    data_sorted = np.sort(data)
+    emp_p = (np.arange(1, n + 1) - 0.5) / n
+    theo_p = stats.norm.cdf((data_sorted - np.mean(data)) / np.std(data))
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=theo_p, y=emp_p, mode="markers",
+                             marker=dict(color="#4C78A8", size=4),
+                             name="Observed",
+                             hovertemplate="Theoretical P=%{x:.3f}<br>Empirical P=%{y:.3f}<extra></extra>"))
+    fig.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode="lines",
+                             line=dict(color="red", dash="dash"),
+                             name="Ideal (Normal)"))
+    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="Theoretical Cumulative Probability",
+                      yaxis_title="Empirical Cumulative Probability",
+                      xaxis=dict(range=[0, 1]), yaxis=dict(range=[0, 1]))
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Points on diagonal = normal\n"
+                    "- S-curve = heavy tails\n"
+                    "- Points above = right skew\n"
+                    "- Points below = left skew")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Assess normality assumption\n"
+                       "- Complement to Q-Q plot\n"
+                       "- Sensitive to center deviations\n"
+                       "- Visual goodness-of-fit check")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Shapiro-Wilk test\n"
+                       "- Kolmogorov-Smirnov\n"
+                       "- Anderson-Darling\n"
+                       "- D'Agostino-Pearson")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "P-P plots are less sensitive to tail "
+                     "departures than Q-Q plots. Use both "
+                     "for a complete normality assessment.")
+
+
+def raincloud_widget():
+    st.markdown("## Raincloud Plot")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Samples per Group", 10, 200, 50, key="rain_n")
+        n_groups = st.selectbox("Number of Groups", [2, 3, 4], index=0, key="rain_ng")
+        separation = st.slider("Group Separation", 0.0, 3.0, 1.0, 0.1, key="rain_sep")
+    np.random.seed(42)
+    k = int(n_groups)
+    colors = px.colors.qualitative.Plotly[:k]
+    means = np.linspace(-separation * (k - 1) / 2, separation * (k - 1) / 2, k)
+    data = [np.random.normal(m, 1, n) for m in means]
+    fig = go.Figure()
+    for i, d in enumerate(data):
+        x_jitter = np.random.uniform(i - 0.2, i + 0.2, n)
+        fig.add_trace(go.Scatter(x=x_jitter, y=d, mode="markers",
+                                 marker=dict(color=colors[i], size=4, opacity=0.4),
+                                 legendgroup=f"g{i}", name=f"Group {i+1}", showlegend=False,
+                                 hoverinfo="skip"))
+        fig.add_trace(go.Box(x0=i, y=d, name=f"Group {i+1}",
+                             marker_color=colors[i], line=dict(color=colors[i], width=2),
+                             fillcolor="rgba(0,0,0,0)", boxpoints=False, width=0.15,
+                             legendgroup=f"g{i}", showlegend=False))
+        fig.add_trace(go.Violin(x0=i, y=d, side="positive",
+                                line=dict(color=colors[i], width=2),
+                                fillcolor=colors[i], opacity=0.3,
+                                points=False, width=0.6,
+                                legendgroup=f"g{i}", name=f"Group {i+1}",
+                                showlegend=True))
+    fig.update_layout(template="plotly_dark", height=450,
+                      margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis=dict(tickmode="array", tickvals=list(range(k)),
+                                 ticktext=[f"Group {i+1}" for i in range(k)]),
+                      yaxis_title="Value", hovermode="closest")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Points = raw data (cloud)\n"
+                    "- Box = median + IQR\n"
+                    "- Half-violin = density shape\n"
+                    "- Combines all three views")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Replace boxplot for more detail\n"
+                       "- Show both distribution and raw data\n"
+                       "- Modern publication-ready graphics\n"
+                       "- Small to moderate sample sizes")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Independent t-test\n"
+                       "- Mann-Whitney U\n"
+                       "- Welch's t-test\n"
+                       "- Permutation tests")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "Jitter width is arbitrary and only "
+                     "shows density not exact x-position. "
+                     "Set random seed for reproducibility.")
+
+
+def residuals_fitted_widget():
+    st.markdown("## Residuals vs Fitted Plot")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Sample Size", 20, 500, 100, key="resid_n")
+        noise = st.slider("Noise Level", 0.1, 3.0, 1.0, 0.1, key="resid_noise")
+        pattern = st.selectbox("Pattern", ["Linear (OK)", "Heteroscedastic", "Non-linear", "Outlier"], key="resid_pattern")
+    np.random.seed(42)
+    x = np.random.uniform(0, 10, n)
+    if pattern == "Linear (OK)":
+        y = 2 + 1.5 * x + np.random.normal(0, noise, n)
+    elif pattern == "Heteroscedastic":
+        y = 2 + 1.5 * x + np.random.normal(0, noise * (0.5 + 0.5 * x / 10), n)
+    elif pattern == "Non-linear":
+        y = 2 + 1.5 * x + 0.5 * x**2 + np.random.normal(0, noise, n)
+    else:
+        y = 2 + 1.5 * x + np.random.normal(0, noise, n)
+        y[-1] += 15
+    from sklearn.linear_model import LinearRegression
+    model = LinearRegression()
+    model.fit(x.reshape(-1, 1), y)
+    fitted = model.predict(x.reshape(-1, 1))
+    residuals = y - fitted
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=fitted, y=residuals, mode="markers",
+                             marker=dict(color="#4C78A8", size=5),
+                             name="Residuals",
+                             hovertemplate="Fitted=%{x:.2f}<br>Residual=%{y:.2f}<extra></extra>"))
+    fig.add_hline(y=0, line=dict(color="red", dash="dash"), opacity=0.7)
+    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="Fitted Values", yaxis_title="Residuals")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Random scatter around 0 = OK\n"
+                    "- Fan shape = heteroscedasticity\n"
+                    "- U-shape = non-linearity\n"
+                    "- Isolated points = outliers")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- After fitting linear regression\n"
+                       "- Check homoscedasticity assumption\n"
+                       "- Check linearity assumption\n"
+                       "- Identify influential points")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Breusch-Pagan test\n"
+                       "- Goldfeld-Quandt test\n"
+                       "- RESET test\n"
+                       "- Cook's distance")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "Patterned residuals indicate model "
+                     "misspecification — do NOT interpret "
+                     "coefficients until residuals are "
+                     "well-behaved.")
+
+
+def poly_reg_widget():
+    st.markdown("## Polynomial Regression Fit")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Sample Size", 20, 300, 80, key="poly_reg_n")
+        degree = st.slider("Polynomial Degree", 1, 10, 1, key="poly_reg_deg")
+        noise = st.slider("Noise Level", 0.1, 3.0, 0.5, 0.1, key="poly_reg_noise")
+        true_fn = st.selectbox("True Relationship", ["Linear", "Quadratic", "Cubic", "Sine"], key="poly_reg_fn")
+    np.random.seed(42)
+    x = np.sort(np.random.uniform(-3, 3, n))
+    if true_fn == "Linear":
+        y_true = 2 + 1.5 * x
+    elif true_fn == "Quadratic":
+        y_true = 1 + x + 0.5 * x**2
+    elif true_fn == "Cubic":
+        y_true = 1 + x + 0.5 * x**2 - 0.2 * x**3
+    else:
+        y_true = 2 * np.sin(x)
+    y = y_true + np.random.normal(0, noise, n)
+    from sklearn.preprocessing import PolynomialFeatures
+    from sklearn.pipeline import make_pipeline
+    from sklearn.linear_model import LinearRegression
+    poly = make_pipeline(PolynomialFeatures(degree), LinearRegression())
+    poly.fit(x.reshape(-1, 1), y)
+    x_smooth = np.linspace(min(x), max(x), 300)
+    y_pred = poly.predict(x_smooth.reshape(-1, 1))
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=x, y=y, mode="markers",
+                             marker=dict(color="#4C78A8", size=5, opacity=0.6),
+                             name="Data",
+                             hovertemplate="x=%{x:.2f}<br>y=%{y:.2f}<extra></extra>"))
+    fig.add_trace(go.Scatter(x=x_smooth, y=y_pred, mode="lines",
+                             line=dict(color="#E45756", width=3),
+                             name=f"Degree {degree}",
+                             hovertemplate="x=%{x:.2f}<br>Pred=%{y:.2f}<extra></extra>"))
+    fig.add_trace(go.Scatter(x=x_smooth, y=y_true, mode="lines",
+                             line=dict(color="gray", width=2, dash="dot"),
+                             name="True Function",
+                             hovertemplate="x=%{x:.2f}<br>True=%{y:.2f}<extra></extra>"))
+    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="X", yaxis_title="Y")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Higher degree = more flexible\n"
+                    "- Degree 1 = straight line\n"
+                    "- Degree 2 = one bend\n"
+                    "- Degree 10 can overfit wildly")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Model non-linear relationships\n"
+                       "- Test for curvature in data\n"
+                       "- Understand bias-variance tradeoff\n"
+                       "- Teaching overfitting concepts")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- F-test for nested models\n"
+                       "- Cross-validation MSE\n"
+                       "- AIC / BIC comparison\n"
+                       "- ANOVA model comparison")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "High-degree polynomials overfit "
+                     "near boundaries. Never extrapolate "
+                     "beyond data range. Use splines "
+                     "for better behavior.")
+
+
+def reg_path_widget():
+    st.markdown("## Regularization Path")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Sample Size", 50, 500, 100, key="regpath_n")
+        n_features = st.slider("Number of Features", 5, 30, 10, key="regpath_k")
+        reg_type = st.selectbox("Regularization", ["Lasso (L1)", "Ridge (L2)"], key="regpath_type")
+    np.random.seed(42)
+    true_coefs = np.zeros(n_features)
+    true_coefs[:5] = [3, -2, 1.5, -1, 0.5]
+    np.random.shuffle(true_coefs)
+    X = np.random.normal(0, 1, (n, n_features))
+    y = X @ true_coefs + np.random.normal(0, 1, n)
+    from sklearn.linear_model import Lasso, Ridge
+    alphas = np.logspace(-2, 2, 100)
+    if reg_type == "Lasso (L1)":
+        coefs = np.array([Lasso(alpha=a, max_iter=10000).fit(X, y).coef_ for a in alphas])
+    else:
+        coefs = np.array([Ridge(alpha=a).fit(X, y).coef_ for a in alphas])
+    fig = go.Figure()
+    for i in range(n_features):
+        fig.add_trace(go.Scatter(x=np.log10(alphas), y=coefs[:, i], mode="lines",
+                                 line=dict(width=1.5),
+                                 name=f"Feature {i+1}",
+                                 hovertemplate="log10(α)=%{x:.2f}<br>Coeff=%{y:.3f}<extra></extra>"))
+    fig.add_hline(y=0, line=dict(color="gray", width=1, dash="dash"))
+    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="log10(Alpha)", yaxis_title="Coefficient Value",
+                      hovermode="closest")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Each line = one coefficient\n"
+                    "- Left (low α) = unregularized\n"
+                    "- Right (high α) = strong shrinkage\n"
+                    "- Lasso forces coefficients to zero")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- High-dimensional data\n"
+                       "- Feature selection (Lasso)\n"
+                       "- Combat multicollinearity (Ridge)\n"
+                       "- Bias-variance tradeoff analysis")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Cross-validated MSE\n"
+                       "- Regularization path stability\n"
+                       "- Bayesian information criterion\n"
+                       "- Bootstrap coefficient stability")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "Lasso selects at most n features. "
+                     "With p > n, Ridge may generalize "
+                     "better. Always standardize predictors "
+                     "before regularization.")
+
+
+def splom_widget():
+    st.markdown("## Scatterplot Matrix (SPLOM)")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Sample Size", 30, 500, 150, key="splom_n")
+        n_vars = st.selectbox("Number of Variables", [3, 4, 5, 6], index=1, key="splom_k")
+        corr = st.slider("Correlation Strength", 0.0, 0.95, 0.5, 0.05, key="splom_corr")
+    np.random.seed(42)
+    k = int(n_vars)
+    cov = np.full((k, k), corr)
+    for i in range(k):
+        cov[i, i] = 1.0
+    data = np.random.multivariate_normal(np.zeros(k), cov, n)
+    col_names = [f"Var {i+1}" for i in range(k)]
+    df = pd.DataFrame(data, columns=col_names)
+    fig = px.scatter_matrix(df, dimensions=col_names, opacity=0.5)
+    fig.update_traces(marker=dict(size=3))
+    fig.update_layout(template="plotly_dark", height=600, margin=dict(l=10, r=10, t=30, b=10))
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Each panel = bivariate scatter\n"
+                    "- Diagonal = each variable vs itself\n"
+                    "- Tight ellipse = strong correlation\n"
+                    "- Row/col patterns = multivariate structure")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Explore many variable pairs at once\n"
+                       "- Detect multicollinearity patterns\n"
+                       "- Identify multivariate outliers\n"
+                       "- EDA for high-dimensional data")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Pearson correlation matrix\n"
+                       "- Variance Inflation Factor (VIF)\n"
+                       "- Bartlett's sphericity test\n"
+                       "- MANOVA assumptions check")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "SPLOMs become unreadable with >10 "
+                     "variables. Use correlation heatmap "
+                     "or PCA for higher dimensions.")
+
+
+def parallel_coords_widget():
+    st.markdown("## Parallel Coordinates Plot")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Sample Size", 50, 500, 200, key="parcoords_n")
+        n_dims = st.selectbox("Number of Dimensions", [4, 5, 6, 7, 8], index=1, key="parcoords_k")
+        n_clusters = st.selectbox("Number of Clusters", [2, 3, 4], index=0, key="parcoords_clust")
+    np.random.seed(42)
+    k = int(n_dims)
+    c = int(n_clusters)
+    cluster_centers = np.random.uniform(-3, 3, (c, k))
+    data_list = []
+    labels = []
+    for i in range(c):
+        n_per = n // c
+        data_list.append(np.random.normal(cluster_centers[i], 0.6, (n_per, k)))
+        labels.extend([i] * n_per)
+    X = np.vstack(data_list)[:n]
+    labels = np.array(labels[:n])
+    col_names = [f"Dim {i+1}" for i in range(k)]
+    df = pd.DataFrame(X, columns=col_names)
+    df["Cluster"] = labels
+    fig = px.parallel_coordinates(df, color="Cluster", dimensions=col_names,
+                                  color_continuous_scale="Viridis")
+    fig.update_layout(template="plotly_dark", height=500, margin=dict(l=10, r=10, t=30, b=10))
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Each vertical axis = one variable\n"
+                    "- Each line = one observation\n"
+                    "- Crossing lines = negative correlation\n"
+                    "- Parallel lines = positive correlation")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Visualize high-dimensional data\n"
+                       "- Identify variable relationships\n"
+                       "- Find multivariate patterns\n"
+                       "- Complement to PCA")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- MANOVA\n"
+                       "- Canonical correlation\n"
+                       "- Discriminant analysis\n"
+                       "- Cluster validation")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "Axis order affects interpretation. "
+                     "Reorder axes to highlight patterns. "
+                     "Too many observations creates clutter "
+                     "— consider sampling.")
 
 
 # =========================
@@ -2411,6 +2826,69 @@ graphs = {
         "common_mistakes": "3D plots can obscure patterns depending on viewing angle - rotate to see all perspectives.",
         "associated_tests": ["MANOVA", "Multivariate regression", "Canonical correlation", "3D PCA"],
         "widget_function": scatter3d_widget,
+    },
+    "Normal P-P Plot": {
+        "category": "Distribution Plots",
+        "description": "Plots empirical cumulative probabilities against theoretical normal probabilities to assess normality.",
+        "when_to_use": "Assessing normality, complementing Q-Q plots, checking distribution center fit.",
+        "interpretation": "Points on diagonal = normal; S-curve = heavy tails; above diagonal = right skew.",
+        "common_mistakes": "P-P plots are less sensitive to tail departures than Q-Q plots — use both together.",
+        "associated_tests": ["Shapiro-Wilk", "Kolmogorov-Smirnov", "Anderson-Darling", "D'Agostino-Pearson"],
+        "widget_function": pp_widget,
+    },
+    "Raincloud Plot": {
+        "category": "Comparison Plots",
+        "description": "Combines jittered raw data, boxplot, and half-violin (KDE) for a comprehensive group comparison.",
+        "when_to_use": "Modern group comparisons, replacing boxplots, showing distributions + raw data simultaneously.",
+        "interpretation": "Points = raw data; box = median + IQR; half-violin = density shape; wider = more density.",
+        "common_mistakes": "Jitter width is arbitrary — it shows density not exact x-position. Set seed for reproducibility.",
+        "associated_tests": ["Independent t-test", "Mann-Whitney U", "Welch's t-test", "Permutation tests"],
+        "widget_function": raincloud_widget,
+    },
+    "Residuals vs Fitted Plot": {
+        "category": "Regression Plots",
+        "description": "Scatter plot of residuals against fitted values to detect model misspecification.",
+        "when_to_use": "After fitting linear regression, checking homoscedasticity, linearity, and outliers.",
+        "interpretation": "Random scatter around 0 = OK; fan shape = heteroscedasticity; U-shape = non-linearity.",
+        "common_mistakes": "Patterned residuals indicate model misspecification — fix model before interpreting coefficients.",
+        "associated_tests": ["Breusch-Pagan", "Goldfeld-Quandt", "RESET test", "Cook's distance"],
+        "widget_function": residuals_fitted_widget,
+    },
+    "Polynomial Regression Fit": {
+        "category": "Regression Plots",
+        "description": "Fits a polynomial of adjustable degree to data, comparing against the true generating function.",
+        "when_to_use": "Teaching bias-variance tradeoff, modeling non-linear relationships, testing curvature.",
+        "interpretation": "Higher degree = more flexible; degree 1 = straight line; high degrees overfit at boundaries.",
+        "common_mistakes": "Never extrapolate polynomial fits — they diverge wildly outside the observed data range.",
+        "associated_tests": ["F-test (nested)", "Cross-validation MSE", "AIC / BIC", "ANOVA model comparison"],
+        "widget_function": poly_reg_widget,
+    },
+    "Regularization Path": {
+        "category": "Regression Plots",
+        "description": "Shows how Lasso (L1) or Ridge (L2) regression coefficients change as regularization strength increases.",
+        "when_to_use": "High-dimensional data, feature selection, understanding bias-variance tradeoff interactively.",
+        "interpretation": "Each line = one coefficient; left = no shrinkage; right = heavy shrinkage; Lasso zeros out features.",
+        "common_mistakes": "Lasso selects at most n features. With p > n, Ridge may generalize better. Standardize predictors first.",
+        "associated_tests": ["Cross-validated MSE", "Regularization path stability", "BIC", "Bootstrap stability"],
+        "widget_function": reg_path_widget,
+    },
+    "Scatterplot Matrix (SPLOM)": {
+        "category": "Correlation Plots",
+        "description": "A grid of bivariate scatterplots for every pair of variables with adjustable correlation structure.",
+        "when_to_use": "Exploring multivariate relationships, detecting multicollinearity, identifying multivariate outliers.",
+        "interpretation": "Each panel = one pair; tight ellipse = strong correlation; diagonal = variable vs itself.",
+        "common_mistakes": "SPLOMs become unreadable with >10 variables — use correlation heatmap or PCA instead.",
+        "associated_tests": ["Pearson correlation", "VIF", "Bartlett's sphericity", "MANOVA assumptions"],
+        "widget_function": splom_widget,
+    },
+    "Parallel Coordinates Plot": {
+        "category": "Multivariate Plots",
+        "description": "Each observation is a line crossing parallel axes, revealing multivariate patterns and clusters.",
+        "when_to_use": "Visualizing high-dimensional data, identifying clusters, exploring variable relationships.",
+        "interpretation": "Each axis = one variable; crossing lines = negative correlation; parallel lines = positive correlation.",
+        "common_mistakes": "Axis order affects interpretation — reorder to highlight patterns. Too many lines creates visual clutter.",
+        "associated_tests": ["MANOVA", "Canonical correlation", "Discriminant analysis", "Cluster validation"],
+        "widget_function": parallel_coords_widget,
     },
 }
 
