@@ -6,6 +6,7 @@ from widgets import render_latex, render_test_widget
 from power_calculator import render_power_calculator
 from flowchart import build_tree
 from glossary import render_glossary
+from graph_explorer import render_graph_explorer
 
 
 # =========================
@@ -14,6 +15,19 @@ from glossary import render_glossary
 def main():
 
     st.set_page_config(page_title="Statistical Test Finder", layout="wide")
+
+    mode = st.sidebar.radio(
+        "Mode",
+        ["Test Finder", "Graph Explorer"],
+        horizontal=True,
+        key="app_mode",
+    )
+
+    if mode == "Graph Explorer":
+        with st.sidebar:
+            st.markdown("---")
+        render_graph_explorer()
+        return
 
     # =========================
     # SIDEBAR GLOSSARY
