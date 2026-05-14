@@ -3834,7 +3834,276 @@ def surv_heatmap_widget():
                      "Assumes proportional hazards "
                      "and exponential baseline. "
                      "Real survival may have "
-                     "time-varying effects.")
+                      "time-varying effects.")
+
+
+# =========================
+# META-ANALYSIS HELPERS
+# =========================
+
+
+def _gen_meta_data(k, eff, het):
+    np.random.seed(42)
+    se = np.random.uniform(0.05, 0.5, k)
+    y = np.random.normal(eff, np.sqrt(se**2 + het**2))
+    return y, se
+
+
+def _gen_meta_bias(k, eff, het, bias):
+    np.random.seed(42)
+    se = np.random.uniform(0.05, 0.5, k)
+    y = np.random.normal(eff, np.sqrt(se**2 + het**2))
+    if bias > 0:
+        for i in range(k):
+            if se[i] > 0.15:
+                p = 2 * (1 - stats.norm.cdf(abs(y[i] / se[i])))
+                if p > 0.05 and np.random.random() < bias:
+                    y[i] = np.nan
+                    se[i] = np.nan
+    m = ~np.isnan(y)
+    return y[m], se[m]
+
+
+def funnel_widget():
+    st.markdown("## Funnel Plot")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Number of Studies", 10, 60, 25, key="funnel_n")
+        bias = st.slider("Publication Bias", 0.0, 1.0, 0.0, 0.1, key="funnel_bias")
+        het = st.slider("Heterogeneity", 0.0, 0.5, 0.1, 0.05, key="funnel_het")
+    eff, se = _gen_meta_bias(int(n), 0.3, het, bias)
+    pooled = np.sum(eff / se**2) / np.sum(1 / se**2)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=eff, y=se, mode="markers",
+                             marker=dict(color="#4C78A8", size=7),
+                             name="Studies",
+                             hovertemplate="Effect=%{x:.3f}<br>SE=%{y:.4f}<extra></extra>"))
+    y_grid = np.linspace(min(se), max(se), 50)
+    fig.add_trace(go.Scatter(x=pooled - 1.96 * y_grid, y=y_grid, mode="lines",
+                             line=dict(color="gray", dash="dash"),
+                             showlegend=False, hoverinfo="skip"))
+    fig.add_trace(go.Scatter(x=pooled + 1.96 * y_grid, y=y_grid, mode="lines",
+                             line=dict(color="gray", dash="dash"), showlegend=False,
+                             fill="tonexty", fillcolor="rgba(128,128,128,0.08)",
+                             hoverinfo="skip"))
+    fig.add_vline(x=pooled, line=dict(color="#E45756", width=2), opacity=0.7)
+    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="Effect Size", yaxis_title="Standard Error",
+                      yaxis=dict(autorange="reversed"))
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Symmetric funnel = no bias\n"
+                    "- Missing left = suppressed negative\n"
+                    "- Missing right = suppressed positive\n"
+                    "- Gap = publication bias")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Assess publication bias\n"
+                       "- Meta-analysis quality check\n"
+                       "- Detect small-study effects\n"
+                       "- Sensitivity analysis")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Egger's regression test\n"
+                       "- Begg's rank test\n"
+                       "- Trim-and-fill method\n"
+                       "- Selection models")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "Funnel asymmetry is NOT always "
+                     "publication bias. It can also "
+                     "indicate heterogeneity or "
+                     "chance, especially with few studies.")
+
+
+def galbraith_widget():
+    st.markdown("## Galbraith (Radial) Plot")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Number of Studies", 10, 60, 25, key="gal_n")
+        het = st.slider("Heterogeneity", 0.0, 0.5, 0.1, 0.05, key="gal_het")
+    eff, se = _gen_meta_data(int(n), 0.3, het)
+    prec = 1 / se
+    z = eff / se
+    pooled = np.sum(eff / se**2) / np.sum(1 / se**2)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=prec, y=z, mode="markers",
+                             marker=dict(color="#4C78A8", size=7),
+                             name="Studies",
+                             hovertemplate="Precision=%{x:.2f}<br>z=%{y:.2f}<extra></extra>"))
+    x_line = np.linspace(0, max(prec) * 1.05, 100)
+    fig.add_trace(go.Scatter(x=x_line, y=pooled * x_line, mode="lines",
+                             line=dict(color="#E45756", width=2.5),
+                             name=f"Pooled ({pooled:.3f})"))
+    fig.add_trace(go.Scatter(x=x_line, y=pooled * x_line + 2, mode="lines",
+                             line=dict(color="gray", dash="dash"),
+                             showlegend=False, hoverinfo="skip"))
+    fig.add_trace(go.Scatter(x=x_line, y=pooled * x_line - 2, mode="lines",
+                             line=dict(color="gray", dash="dash"),
+                             showlegend=False, fill="tonexty",
+                             fillcolor="rgba(128,128,128,0.08)", hoverinfo="skip"))
+    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="Precision (1/SE)", yaxis_title="z-score (Effect/SE)",
+                      hovermode="closest")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Slope = pooled effect size\n"
+                    "- Scatter around line = heterogeneity\n"
+                    "- Outside gray band = outlier\n"
+                    "- Intercept ≈ 0 = no bias")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Identify outlier studies\n"
+                       "- Assess heterogeneity visually\n"
+                       "- Complement to funnel plot\n"
+                       "- Detect effect modification")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Cochran's Q test\n"
+                       "- I² heterogeneity statistic\n"
+                       "- H statistic\n"
+                       "- Subgroup meta-analysis")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "Radial plot uses the same data "
+                     "as the funnel — points on both "
+                     "axes are correlated. Use it "
+                     "with the funnel for full picture.")
+
+
+def baujat_widget():
+    st.markdown("## Baujat Plot")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Number of Studies", 10, 50, 20, key="baujat_n")
+        het = st.slider("Heterogeneity", 0.0, 1.0, 0.3, 0.05, key="baujat_het")
+        outlier = st.slider("Outlier Study Effect", 0.0, 3.0, 0.0, 0.5, key="baujat_out")
+    eff, se = _gen_meta_data(int(n), 0.3, het)
+    if outlier > 0:
+        eff[-1] += outlier
+    w = 1 / se**2
+    pooled = np.sum(w * eff) / np.sum(w)
+    q_contrib = w * (eff - pooled)**2
+    loo_effects = np.array([np.sum(np.delete(w, i) * np.delete(eff, i)) / np.sum(np.delete(w, i))
+                            for i in range(len(eff))])
+    influence = np.abs(loo_effects - pooled)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=q_contrib, y=influence, mode="markers+text",
+                             marker=dict(color="#4C78A8", size=10),
+                             text=[str(i+1) for i in range(len(eff))],
+                             textposition="top center",
+                             name="Studies",
+                             hovertemplate="Study %{text}<br>Q contrib=%{x:.2f}<br>Influence=%{y:.4f}<extra></extra>"))
+    fig.add_hline(y=np.median(influence)*2, line=dict(color="gray", dash="dash"), opacity=0.5)
+    fig.add_vline(x=np.median(q_contrib)*2, line=dict(color="gray", dash="dash"), opacity=0.5)
+    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="Contribution to Heterogeneity (Q)", yaxis_title="Influence on Pooled Effect",
+                      hovermode="closest")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Upper-right = high influence + heterogeneity\n"
+                    "- Lower-right = heterogeneous but not influential\n"
+                    "- Upper-left = influential but not heterogeneous\n"
+                    "- Lower-left = well-fitting studies")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Identify influential studies\n"
+                       "- Detect heterogeneity sources\n"
+                       "- Sensitivity analysis\n"
+                       "- Meta-analysis diagnostics")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Leave-one-out analysis\n"
+                       "- DFBETAS / Cook's distance\n"
+                       "- Q-test for heterogeneity\n"
+                       "- I² statistic per subgroup")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "Baujat plot is descriptive, not "
+                     "inferential. Cut-off lines are "
+                     "arbitrary — use with caution "
+                     "when k is small (< 10).")
+
+
+def loo_widget():
+    st.markdown("## Leave-One-Out Plot")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Number of Studies", 5, 30, 15, key="loo_n")
+        het = st.slider("Heterogeneity", 0.0, 0.5, 0.1, 0.05, key="loo_het")
+    eff, se = _gen_meta_data(int(n), 0.3, het)
+    w = 1 / se**2
+    pooled_all = np.sum(w * eff) / np.sum(w)
+    loo_pooled = []
+    loo_lower = []
+    loo_upper = []
+    for i in range(len(eff)):
+        w_i = np.delete(w, i)
+        e_i = np.delete(eff, i)
+        p = np.sum(w_i * e_i) / np.sum(w_i)
+        se_p = np.sqrt(1 / np.sum(w_i))
+        loo_pooled.append(p)
+        loo_lower.append(p - 1.96 * se_p)
+        loo_upper.append(p + 1.96 * se_p)
+    loo_pooled = np.array(loo_pooled)
+    loo_lower = np.array(loo_lower)
+    loo_upper = np.array(loo_upper)
+    study_labels = [f"Omit {i+1}" for i in range(len(eff))]
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=loo_pooled, y=study_labels, mode="markers",
+                             marker=dict(color="#4C78A8", size=10),
+                             error_x=dict(type="data", symmetric=False,
+                                          array=loo_upper - loo_pooled,
+                                          arrayminus=loo_pooled - loo_lower,
+                                          width=5, color="#4C78A8"),
+                             name="Leave-One-Out",
+                             hovertemplate="%{y}<br>Pooled=%{x:.3f}<extra></extra>"))
+    fig.add_vline(x=pooled_all, line=dict(color="#E45756", width=3, dash="dot"), opacity=0.7)
+    fig.update_layout(template="plotly_dark", height=max(30*len(eff), 200),
+                      margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="Pooled Effect Size", yaxis_title="",
+                      hovermode="y")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Dot = pooled effect without that study\n"
+                    "- Line = 95% CI without that study\n"
+                    "- Red line = overall pooled effect\n"
+                    "- Dot far from red = influential study")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Identify influential studies\n"
+                       "- Sensitivity analysis\n"
+                       "- Check result robustness\n"
+                       "- Meta-analysis diagnostics")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Baujat plot\n"
+                       "- DFBETAS statistic\n"
+                       "- Cook's distance\n"
+                       "- Cumulative meta-analysis")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "If removing a study changes "
+                     "the conclusion, that study "
+                     "drives the result. Report "
+                     "both with and without "
+                     "influential studies.")
 
 
 # =========================
@@ -4320,13 +4589,49 @@ graphs = {
         "widget_function": growth_curve_widget,
     },
     "Forest Plot": {
-        "category": "Comparison Plots",
+        "category": "Meta-Analysis Visualizations",
         "description": "Effect sizes with confidence intervals for multiple studies, used in meta-analysis.",
         "when_to_use": "Meta-analysis reporting, systematic review synthesis, comparing across multiple studies.",
         "interpretation": "Each row = one study; dot = effect size; line = 95% CI; red line = pooled estimate.",
         "common_mistakes": "Pooled estimate is the overall effect, NOT the average of individual study effect sizes.",
         "associated_tests": ["Cochran's Q test", "Higgins I² statistic", "Egger's test", "Meta-regression"],
         "widget_function": forest_plot_widget,
+    },
+    "Funnel Plot": {
+        "category": "Meta-Analysis Visualizations",
+        "description": "Scatter plot of effect size vs precision to detect publication bias via funnel asymmetry.",
+        "when_to_use": "Assessing publication bias, meta-analysis quality check, detecting small-study effects.",
+        "interpretation": "Symmetric funnel = no bias; missing side = suppressed results; gap = publication bias.",
+        "common_mistakes": "Funnel asymmetry is NOT always publication bias — heterogeneity or chance can cause it.",
+        "associated_tests": ["Egger's regression test", "Begg's rank test", "Trim-and-fill", "Selection models"],
+        "widget_function": funnel_widget,
+    },
+    "Galbraith (Radial) Plot": {
+        "category": "Meta-Analysis Visualizations",
+        "description": "Plots precision vs z-score to identify outlier studies and assess heterogeneity.",
+        "when_to_use": "Identifying outliers, assessing heterogeneity visually, complementing funnel plots.",
+        "interpretation": "Slope = pooled effect; scatter around line = heterogeneity; outside band = outlier.",
+        "common_mistakes": "Radial and funnel plot use correlated axes — interpret them together, not separately.",
+        "associated_tests": ["Cochran's Q test", "I² heterogeneity", "H statistic", "Subgroup analysis"],
+        "widget_function": galbraith_widget,
+    },
+    "Baujat Plot": {
+        "category": "Meta-Analysis Visualizations",
+        "description": "Plots each study's contribution to heterogeneity vs its influence on the pooled effect.",
+        "when_to_use": "Identifying influential studies, detecting heterogeneity sources, sensitivity analysis.",
+        "interpretation": "Upper-right = high influence + heterogeneity; lower-left = well-fitting studies.",
+        "common_mistakes": "Baujat plot is descriptive, not inferential — cut-offs are arbitrary, especially with k < 10.",
+        "associated_tests": ["Leave-one-out analysis", "DFBETAS", "Cook's distance", "Q-test for heterogeneity"],
+        "widget_function": baujat_widget,
+    },
+    "Leave-One-Out Plot": {
+        "category": "Meta-Analysis Visualizations",
+        "description": "Shows how the pooled effect changes when each study is removed one at a time.",
+        "when_to_use": "Identifying influential studies, sensitivity analysis, checking result robustness.",
+        "interpretation": "Dot far from red line = influential study; stable estimates = robust meta-analysis.",
+        "common_mistakes": "If removing a study changes the conclusion, that study drives the result — report both.",
+        "associated_tests": ["Baujat plot", "DFBETAS", "Cook's distance", "Cumulative meta-analysis"],
+        "widget_function": loo_widget,
     },
     "Kaplan-Meier Curve": {
         "category": "Survival Analysis Plots",
@@ -4393,6 +4698,7 @@ CATEGORIES = [
     "Agreement Plots",
     "Multivariate Plots",
     "Survival Analysis Plots",
+    "Meta-Analysis Visualizations",
 ]
 
 
