@@ -2534,6 +2534,1309 @@ def parallel_coords_widget():
                      "— consider sampling.")
 
 
+def stem_leaf_widget():
+    st.markdown("## Stem-and-Leaf Plot")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Sample Size", 20, 200, 60, key="stemn")
+        dist = st.selectbox("Distribution", ["Normal", "Skewed", "Bimodal", "Uniform"], key="stemd")
+    np.random.seed(42)
+    if dist == "Normal":
+        d = np.random.normal(50, 15, n)
+    elif dist == "Skewed":
+        d = np.random.gamma(2, 20, n) + 10
+    elif dist == "Bimodal":
+        d = np.concatenate([np.random.normal(30, 8, n//2), np.random.normal(70, 8, n//2)])
+    else:
+        d = np.random.uniform(10, 90, n)
+    d = np.round(d).astype(int)
+    d = d[(d >= 0)]
+    stems = d // 10
+    leaves = d % 10
+    us = np.sort(np.unique(stems))
+    stem_vals = [str(s) for s in us]
+    leaf_vals = [" ".join(str(l) for l in np.sort(leaves[stems==s])) for s in us]
+    fig = go.Figure(data=[go.Table(
+        header=dict(values=["Stem", "Leaf"], font=dict(size=14),
+                    align="left", fill_color="#1E1E1E"),
+        cells=dict(values=[stem_vals, leaf_vals],
+                   font=dict(family="monospace", size=13),
+                   align="left", height=24,
+                   fill_color="#2D2D2D"))
+    ])
+    fig.update_layout(template="plotly_dark", height=max(26*len(us)+60, 200),
+                      margin=dict(l=10, r=10, t=10, b=10))
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Stem = leading digit(s)\n"
+                    "- Leaf = trailing digit\n"
+                    "- Row length = frequency\n"
+                    "- Preserves exact values")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Small datasets (< 200)\n"
+                       "- Quick distribution view\n"
+                       "- Paper-and-pencil stats\n"
+                       "- Classroom teaching tool")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Kolmogorov-Smirnov\n"
+                       "- Shapiro-Wilk\n"
+                       "- Anderson-Darling\n"
+                       "- Visual shape assessment")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "Choose stem unit carefully — "
+                     "too few stems loses detail, "
+                     "too many creates sparse rows. "
+                     "Aim for 10-20 stems.")
+
+
+def freq_poly_widget():
+    st.markdown("## Frequency Polygon")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Sample Size", 20, 500, 100, key="fp_n")
+        bins = st.slider("Number of Bins", 5, 30, 10, key="fp_bins")
+        dist = st.selectbox("Distribution", ["Normal", "Skewed", "Bimodal"], key="fp_dist")
+    np.random.seed(42)
+    if dist == "Normal":
+        d = np.random.normal(0, 1, n)
+    elif dist == "Skewed":
+        d = np.random.gamma(2, 1, n)
+    else:
+        d = np.concatenate([np.random.normal(-1.5, 0.7, n//2), np.random.normal(1.5, 0.7, n//2)])
+    counts, edges = np.histogram(d, bins=bins)
+    centers = (edges[:-1] + edges[1:]) / 2
+    fig = go.Figure()
+    fig.add_trace(go.Bar(x=centers, y=counts, width=np.diff(edges),
+                         marker=dict(color="#4C78A8", opacity=0.4), name="Histogram"))
+    fig.add_trace(go.Scatter(x=centers, y=counts, mode="lines+markers",
+                             line=dict(color="#E45756", width=3),
+                             marker=dict(size=8), name="Frequency Polygon"))
+    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="Value", yaxis_title="Frequency")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Points at bin midpoints\n"
+                    "- Line = distribution shape\n"
+                    "- Area under polygon = N\n"
+                    "- Smoother than histogram")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Overlay multiple distributions\n"
+                       "- Compare group shapes\n"
+                       "- Cumulative frequency curve\n"
+                       "- Smooth frequency display")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Chi-square GOF test\n"
+                       "- Kolmogorov-Smirnov\n"
+                       "- Anderson-Darling\n"
+                       "- Distribution fit test")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "Bin count changes polygon shape. "
+                     "Fewer bins = smoother but less "
+                     "detail. Always try multiple "
+                     "bin widths.")
+
+
+def _swarm_positions(values, size=0.3):
+    n = len(values)
+    idx = np.argsort(values)
+    sv = values[idx]
+    pos = np.zeros((n, 2))
+    placed = []
+    for i, v in enumerate(sv):
+        for r in range(50):
+            for s in [1, -1] if r > 0 else [1]:
+                x = s * r * size * 0.3
+                ok = True
+                for px, py in placed:
+                    if abs(v - py) < size * 0.5 and abs(x - px) < size * 0.4:
+                        ok = False
+                        break
+                if ok:
+                    pos[i] = [x, v]
+                    placed.append((x, v))
+                    break
+    return pos[np.argsort(idx)]
+
+
+def beeswarm_widget():
+    st.markdown("## Beeswarm / Swarm Plot")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Samples per Group", 10, 150, 40, key="bsw_n")
+        k = st.selectbox("Number of Groups", [2, 3, 4], index=0, key="bsw_k")
+        sep = st.slider("Group Separation", 0.0, 3.0, 1.0, 0.1, key="bsw_sep")
+    np.random.seed(42)
+    kg = int(k)
+    colors = px.colors.qualitative.Plotly[:kg]
+    means = np.linspace(-sep*(kg-1)/2, sep*(kg-1)/2, kg)
+    fig = go.Figure()
+    for i in range(kg):
+        d = np.random.normal(means[i], 1, n)
+        pos = _swarm_positions(d)
+        fig.add_trace(go.Scatter(x=pos[:, 0] + i, y=pos[:, 1], mode="markers",
+                                 marker=dict(color=colors[i], size=5, opacity=0.7),
+                                 name=f"Group {i+1}",
+                                 hovertemplate="x=%{x:.2f}<br>y=%{y:.2f}<extra></extra>"))
+    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis=dict(tickmode="array", tickvals=list(range(kg)),
+                                 ticktext=[f"Group {i+1}" for i in range(kg)]),
+                      yaxis_title="Value", hovermode="closest")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Each dot = one observation\n"
+                    "- No overlap = exact value\n"
+                    "- Density = vertical stacking\n"
+                    "- Curved edge = distribution")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Small to moderate n\n"
+                       "- Show every data point\n"
+                       "- Avoid jitter ambiguity\n"
+                       "- Publication-ready plots")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Independent t-test\n"
+                       "- Mann-Whitney U\n"
+                       "- Welch's t-test\n"
+                       "- Permutation test")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "Cluttered with n > 200. "
+                     "Use violin or boxplot for "
+                     "larger samples.")
+
+
+def polar_density_widget():
+    st.markdown("## Polar Density Plot")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Sample Size", 50, 500, 200, key="pold_n")
+        modes = st.selectbox("Number of Modes", ["1 (Uniform)", "2 (Bimodal)", "3 (Trimodal)"], key="pold_m")
+        bw = st.slider("Bandwidth", 0.1, 1.0, 0.3, 0.05, key="pold_bw")
+    np.random.seed(42)
+    if modes == "1 (Uniform)":
+        theta = np.random.uniform(0, 2*np.pi, n)
+    elif modes == "2 (Bimodal)":
+        theta = np.concatenate([np.random.vonmises(0, 2, n//2), np.random.vonmises(np.pi, 2, n//2)])
+    else:
+        theta = np.concatenate([np.random.vonmises(0, 3, n//3), np.random.vonmises(2*np.pi/3, 3, n//3),
+                                np.random.vonmises(4*np.pi/3, 3, n//3)])
+    theta = theta % (2*np.pi)
+    kde_x = np.linspace(0, 2*np.pi, 200)
+    kde = stats.gaussian_kde(theta, bw_method=bw)
+    kde_y = kde(kde_x)
+    kde_y = kde_y / max(kde_y) * 100
+    fig = go.Figure()
+    fig.add_trace(go.Scatterpolar(r=kde_y, theta=np.degrees(kde_x), mode="lines",
+                                  line=dict(color="#4C78A8", width=3), fill="toself",
+                                  name="Density"))
+    fig.add_trace(go.Scatterpolar(r=np.full(n, 5), theta=np.degrees(theta), mode="markers",
+                                  marker=dict(color="#E45756", size=2, opacity=0.3),
+                                  name="Data", hoverinfo="skip"))
+    fig.update_layout(template="plotly_dark", height=450, margin=dict(l=40, r=40, t=30, b=40),
+                      polar=dict(angularaxis=dict(tickmode="array",
+                                                  tickvals=[0, 90, 180, 270],
+                                                  ticktext=["0°", "90°", "180°", "270°"])))
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Angle = direction\n"
+                    "- Radius = density\n"
+                    "- Peaks = preferred direction\n"
+                    "- Troughs = avoided direction")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Circular / directional data\n"
+                       "- Wind direction analysis\n"
+                       "- Seasonal pattern data\n"
+                       "- Animal movement bearings")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Rayleigh test\n"
+                       "- V-test\n"
+                       "- Watson-Williams test\n"
+                       "- Circular ANOVA")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "Circular data wraps at 0°/360° "
+                     "— linear KDE gives wrong "
+                     "density at boundary. Use "
+                     "von Mises-based KDE.")
+
+
+def pdf_plot_widget():
+    st.markdown("## Probability Density Function Plot")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        dist = st.selectbox("Distribution",
+                            ["Normal", "t (Student)", "F", "Chi-square", "Exponential", "Beta", "Gamma"],
+                            key="pdf_dist")
+        n_range = st.slider("x Range (—n to +n)", 1, 10, 4, key="pdf_n")
+    np.random.seed(42)
+    x = np.linspace(-n_range, n_range, 500)
+    x_pos = np.linspace(0.001, 2*n_range, 500)
+    if dist == "Normal":
+        mu = st.slider("Mean", -3.0, 3.0, 0.0, 0.1, key="pdf_mu")
+        sigma = st.slider("Std Dev", 0.1, 3.0, 1.0, 0.1, key="pdf_sigma")
+        y = stats.norm.pdf(x, mu, sigma)
+    elif dist == "t (Student)":
+        df = st.slider("Degrees of Freedom", 1, 50, 10, key="pdf_t_df")
+        y = stats.t.pdf(x, df)
+    elif dist == "F":
+        df1 = st.slider("DF Numerator", 1, 30, 5, key="pdf_f1")
+        df2 = st.slider("DF Denominator", 1, 50, 20, key="pdf_f2")
+        y = stats.f.pdf(x_pos, df1, df2)
+        x = x_pos
+    elif dist == "Chi-square":
+        df = st.slider("Degrees of Freedom", 1, 30, 5, key="pdf_cdf")
+        y = stats.chi2.pdf(x_pos, df)
+        x = x_pos
+    elif dist == "Exponential":
+        rate = st.slider("Rate (lambda)", 0.1, 5.0, 1.0, 0.1, key="pdf_exp")
+        y = stats.expon.pdf(x_pos, scale=1/rate)
+        x = x_pos
+    elif dist == "Beta":
+        a = st.slider("Alpha", 0.1, 10.0, 2.0, 0.1, key="pdf_ba")
+        b = st.slider("Beta", 0.1, 10.0, 2.0, 0.1, key="pdf_bb")
+        y = stats.beta.pdf(np.linspace(0.001, 0.999, 500), a, b)
+        x = np.linspace(0.001, 0.999, 500)
+    else:
+        shape = st.slider("Shape (k)", 0.1, 5.0, 2.0, 0.1, key="pdf_gk")
+        scale = st.slider("Scale (theta)", 0.1, 5.0, 1.0, 0.1, key="pdf_gs")
+        y = stats.gamma.pdf(x_pos, a=shape, scale=scale)
+        x = x_pos
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=x, y=y, mode="lines", fill="tozeroy",
+                             line=dict(color="#4C78A8", width=3),
+                             name=dist,
+                             hovertemplate="x=%{x:.2f}<br>PDF=%{y:.4f}<extra></extra>"))
+    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="x", yaxis_title="Density")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Area under curve = 1\n"
+                    "- Height = relative likelihood\n"
+                    "- Peak = most probable region\n"
+                    "- Spread = parameter variance")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Understand distribution shapes\n"
+                       "- Compare theoretical PDFs\n"
+                       "- Learn parameter effects\n"
+                       "- Check data-model fit")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- GOF (KS, AD, CVM tests)\n"
+                       "- Q-Q plot assessment\n"
+                       "- Parameter estimation\n"
+                       "- MLE / Bayesian inference")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "PDF > 1 is normal — PDF is "
+                     "a density, not a probability. "
+                     "Only the integral over a "
+                     "range gives probability.")
+
+
+def pareto_widget():
+    st.markdown("## Pareto Chart")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Sample Size", 50, 1000, 200, key="pareto_n")
+        n_cat = st.selectbox("Number of Categories", [5, 6, 7, 8, 10], index=2, key="pareto_k")
+    np.random.seed(42)
+    k = int(n_cat)
+    probs = np.random.dirichlet(np.ones(k) * 0.5)
+    counts = np.random.multinomial(n, probs)
+    cats = [f"Category {i+1}" for i in range(k)]
+    order = np.argsort(-counts)
+    cats_sorted = [cats[i] for i in order]
+    counts_sorted = counts[order]
+    cum_pct = np.cumsum(counts_sorted) / n * 100
+    fig = go.Figure()
+    fig.add_trace(go.Bar(x=cats_sorted, y=counts_sorted, name="Frequency",
+                         marker=dict(color="#4C78A8"),
+                         hovertemplate="%{y}<extra></extra>"))
+    fig.add_trace(go.Scatter(x=cats_sorted, y=cum_pct, mode="lines+markers",
+                             name="Cumulative %", yaxis="y2",
+                             line=dict(color="#E45756", width=3),
+                             marker=dict(size=8),
+                             hovertemplate="%{y:.1f}%<extra></extra>"))
+    fig.add_hline(y=80, line=dict(color="gray", dash="dash"), opacity=0.5)
+    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="Category", yaxis_title="Frequency",
+                      yaxis2=dict(overlaying="y", side="right", range=[0, 110],
+                                  title="Cumulative %", tickformat=".0f"),
+                      hovermode="x unified")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Bars sorted descending\n"
+                    "- Line = cumulative percent\n"
+                    "- 80% line = Pareto principle\n"
+                    "- Top few = majority of effect")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Quality control analysis\n"
+                       "- Identify vital few vs many\n"
+                       "- Prioritize improvements\n"
+                       "- Resource allocation")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Chi-square GOF\n"
+                       "- Lorenz curve\n"
+                       "- Gini coefficient\n"
+                       "- Concentration indices")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "80/20 is a guideline not a "
+                     "law. Actual split depends on "
+                     "your data. Always check the "
+                     "actual cumulative curve.")
+
+
+def dot_plot_widget():
+    st.markdown("## Dot Plot")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Sample Size", 10, 200, 50, key="dot_n")
+        dist = st.selectbox("Distribution", ["Normal", "Skewed", "Bimodal"], key="dot_dist")
+        jitter = st.slider("Jitter Amount", 0.0, 0.5, 0.2, 0.05, key="dot_jitter")
+    np.random.seed(42)
+    if dist == "Normal":
+        d = np.random.normal(0, 1, n)
+    elif dist == "Skewed":
+        d = np.random.gamma(2, 1, n)
+    else:
+        d = np.concatenate([np.random.normal(-1.5, 0.6, n//2), np.random.normal(1.5, 0.6, n//2)])
+    y_jitter = np.random.uniform(-jitter, jitter, n)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=d, y=y_jitter, mode="markers",
+                             marker=dict(color="#4C78A8", size=5, opacity=0.6),
+                             name="Data",
+                             hovertemplate="Value=%{x:.2f}<extra></extra>"))
+    fig.add_hline(y=0, line=dict(color="gray", width=1, dash="dot"), opacity=0.5)
+    fig.update_layout(template="plotly_dark", height=200, margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="Value", yaxis=dict(visible=False),
+                      hovermode="x", showlegend=False)
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Each dot = one observation\n"
+                    "- Horizontal spread = distribution\n"
+                    "- Stacked dots = multiple values\n"
+                    "- Gaps = empty regions")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Small datasets (n < 100)\n"
+                       "- Show exact distribution\n"
+                       "- Identify clusters and gaps\n"
+                       "- Complement to boxplot")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- One-sample t-test\n"
+                       "- Wilcoxon signed-rank\n"
+                       "- Sign test\n"
+                       "- Shapiro-Wilk normality")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "Random jitter can mislead. "
+                     "Use fixed seed for "
+                     "reproducibility. Beeswarm "
+                     "is more accurate.")
+
+
+def time_series_widget():
+    st.markdown("## Time Series Plot")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Time Points", 20, 300, 100, key="ts_n")
+        trend = st.selectbox("Trend", ["None (stationary)", "Linear", "Seasonal", "Trend + Seasonal"], key="ts_trend")
+        noise = st.slider("Noise Level", 0.0, 3.0, 0.5, 0.1, key="ts_noise")
+    np.random.seed(42)
+    t = np.arange(n)
+    y = np.random.normal(0, noise, n)
+    if trend == "Linear":
+        y += 0.05 * t
+    elif trend == "Seasonal":
+        y += 2 * np.sin(2 * np.pi * t / 12)
+    elif trend == "Trend + Seasonal":
+        y += 0.03 * t + 2 * np.sin(2 * np.pi * t / 12)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=t, y=y, mode="lines+markers",
+                             line=dict(color="#4C78A8", width=2),
+                             marker=dict(size=3), name="Series",
+                             hovertemplate="t=%{x}<br>y=%{y:.2f}<extra></extra>"))
+    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="Time", yaxis_title="Value", hovermode="x unified")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- X-axis = time order\n"
+                    "- Points connected by line\n"
+                    "- Trend = long-term direction\n"
+                    "- Seasonality = repeating pattern")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Longitudinal / repeated data\n"
+                       "- Trend analysis / forecasting\n"
+                       "- Seasonal pattern detection\n"
+                       "- Intervention effect analysis")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Augmented Dickey-Fuller\n"
+                       "- Ljung-Box test\n"
+                       "- Durbin-Watson test\n"
+                       "- Granger causality")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "Don't connect points across "
+                     "missing time gaps. Always "
+                     "check for autocorrelation "
+                     "before modeling.")
+
+
+def pie_chart_widget():
+    st.markdown("## Pie Chart")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        k = st.selectbox("Number of Slices", [3, 4, 5, 6], index=1, key="pie_k")
+        pattern = st.selectbox("Distribution", ["Equal", "Dominant", "Gradual"], key="pie_pattern")
+        explode = st.toggle("Explode Largest Slice", False, key="pie_explode")
+    np.random.seed(42)
+    kg = int(k)
+    if pattern == "Equal":
+        vals = np.ones(kg)
+    elif pattern == "Dominant":
+        vals = np.array([5] + [1]*(kg-1))
+    else:
+        vals = np.arange(kg, 0, -1) + 1
+    labels = [f"Category {i+1}" for i in range(kg)]
+    colors = px.colors.qualitative.Plotly[:kg]
+    pull = [0.1 if explode and i == 0 else 0 for i in range(kg)]
+    fig = go.Figure(data=[go.Pie(labels=labels, values=vals, pull=pull,
+                                 marker=dict(colors=colors),
+                                 textinfo="label+percent",
+                                 hovertemplate="%{label}<br>%{value} (%{percent})<extra></extra>")])
+    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=30, b=10))
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Each slice = proportion\n"
+                    "- Area encodes percentage\n"
+                    "- Full circle = 100%\n"
+                    "- Best for few categories")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Simple part-to-whole\n"
+                       "- Few categories (2-5)\n"
+                       "- Rough visual comparison\n"
+                       "- Non-technical audience")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Chi-square GOF\n"
+                       "- Binomial test\n"
+                       "- Proportion tests\n"
+                       "- Confidence intervals")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     ">5 slices is hard to read. "
+                     "3D pies distort proportions. "
+                     "Bar charts or treemaps "
+                     "are often better.")
+
+
+def area_graph_widget():
+    st.markdown("## Area Graph")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Time Points", 10, 100, 40, key="area_n")
+        k = st.selectbox("Number of Series", [2, 3, 4], index=1, key="area_k")
+        style = st.selectbox("Style", ["Stacked", "Overlaid"], key="area_style")
+    np.random.seed(42)
+    kg = int(k)
+    t = np.arange(n)
+    colors = px.colors.qualitative.Plotly[:kg]
+    fig = go.Figure()
+    if style == "Stacked":
+        bases = np.zeros(n)
+        for i in range(kg):
+            y = np.abs(np.random.normal(10*(i+1), 2, n) + 0.1 * t * (i+1))
+            fig.add_trace(go.Scatter(x=t, y=y + bases, mode="lines",
+                                     line=dict(width=2), name=f"Series {i+1}",
+                                     stackgroup="one", fillcolor=colors[i]))
+            bases += y
+    else:
+        for i in range(kg):
+            y = np.abs(np.random.normal(10*(i+1), 2, n) + 0.05 * t * (i+1))
+            fig.add_trace(go.Scatter(x=t, y=y, mode="lines", fill="tozeroy",
+                                     line=dict(width=2), name=f"Series {i+1}",
+                                     fillcolor=colors[i], opacity=0.3))
+    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="Time", yaxis_title="Value", hovermode="x unified")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Filled area = magnitude\n"
+                    "- Stacked = total + composition\n"
+                    "- Overlaid = compare shapes\n"
+                    "- Slope = rate of change")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Magnitude over time\n"
+                       "- Compare series contributions\n"
+                       "- Cumulative trends\n"
+                       "- Composition changes")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Time series decomposition\n"
+                       "- Change point detection\n"
+                       "- Trend analysis\n"
+                       "- Intervention analysis")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     ">4 stacked series becomes "
+                     "unreadable. Overlaid areas "
+                     "need transparency.")
+
+
+def contour_widget():
+    st.markdown("## Contour Plot")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Sample Size", 100, 1000, 300, key="cont_n")
+        bw = st.slider("Bandwidth", 0.1, 1.0, 0.3, 0.05, key="cont_bw")
+        dist = st.selectbox("Distribution", ["Bivariate Normal", "Two Clusters", "Donut"], key="cont_dist")
+    np.random.seed(42)
+    if dist == "Bivariate Normal":
+        x = np.random.normal(0, 1, n)
+        y = np.random.normal(0, 1, n)
+    elif dist == "Two Clusters":
+        x = np.concatenate([np.random.normal(-2, 0.8, n//2), np.random.normal(2, 0.8, n//2)])
+        y = np.concatenate([np.random.normal(0, 0.8, n//2), np.random.normal(0, 0.8, n//2)])
+    else:
+        angles = np.random.uniform(0, 2*np.pi, n)
+        radii = np.random.normal(2, 0.4, n)
+        x = radii * np.cos(angles)
+        y = radii * np.sin(angles)
+    kde = stats.gaussian_kde(np.vstack([x, y]), bw_method=bw)
+    xi, yi = np.meshgrid(np.linspace(min(x)-1, max(x)+1, 50),
+                         np.linspace(min(y)-1, max(y)+1, 50))
+    zi = kde(np.vstack([xi.ravel(), yi.ravel()])).reshape(xi.shape)
+    fig = go.Figure()
+    fig.add_trace(go.Contour(x=xi[0], y=yi[:, 0], z=zi, colorscale="Viridis",
+                             contours=dict(coloring="heatmap"),
+                             hovertemplate="x=%{x:.2f}<br>y=%{y:.2f}<br>density=%{z:.4f}<extra></extra>"))
+    fig.add_trace(go.Scatter(x=x, y=y, mode="markers",
+                             marker=dict(color="white", size=2, opacity=0.3),
+                             name="Data", hoverinfo="skip"))
+    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="X", yaxis_title="Y")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Lines = constant density\n"
+                    "- Closer lines = steeper gradient\n"
+                    "- Peaks = dense regions\n"
+                    "- Color = density intensity")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Visualize 2D distribution\n"
+                       "- Identify density peaks\n"
+                       "- Replace scatter for large n\n"
+                       "- Topographic data display")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Bivariate normality test\n"
+                       "- Hotelling's T-squared\n"
+                       "- Multivariate outlier test\n"
+                       "- Kernel density estimation")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "Bandwidth changes contours "
+                     "dramatically. Too low = spikes, "
+                     "too high = oversmoothed. "
+                     "Use cross-validation.")
+
+
+def stacked_bar_widget():
+    st.markdown("## Stacked Bar Chart")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n_groups = st.selectbox("Number of Groups", [2, 3, 4], index=1, key="stbar_ng")
+        n_cat = st.selectbox("Number of Categories", [2, 3, 4], index=2, key="stbar_nc")
+        style = st.selectbox("Style", ["Stacked", "100% Stacked"], key="stbar_style")
+    np.random.seed(42)
+    ng = int(n_groups)
+    nc = int(n_cat)
+    data = np.random.randint(5, 30, (ng, nc))
+    groups = [f"Group {i+1}" for i in range(ng)]
+    cats = [f"Cat {i+1}" for i in range(nc)]
+    colors = px.colors.qualitative.Plotly[:nc]
+    fig = go.Figure()
+    if style == "Stacked":
+        for i in range(nc):
+            fig.add_trace(go.Bar(name=cats[i], x=groups, y=data[:, i],
+                                 marker_color=colors[i],
+                                 hovertemplate="%{y}<extra></extra>"))
+    else:
+        totals = data.sum(axis=1)
+        pcts = data / totals[:, None] * 100
+        for i in range(nc):
+            fig.add_trace(go.Bar(name=cats[i], x=groups, y=pcts[:, i],
+                                 marker_color=colors[i],
+                                 hovertemplate="%{y:.1f}%<extra></extra>"))
+    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="Group",
+                      yaxis_title="Count" if style=="Stacked" else "Percentage",
+                      barmode="stack", hovermode="x unified")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Total bar = group total\n"
+                    "- Segment = category contribution\n"
+                    "- 100% = proportions not counts\n"
+                    "- Compare composition across groups")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Show group composition\n"
+                       "- Compare totals and parts\n"
+                       "- Survey response breakdowns\n"
+                       "- Budget allocation view")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Chi-square independence\n"
+                       "- Fisher's exact test\n"
+                       "- G-test\n"
+                       "- Correspondence analysis")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "Non-100% bars are hard to "
+                     "compare across different "
+                     "totals. Normalize to 100% "
+                     "for composition comparison.")
+
+
+def pop_pyramid_widget():
+    st.markdown("## Population Pyramid")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Total Population (K)", 10, 1000, 100, key="pyram_n")
+        skew = st.slider("Age Skew", -2.0, 2.0, 0.0, 0.1, key="pyram_skew")
+        dev = st.slider("Sex Deviation", -1.0, 1.0, 0.0, 0.1, key="pyram_dev")
+    np.random.seed(42)
+    age_groups = ["0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34",
+                  "35-39", "40-44", "45-49", "50-54", "55-59", "60-64",
+                  "65-69", "70-74", "75-79", "80+"]
+    k = len(age_groups)
+    ages = np.arange(k)
+    base = np.exp(-0.1 * ages + skew * 0.05 * ages)
+    base = base / base.sum() * n
+    male = base * (0.5 + dev * 0.1) + np.random.uniform(-1, 1, k) * 0.5
+    female = base * (0.5 - dev * 0.1) + np.random.uniform(-1, 1, k) * 0.5
+    male = np.maximum(male, 0)
+    female = np.maximum(female, 0)
+    fig = go.Figure()
+    fig.add_trace(go.Bar(x=-male, y=age_groups, orientation="h",
+                         name="Male", marker_color="#4C78A8",
+                         hovertemplate="%{x:.1f}K<extra></extra>"))
+    fig.add_trace(go.Bar(x=female, y=age_groups, orientation="h",
+                         name="Female", marker_color="#E45756",
+                         hovertemplate="%{x:.1f}K<extra></extra>"))
+    fig.update_layout(template="plotly_dark", height=450, margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="Population (K)", yaxis_title="Age Group",
+                      barmode="overlay", hovermode="y unified")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Left = male, Right = female\n"
+                    "- Wide base = high birth rate\n"
+                    "- Narrow top = lower life exp\n"
+                    "- Bulges = baby boom cohorts")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Demographic analysis\n"
+                       "- Population structure\n"
+                       "- Age-sex distribution\n"
+                       "- Policy and planning")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Chi-square independence\n"
+                       "- Age standardization\n"
+                       "- Dependency ratio\n"
+                       "- Life table analysis")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "Different scales on left/right "
+                     "axes mislead. Always use "
+                     "the same scale on both "
+                     "sides for fair comparison.")
+
+
+def growth_curve_widget():
+    st.markdown("## Growth Curve Plot")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Time Points", 10, 100, 30, key="gc_n")
+        noise = st.slider("Noise Level", 0.0, 2.0, 0.3, 0.05, key="gc_noise")
+        model = st.selectbox("Growth Model", ["Logistic", "Gompertz", "Exponential"], key="gc_model")
+    np.random.seed(42)
+    t = np.linspace(0, 20, n)
+    if model == "Logistic":
+        L, k, t0 = 10, 0.5, 10
+        y_true = L / (1 + np.exp(-k * (t - t0)))
+    elif model == "Gompertz":
+        L, k, t0 = 10, 0.3, 5
+        y_true = L * np.exp(-np.exp(-k * (t - t0)))
+    else:
+        r, y0 = 0.2, 0.5
+        y_true = y0 * np.exp(r * t)
+    y = y_true + np.random.normal(0, noise, n)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=t, y=y, mode="markers",
+                             marker=dict(color="#4C78A8", size=5, opacity=0.6),
+                             name="Observed",
+                             hovertemplate="t=%{x:.1f}<br>y=%{y:.2f}<extra></extra>"))
+    fig.add_trace(go.Scatter(x=t, y=y_true, mode="lines",
+                             line=dict(color="#E45756", width=3),
+                             name="True Growth",
+                             hovertemplate="t=%{x:.1f}<br>y=%{y:.2f}<extra></extra>"))
+    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="Time", yaxis_title="Size / Population")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- S-curve = logistic growth\n"
+                    "- Asymptote = carrying capacity\n"
+                    "- Steepest = max growth rate\n"
+                    "- Lag → log → stationary phases")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Population growth modeling\n"
+                       "- Epidemic curve analysis\n"
+                       "- Learning curve analysis\n"
+                       "- Biological growth processes")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Non-linear regression F-test\n"
+                       "- Model comparison (AIC/BIC)\n"
+                       "- Residual diagnostics\n"
+                       "- Bootstrap parameter CIs")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "Extrapolating beyond observed "
+                     "data is risky. Asymptote "
+                     "depends strongly on model "
+                     "choice.")
+
+
+def forest_plot_widget():
+    st.markdown("## Forest Plot")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n_studies = st.slider("Number of Studies", 5, 30, 10, key="forest_ns")
+        eff = st.slider("Overall Effect (log OR)", -1.0, 1.0, 0.3, 0.05, key="forest_eff")
+        hetero = st.slider("Heterogeneity", 0.0, 1.0, 0.3, 0.05, key="forest_hetero")
+    np.random.seed(42)
+    k = int(n_studies)
+    ses = np.random.uniform(0.1, 0.5, k)
+    log_ors = np.random.normal(eff, hetero, k)
+    lower = log_ors - 1.96 * ses
+    upper = log_ors + 1.96 * ses
+    ors = np.exp(log_ors)
+    or_lower = np.exp(lower)
+    or_upper = np.exp(upper)
+    studies = [f"Study {i+1}" for i in range(k)]
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=ors, y=studies, mode="markers",
+                             marker=dict(color="#4C78A8", size=10),
+                             error_x=dict(type="data", symmetric=False,
+                                          array=or_upper - ors,
+                                          arrayminus=ors - or_lower,
+                                          width=5, color="#4C78A8"),
+                             hovertemplate="%{y}<br>OR=%{x:.2f} "
+                                           "[%{customdata[0]:.2f}, %{customdata[1]:.2f}]<extra></extra>",
+                             customdata=np.column_stack([or_lower, or_upper])))
+    fig.add_vline(x=1, line=dict(color="gray", dash="dash"), opacity=0.5)
+    fig.add_vline(x=np.exp(eff), line=dict(color="#E45756", width=3, dash="dot"), opacity=0.7)
+    fig.update_layout(template="plotly_dark", height=max(30*k, 200),
+                      margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="Odds Ratio (log scale)", xaxis=dict(type="log"),
+                      yaxis_title="", hovermode="y")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Each row = one study\n"
+                    "- Dot = effect size (OR)\n"
+                    "- Line = 95% confidence interval\n"
+                    "- Red = pooled estimate (meta)")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Meta-analysis reporting\n"
+                       "- Systematic review synthesis\n"
+                       "- Compare across multiple studies\n"
+                       "- Identify heterogeneous results")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Cochran's Q test\n"
+                       "- Higgins I² statistic\n"
+                       "- Egger's test (pub bias)\n"
+                       "- Meta-regression")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "Pooled estimate (diamond) is "
+                     "the overall effect, NOT "
+                     "the average of individual "
+                     "study ORs.")
+
+
+# =========================
+# SURVIVAL ANALYSIS HELPERS
+# =========================
+
+
+def _gen_surv_data(n, hr, cens_frac):
+    np.random.seed(42)
+    t_ctrl = np.random.exponential(12, n)
+    t_trt = np.random.exponential(12 / hr, n)
+    times = np.concatenate([t_ctrl, t_trt])
+    groups = np.array([0] * n + [1] * n)
+    cens = np.random.uniform(0, 25, 2 * n)
+    obs = np.minimum(times, cens)
+    event = (times <= cens).astype(int)
+    return obs, event, groups
+
+
+def _km(t, e):
+    df = pd.DataFrame({"t": t, "e": e}).sort_values("t")
+    ts = sorted(df["t"].unique())
+    s = 1.0
+    ot, os = [0], [1.0]
+    for ti in ts:
+        nr = (df["t"] >= ti).sum()
+        ne = df.loc[df["t"] == ti, "e"].sum()
+        if nr > 0:
+            s *= (1 - ne / nr)
+        ot.extend([ti, ti])
+        os.extend([os[-1], s])
+    return np.array(ot), np.array(os)
+
+
+def _na(t, e):
+    df = pd.DataFrame({"t": t, "e": e}).sort_values("t")
+    h = 0.0
+    ot, oh = [0], [0.0]
+    for ti in sorted(df["t"].unique()):
+        nr = (df["t"] >= ti).sum()
+        ne = df.loc[df["t"] == ti, "e"].sum()
+        if nr > 0:
+            h += ne / nr
+        ot.extend([ti, ti])
+        oh.extend([oh[-1], h])
+    return np.array(ot), np.array(oh)
+
+
+def kaplan_meier_widget():
+    st.markdown("## Kaplan-Meier Curve")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Patients per Group", 20, 200, 50, key="km_n")
+        hr = st.slider("Hazard Ratio (Trt/Control)", 0.2, 1.5, 0.5, 0.05, key="km_hr")
+        cens = st.slider("Censoring Rate", 0.0, 0.5, 0.2, 0.05, key="km_cens")
+        show_ci = st.toggle("Show 95% CI", True, key="km_ci")
+    t, e, g = _gen_surv_data(n, hr, cens)
+    fig = go.Figure()
+    for grp, name, color in [(0, "Control", "#4C78A8"), (1, "Treatment", "#E45756")]:
+        mask = g == grp
+        tt, ss = _km(t[mask], e[mask])
+        fig.add_trace(go.Scatter(x=tt, y=ss, mode="lines",
+                                 line=dict(color=color, width=2.5),
+                                 name=name,
+                                 hovertemplate="Time=%{x:.1f}<br>Survival=%{y:.3f}<extra></extra>"))
+        cens_t = t[mask & (e == 0)]
+        if len(cens_t) > 0:
+            cens_s = []
+            for ct in cens_t:
+                idx = np.searchsorted(tt, ct, side="right") - 1
+                cens_s.append(ss[max(0, idx)])
+            fig.add_trace(go.Scatter(x=cens_t, y=cens_s, mode="markers",
+                                     marker=dict(color=color, symbol="line-ns", size=8),
+                                     showlegend=False, hoverinfo="skip"))
+    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="Time", yaxis_title="Survival Probability",
+                      hovermode="x unified")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Step down = event occurred\n"
+                    "- Tick marks = censored\n"
+                    "- Lower curve = worse survival\n"
+                    "- Gap between groups = treatment effect")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Time-to-event analysis\n"
+                       "- Clinical trial comparison\n"
+                       "- Estimate median survival\n"
+                       "- Treatment efficacy assessment")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Log-rank test\n"
+                       "- Wilcoxon-Gehan test\n"
+                       "- Peto-Peto test\n"
+                       "- Cox proportional hazards")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "KM curves beyond last event "
+                     "are unstable. Always show "
+                     "number at risk below "
+                     "the x-axis.")
+
+
+def nelson_aalen_widget():
+    st.markdown("## Nelson-Aalen Plot")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Patients per Group", 20, 200, 50, key="na_n")
+        hr = st.slider("Hazard Ratio", 0.2, 1.5, 0.5, 0.05, key="na_hr")
+        cens = st.slider("Censoring Rate", 0.0, 0.5, 0.2, 0.05, key="na_cens")
+    t, e, g = _gen_surv_data(n, hr, cens)
+    fig = go.Figure()
+    for grp, name, color in [(0, "Control", "#4C78A8"), (1, "Treatment", "#E45756")]:
+        mask = g == grp
+        tt, hh = _na(t[mask], e[mask])
+        fig.add_trace(go.Scatter(x=tt, y=hh, mode="lines",
+                                 line=dict(color=color, width=2.5),
+                                 name=name,
+                                 hovertemplate="Time=%{x:.1f}<br>Cum Hazard=%{y:.3f}<extra></extra>"))
+    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="Time", yaxis_title="Cumulative Hazard",
+                      hovermode="x unified")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Step up = event increment\n"
+                    "- Steeper = higher hazard\n"
+                    "- Slope = instantaneous hazard\n"
+                    "- Gap = constant HR assumption")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Non-parametric hazard estimate\n"
+                       "- Compare hazard between groups\n"
+                       "- Check proportional hazards\n"
+                       "- Complement to KM curve")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Log-rank test\n"
+                       "- Cox PH model\n"
+                       "- Schoenfeld residuals\n"
+                       "- Cumulative hazard comparison")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "Nelson-Aalen is a cumulative "
+                     "estimate, not the hazard "
+                     "rate itself. Slope gives "
+                     "hazard, not the absolute "
+                     "value.")
+
+
+def hazard_function_widget():
+    st.markdown("## Hazard Function Plot")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Sample Size", 50, 500, 200, key="hf_n")
+        base_hazard = st.selectbox("Baseline Shape", ["Constant", "Increasing", "Decreasing", "Bathtub"], key="hf_shape")
+        bw = st.slider("Smoothing Bandwidth", 1.0, 10.0, 3.0, 0.5, key="hf_bw")
+    np.random.seed(42)
+    t = np.linspace(0, 50, 500)
+    if base_hazard == "Constant":
+        h_true = np.full_like(t, 0.05)
+    elif base_hazard == "Increasing":
+        h_true = 0.01 + 0.003 * t
+    elif base_hazard == "Decreasing":
+        h_true = 0.08 - 0.001 * t
+    else:
+        h_true = 0.01 + 0.002 * np.abs(t - 25)
+    h_true = np.maximum(h_true, 0.001)
+    surv_true = np.exp(-np.cumsum(h_true) * (t[1] - t[0]))
+    event_times = []
+    for i in range(n):
+        u = np.random.uniform()
+        idx = np.searchsorted(surv_true, u, side="left")
+        if idx < len(t):
+            event_times.append(t[idx])
+        else:
+            event_times.append(50)
+    event_times = np.array(event_times)
+    k = stats.gaussian_kde(event_times, bw_method=bw / 50)
+    h_est = k(t) / np.maximum(np.array([(event_times >= ti).mean() for ti in t]), 0.001)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=t, y=h_true, mode="lines",
+                             line=dict(color="gray", width=2, dash="dot"),
+                             name="True Hazard",
+                             hovertemplate="Time=%{x:.1f}<br>Hazard=%{y:.4f}<extra></extra>"))
+    fig.add_trace(go.Scatter(x=t, y=h_est, mode="lines",
+                             line=dict(color="#4C78A8", width=2.5),
+                             name="Estimated Hazard",
+                             hovertemplate="Time=%{x:.1f}<br>Hazard=%{y:.4f}<extra></extra>"))
+    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="Time", yaxis_title="Hazard Rate",
+                      hovermode="x unified")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Hazard = instantaneous risk\n"
+                    "- Increasing = wearing out\n"
+                    "- Decreasing = early failures\n"
+                    "- Bathtub = both phases")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Model time-to-failure\n"
+                       "- Understand risk over time\n"
+                       "- Compare population hazard shapes\n"
+                       "- Reliability engineering")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Weibull distribution fit\n"
+                       "- Exponential GOF test\n"
+                       "- Cox-Snell residuals\n"
+                       "- Hazard shape tests")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "Hazard is not a probability — "
+                     "it can exceed 1. It is a "
+                     "rate (events per time unit)."
+                     "Do not confuse with risk.")
+
+
+def cumulative_hazard_widget():
+    st.markdown("## Cumulative Hazard Plot")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n = st.slider("Patients per Group", 20, 200, 50, key="ch_n")
+        hr = st.slider("Hazard Ratio (Trt/Control)", 0.2, 1.5, 0.5, 0.05, key="ch_hr")
+        cens = st.slider("Censoring Rate", 0.0, 0.5, 0.2, 0.05, key="ch_cens")
+        log_scale = st.toggle("Log Scale", False, key="ch_log")
+    t, e, g = _gen_surv_data(n, hr, cens)
+    fig = go.Figure()
+    for grp, name, color in [(0, "Control", "#4C78A8"), (1, "Treatment", "#E45756")]:
+        mask = g == grp
+        tt, hh = _na(t[mask], e[mask])
+        fig.add_trace(go.Scatter(x=tt, y=hh, mode="lines",
+                                 line=dict(color=color, width=2.5),
+                                 name=name,
+                                 hovertemplate="Time=%{x:.1f}<br>Cum H=%{y:.3f}<extra></extra>"))
+    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="Time", yaxis_title="Cumulative Hazard" + (" (log)" if log_scale else ""),
+                      yaxis_type="log" if log_scale else "linear",
+                      hovermode="x unified")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Log scale → parallel = PH\n"
+                    "- Upward curve = increasing hazard\n"
+                    "- Downward curve = decreasing\n"
+                    "- Straight line = constant hazard")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Check proportional hazards\n"
+                       "- Estimate cumulative risk\n"
+                       "- Model diagnostic tool\n"
+                       "- Complement to KM curves")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Cox PH model\n"
+                       "- Schoenfeld residuals\n"
+                       "- Log-cumulative hazard plot\n"
+                       "- PH assumption check")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "Log-cumulative hazard lines "
+                     "must be parallel for PH. "
+                     "Crossing lines = non-PH. "
+                     "Use stratified Cox or AFT.")
+
+
+def cox_ph_widget():
+    st.markdown("## Cox PH Effect Plot")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n_cov = st.selectbox("Number of Covariates", [4, 6, 8], index=0, key="cox_n")
+        n = st.slider("Sample Size", 100, 1000, 300, key="cox_sample")
+        hr_range = st.slider("HR Range", 1.0, 5.0, 3.0, 0.5, key="cox_hr")
+    np.random.seed(42)
+    k = int(n_cov)
+    cov_names = [f"Treatment", "Age (10yr)", "Biomarker", "Comorbidity",
+                 "BMI (>30)", "Smoking", "Stage III+", "Surgery"][:k]
+    log_hrs = np.random.uniform(-np.log(hr_range), np.log(hr_range), k)
+    ses = np.random.uniform(0.15, 0.4, k)
+    hr = np.exp(log_hrs)
+    lower = np.exp(log_hrs - 1.96 * ses)
+    upper = np.exp(log_hrs + 1.96 * ses)
+    p_vals = np.random.uniform(0.001, 0.2, k)
+    sig = p_vals < 0.05
+    order = np.argsort(hr)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=hr[order], y=[cov_names[i] for i in order], mode="markers",
+                             marker=dict(color=["#E45756" if s else "#4C78A8" for s in sig[order]],
+                                         size=12),
+                             error_x=dict(type="data", symmetric=False,
+                                          array=upper[order] - hr[order],
+                                          arrayminus=hr[order] - lower[order],
+                                          width=5, color="gray"),
+                             hovertemplate="%{y}<br>HR=%{x:.2f}<extra></extra>"))
+    fig.add_vline(x=1, line=dict(color="gray", dash="dash"), opacity=0.5)
+    fig.update_layout(template="plotly_dark", height=max(40*k, 200),
+                      margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="Hazard Ratio (log scale)", xaxis=dict(type="log"),
+                      yaxis_title="", hovermode="y")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Dot = estimated HR\n"
+                    "- Line = 95% CI\n"
+                    "- HR > 1 = increased risk\n"
+                    "- Red = significant (p < .05)")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Multivariable survival analysis\n"
+                       "- Adjust for confounders\n"
+                       "- Identify risk factors\n"
+                       "- Compare effect sizes")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Wald test per covariate\n"
+                       "- Likelihood ratio test\n"
+                       "- Proportional hazards test\n"
+                       "- Schoenfeld residual test")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "HR > 1 = higher hazard (worse). "
+                     "PH assumption must hold. "
+                     "HR is not risk ratio — "
+                     "it is relative hazard rate.")
+
+
+def surv_heatmap_widget():
+    st.markdown("## Survival Probability Heatmap")
+    c1, c2 = st.columns([1, 2.5])
+    with c1:
+        n_time = st.slider("Time Points", 10, 50, 20, key="shm_nt")
+        n_cov = st.slider("Covariate Values", 10, 50, 20, key="shm_nc")
+        base_haz = st.slider("Baseline Hazard Rate", 0.01, 0.2, 0.05, 0.01, key="shm_haz")
+        hr_effect = st.slider("HR per Covariate Unit", 0.5, 3.0, 1.5, 0.1, key="shm_hr")
+    np.random.seed(42)
+    times = np.linspace(0, 50, n_time)
+    cov_vals = np.linspace(-2, 2, n_cov)
+    S = np.zeros((n_cov, n_time))
+    for i, c in enumerate(cov_vals):
+        hr = hr_effect ** c
+        S[i, :] = np.exp(-base_haz * hr * times)
+    fig = go.Figure(data=go.Heatmap(x=times, y=np.round(cov_vals, 1), z=S,
+                                    colorscale="Viridis", zmin=0, zmax=1,
+                                    colorbar=dict(title="Survival"),
+                                    hovertemplate="Time=%{x:.1f}<br>Covariate=%{y}<br>Survival=%{z:.3f}<extra></extra>"))
+    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=30, b=10),
+                      xaxis_title="Time", yaxis_title="Covariate Value")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    with st.expander("📖 Interpretation & Guidance", expanded=True):
+        col_i, col_w, col_t, col_m = st.columns(4)
+        with col_i:
+            st.info("**Interpretation**\n\n"
+                    "- Yellow = high survival\n"
+                    "- Purple = low survival\n"
+                    "- Row = covariate effect on survival\n"
+                    "- Column = time effect")
+        with col_w:
+            st.success("**When To Use**\n\n"
+                       "- Visualize covariate effect\n"
+                       "- Model-predicted survival\n"
+                       "- Identify risk strata\n"
+                       "- Treatment effect surface")
+        with col_t:
+            st.warning("**Associated Tests**\n\n"
+                       "- Cox PH model predictions\n"
+                       "- Parametric survival models\n"
+                       "- Time-dependent covariates\n"
+                       "- Interaction testing")
+        with col_m:
+            st.error("**Common Mistake**\n\n"
+                     "Assumes proportional hazards "
+                     "and exponential baseline. "
+                     "Real survival may have "
+                     "time-varying effects.")
+
+
 # =========================
 # GRAPH REGISTRY
 # =========================
@@ -2890,6 +4193,195 @@ graphs = {
         "associated_tests": ["MANOVA", "Canonical correlation", "Discriminant analysis", "Cluster validation"],
         "widget_function": parallel_coords_widget,
     },
+    "Stem-and-Leaf Plot": {
+        "category": "Distribution Plots",
+        "description": "A text-based display showing the leading digit (stem) and trailing digit (leaf) of each data point.",
+        "when_to_use": "Small datasets, quick manual distribution check, preserving exact values.",
+        "interpretation": "Stem = leading digit; leaf = trailing digit; row length = frequency of stem.",
+        "common_mistakes": "Choose stem unit carefully — too few stems loses detail, too many creates sparse rows.",
+        "associated_tests": ["Kolmogorov-Smirnov", "Shapiro-Wilk", "Anderson-Darling", "Visual shape assessment"],
+        "widget_function": stem_leaf_widget,
+    },
+    "Frequency Polygon": {
+        "category": "Distribution Plots",
+        "description": "A line graph connecting the midpoints of histogram bins to show distribution shape smoothly.",
+        "when_to_use": "Overlaying multiple distributions, comparing group shapes, cumulative frequency display.",
+        "interpretation": "Points at bin midpoints; line shows distribution shape; area under polygon = total N.",
+        "common_mistakes": "Bin count changes polygon shape significantly — always try multiple bin widths.",
+        "associated_tests": ["Chi-square GOF", "Kolmogorov-Smirnov", "Anderson-Darling", "Distribution fit test"],
+        "widget_function": freq_poly_widget,
+    },
+    "Beeswarm / Swarm Plot": {
+        "category": "Comparison Plots",
+        "description": "Non-overlapping points showing every observation with exact position and distribution shape.",
+        "when_to_use": "Small to moderate n, showing every data point clearly, publication-ready group plots.",
+        "interpretation": "Each dot = one observation; no overlap = exact value visible; density by vertical stacking.",
+        "common_mistakes": "Cluttered with n > 200 — use violin or boxplot for larger samples.",
+        "associated_tests": ["Independent t-test", "Mann-Whitney U", "Welch's t-test", "Permutation test"],
+        "widget_function": beeswarm_widget,
+    },
+    "Polar Density Plot": {
+        "category": "Distribution Plots",
+        "description": "A circular density plot showing the distribution of directional / angular data.",
+        "when_to_use": "Circular or directional data, wind direction analysis, seasonal patterns, animal movement.",
+        "interpretation": "Angle = direction; radius = density; peaks = preferred direction; troughs = avoided direction.",
+        "common_mistakes": "Circular data wraps at 0°/360° — linear KDE gives wrong boundary density.",
+        "associated_tests": ["Rayleigh test", "V-test", "Watson-Williams test", "Circular ANOVA"],
+        "widget_function": polar_density_widget,
+    },
+    "Probability Density Function Plot": {
+        "category": "Distribution Plots",
+        "description": "Interactive theoretical PDFs for Normal, t, F, Chi-square, Exponential, Beta, and Gamma distributions.",
+        "when_to_use": "Understanding distribution shapes, comparing theoretical PDFs, learning parameter effects.",
+        "interpretation": "Area under curve = 1; height = relative likelihood; peak = most probable region.",
+        "common_mistakes": "PDF can exceed 1 — it is a density not a probability. Only the integral over a range gives probability.",
+        "associated_tests": ["GOF (KS, AD, CVM)", "Q-Q plot", "Parameter estimation", "MLE / Bayesian inference"],
+        "widget_function": pdf_plot_widget,
+    },
+    "Pareto Chart": {
+        "category": "Distribution Plots",
+        "description": "A bar chart sorted by frequency with a cumulative percentage line to highlight the vital few.",
+        "when_to_use": "Quality control, identifying vital few vs trivial many, prioritizing improvements.",
+        "interpretation": "Bars sorted descending; line = cumulative percent; 80% line = Pareto principle.",
+        "common_mistakes": "80/20 is a guideline not a law — actual split depends on your data.",
+        "associated_tests": ["Chi-square GOF", "Lorenz curve", "Gini coefficient", "Concentration indices"],
+        "widget_function": pareto_widget,
+    },
+    "Dot Plot": {
+        "category": "Distribution Plots",
+        "description": "Each observation shown as a dot along a single axis with jitter for overlapping values.",
+        "when_to_use": "Small datasets, showing exact distribution, identifying clusters and gaps.",
+        "interpretation": "Each dot = one observation; horizontal spread = distribution; stacked = multiple values.",
+        "common_mistakes": "Random jitter can mislead — use fixed seed for reproducibility.",
+        "associated_tests": ["One-sample t-test", "Wilcoxon signed-rank", "Sign test", "Shapiro-Wilk"],
+        "widget_function": dot_plot_widget,
+    },
+    "Time Series Plot": {
+        "category": "Comparison Plots",
+        "description": "Data points plotted in time order to reveal trends, seasonality, and patterns.",
+        "when_to_use": "Longitudinal data, trend analysis, seasonal pattern detection, intervention effects.",
+        "interpretation": "X-axis = time order; trend = long-term direction; seasonality = repeating pattern.",
+        "common_mistakes": "Don't connect points across missing time gaps. Check for autocorrelation before modeling.",
+        "associated_tests": ["ADF test", "Ljung-Box test", "Durbin-Watson test", "Granger causality"],
+        "widget_function": time_series_widget,
+    },
+    "Pie Chart": {
+        "category": "Comparison Plots",
+        "description": "A circular chart divided into slices proportional to the quantities they represent.",
+        "when_to_use": "Simple part-to-whole displays, few categories, rough visual comparison, non-technical audiences.",
+        "interpretation": "Each slice = proportion; area encodes percentage; full circle = 100%.",
+        "common_mistakes": "More than 5 slices is hard to read. 3D pies distort proportions. Bar charts are often better.",
+        "associated_tests": ["Chi-square GOF", "Binomial test", "Proportion tests", "Confidence intervals"],
+        "widget_function": pie_chart_widget,
+    },
+    "Area Graph": {
+        "category": "Comparison Plots",
+        "description": "A line chart with the area below the line filled, showing magnitude over time or categories.",
+        "when_to_use": "Showing magnitude over time, comparing series contributions, cumulative trends, composition changes.",
+        "interpretation": "Filled area = magnitude; stacked = total + composition; overlaid = shape comparison.",
+        "common_mistakes": "More than 4 stacked series becomes unreadable. Overlaid areas need transparency.",
+        "associated_tests": ["Time series decomposition", "Change point detection", "Trend analysis", "Intervention analysis"],
+        "widget_function": area_graph_widget,
+    },
+    "Contour Plot": {
+        "category": "Multivariate Plots",
+        "description": "2D density contours showing the distribution of bivariate data with color-filled regions.",
+        "when_to_use": "Visualizing 2D distributions, identifying density peaks, replacing scatterplots for large n.",
+        "interpretation": "Lines = constant density; closer lines = steeper gradient; peaks = dense regions.",
+        "common_mistakes": "Bandwidth changes contours dramatically — use cross-validation to choose optimally.",
+        "associated_tests": ["Bivariate normality test", "Hotelling's T-squared", "Multivariate outlier test", "KDE"],
+        "widget_function": contour_widget,
+    },
+    "Stacked Bar Chart": {
+        "category": "Comparison Plots",
+        "description": "Bars divided into sub-segments showing both total magnitude and category composition per group.",
+        "when_to_use": "Showing group composition, comparing totals across groups, survey response breakdowns.",
+        "interpretation": "Total bar = group total; segment = category contribution; 100% = proportions.",
+        "common_mistakes": "Non-100% bars are hard to compare across different totals — normalize for fair comparison.",
+        "associated_tests": ["Chi-square independence", "Fisher's exact test", "G-test", "Correspondence analysis"],
+        "widget_function": stacked_bar_widget,
+    },
+    "Population Pyramid": {
+        "category": "Distribution Plots",
+        "description": "Two back-to-back horizontal bar charts showing the age-sex distribution of a population.",
+        "when_to_use": "Demographic analysis, population structure visualization, age-sex distribution, policy planning.",
+        "interpretation": "Left = male, right = female; wide base = high birth rate; narrow top = lower life expectancy.",
+        "common_mistakes": "Different scales on left/right axes mislead — always use the same scale on both sides.",
+        "associated_tests": ["Chi-square independence", "Age standardization", "Dependency ratio", "Life table analysis"],
+        "widget_function": pop_pyramid_widget,
+    },
+    "Growth Curve Plot": {
+        "category": "Regression Plots",
+        "description": "Non-linear growth models (Logistic, Gompertz, Exponential) fitted to time-series data.",
+        "when_to_use": "Population growth modeling, epidemic curves, learning curves, biological growth processes.",
+        "interpretation": "S-curve = logistic; asymptote = carrying capacity; steepest point = max growth rate.",
+        "common_mistakes": "Extrapolating beyond observed data is risky — the asymptote depends strongly on model choice.",
+        "associated_tests": ["Non-linear regression F-test", "AIC/BIC comparison", "Residual diagnostics", "Bootstrap CIs"],
+        "widget_function": growth_curve_widget,
+    },
+    "Forest Plot": {
+        "category": "Comparison Plots",
+        "description": "Effect sizes with confidence intervals for multiple studies, used in meta-analysis.",
+        "when_to_use": "Meta-analysis reporting, systematic review synthesis, comparing across multiple studies.",
+        "interpretation": "Each row = one study; dot = effect size; line = 95% CI; red line = pooled estimate.",
+        "common_mistakes": "Pooled estimate is the overall effect, NOT the average of individual study effect sizes.",
+        "associated_tests": ["Cochran's Q test", "Higgins I² statistic", "Egger's test", "Meta-regression"],
+        "widget_function": forest_plot_widget,
+    },
+    "Kaplan-Meier Curve": {
+        "category": "Survival Analysis Plots",
+        "description": "Step-function estimate of survival probability over time with censoring marks.",
+        "when_to_use": "Time-to-event analysis, clinical trial comparison, estimating median survival.",
+        "interpretation": "Steps down at events; tick marks = censored; lower curve = worse survival.",
+        "common_mistakes": "KM curves beyond last event are unstable — always show number at risk.",
+        "associated_tests": ["Log-rank test", "Wilcoxon-Gehan test", "Peto-Peto test", "Cox PH model"],
+        "widget_function": kaplan_meier_widget,
+    },
+    "Nelson-Aalen Plot": {
+        "category": "Survival Analysis Plots",
+        "description": "Non-parametric cumulative hazard estimate showing event accumulation over time.",
+        "when_to_use": "Non-parametric hazard estimate, comparing hazard between groups, checking PH assumption.",
+        "interpretation": "Stepped line = cumulative hazard; steeper = higher hazard; gap = treatment effect.",
+        "common_mistakes": "Nelson-Aalen is cumulative hazard, not hazard rate — slope gives the rate.",
+        "associated_tests": ["Log-rank test", "Cox PH model", "Schoenfeld residuals", "Cumulative hazard comparison"],
+        "widget_function": nelson_aalen_widget,
+    },
+    "Hazard Function Plot": {
+        "category": "Survival Analysis Plots",
+        "description": "Smoothed instantaneous hazard rate over time showing risk dynamics.",
+        "when_to_use": "Modeling time-to-failure, understanding risk over time, reliability engineering.",
+        "interpretation": "Hazard = instantaneous risk; increasing = wearing out; decreasing = early failures.",
+        "common_mistakes": "Hazard is not a probability — it can exceed 1. It is a rate (events per time unit).",
+        "associated_tests": ["Weibull distribution fit", "Exponential GOF", "Cox-Snell residuals", "Hazard shape tests"],
+        "widget_function": hazard_function_widget,
+    },
+    "Cumulative Hazard Plot": {
+        "category": "Survival Analysis Plots",
+        "description": "Cumulative hazard with optional log scale to check proportional hazards assumption.",
+        "when_to_use": "Checking proportional hazards, estimating cumulative risk, model diagnostics.",
+        "interpretation": "Log scale → parallel lines = PH holds; upward = increasing hazard; straight = constant.",
+        "common_mistakes": "Log-cumulative hazard lines must be parallel for PH — crossing = non-PH.",
+        "associated_tests": ["Cox PH model", "Schoenfeld residuals", "Log-cumulative hazard plot", "PH assumption check"],
+        "widget_function": cumulative_hazard_widget,
+    },
+    "Cox PH Effect Plot": {
+        "category": "Survival Analysis Plots",
+        "description": "Forest-style plot of hazard ratios with 95% CIs for multiple covariates.",
+        "when_to_use": "Multivariable survival analysis, adjusting for confounders, identifying risk factors.",
+        "interpretation": "Dot = estimated HR; line = 95% CI; HR > 1 = increased risk; red = significant.",
+        "common_mistakes": "HR > 1 = higher hazard (worse). PH assumption must hold for valid interpretation.",
+        "associated_tests": ["Wald test", "Likelihood ratio test", "Proportional hazards test", "Schoenfeld residuals"],
+        "widget_function": cox_ph_widget,
+    },
+    "Survival Probability Heatmap": {
+        "category": "Survival Analysis Plots",
+        "description": "Heatmap of predicted survival probabilities across time and a continuous covariate.",
+        "when_to_use": "Visualizing covariate effects on survival, model predictions, identifying risk strata.",
+        "interpretation": "Yellow = high survival; purple = low survival; row = covariate effect; column = time.",
+        "common_mistakes": "Assumes proportional hazards and exponential baseline — real data may differ.",
+        "associated_tests": ["Cox PH predictions", "Parametric survival models", "Time-dependent covariates", "Interactions"],
+        "widget_function": surv_heatmap_widget,
+    },
 }
 
 CATEGORIES = [
@@ -2900,6 +4392,7 @@ CATEGORIES = [
     "Diagnostic Accuracy Plots",
     "Agreement Plots",
     "Multivariate Plots",
+    "Survival Analysis Plots",
 ]
 
 
