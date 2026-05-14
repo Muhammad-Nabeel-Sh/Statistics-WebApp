@@ -1,0 +1,937 @@
+# Mapping from test finder rule names to sample size estimation analysis types
+TEST_TO_SS_TYPE = {
+    "One-sample t-test": "One-sample Mean (t/z-test)",
+    "One-sample z-test": "One-sample Mean (t/z-test)",
+    "Student's t-test (Independent)": "Two Independent Means (t-test)",
+    "Welch's t-test (unequal variances)": "Two Independent Means (t-test)",
+    "Paired t-test": "Paired Means (t-test)",
+    "One-sample Proportion Test (Binomial Test)": "One-sample Proportion",
+    "Two Proportion Z-test": "Two Proportions",
+    "One-way ANOVA": "One-way ANOVA",
+    "Pearson Correlation": "Correlation (Pearson)",
+    "Multiple Linear Regression": "Multiple Linear Regression",
+    "Logistic Regression": "Logistic Regression",
+    "Chi-Square Test of Independence": "Chi-Square Test",
+    "Chi-Square Goodness of Fit Test": "Chi-Square Test",
+    "Mann-Whitney U Test": "Mann-Whitney / Wilcoxon (Non-parametric)",
+    "One-sample Wilcoxon Signed-Rank Test": "Wilcoxon Signed-Rank (paired)",
+    "Log-Rank Test (Survival)": "Log-Rank Test (Survival)",
+    "Cox Regression": "Cox Regression",
+    "Kruskal-Wallis Test": "Kruskal-Wallis Test",
+    "Friedman Test": "Friedman Test",
+    "McNemar's Test": "McNemar's Test",
+    "Fisher's Exact Test": "Fisher's Exact Test",
+    "MANOVA": "MANOVA (Multivariate ANOVA)",
+    "Permutation MANOVA": "MANOVA (Multivariate ANOVA)",
+}
+
+
+rules = [
+    # Comparison Tests
+    {
+        "name": "One-sample t-test",
+        "Objective": "Comparison",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": "None",
+        "Groups": "1",
+        "Relation": "any",
+        "Distribution": "Normal",
+        "Explanation": "One-Sample t-test This test is used to determine whether the mean of a single sample is significantly different from a known or hypothesized population mean. It assumes that the data is continuous and follows a normal distribution. It is typically used when comparing a clinical measurement (like blood pressure) against a standard clinical threshold. ",
+        "Example": "A researcher wants to test if the average systolic blood pressure of a group of patients is significantly different from the standard threshold of 120 mmHg. The researcher collects blood pressure readings from 30 patients and performs a one-sample t-test to compare the sample mean against the known population mean of 120 mmHg.",
+        "Formula": r"""
+                    $$ t = \dfrac{\bar{x} - \mu_0}{\dfrac{s}{\sqrt{n}}}$$ 
+                    Where: 
+                    - :orange[$\bar{x}$] is the sample mean,   
+                    - :orange[$\mu_0$] is the population mean, 
+                    - :orange[$s$] is the sample standard deviation, 
+                    - :orange[$n$] is the sample size 
+                    - :orange[$\dfrac{s}{\sqrt{n}}$] is the standard error of the mean.
+                    """,
+    },
+    {
+        "name": "One-sample z-test",
+        "Objective": "Comparison",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": "None",
+        "Groups": "1",
+        "Relation": "any",
+        "Distribution": "Normal",
+        "Explanation": "One-Sample z-Test This test is used to determine whether the mean of a single sample is significantly different from a known or hypothesized population mean. It assumes that the data is continuous and follows a normal distribution, and that the population standard deviation is known.",
+        "Example": "A researcher wants to test if the average systolic blood pressure of a group of patients is significantly different from the standard threshold of 120 mmHg. The researcher knows the population standard deviation is 10 mmHg and collects blood pressure readings from 30 patients. The researcher performs a one-sample z-test to compare the sample mean against the known population mean of 120 mmHg.",
+        "Formula": r"""
+                    $$ z = \dfrac{\bar{x} - \mu_0}{\dfrac{\sigma}{\sqrt{n}}} $$
+                    where:
+                    - :orange[$\bar{x}$] is the sample mean,
+                    - :orange[$\mu_0$] is the population mean,
+                    - :orange[$\sigma$] is the population standard deviation,
+                    - :orange[$n$] is the sample size.
+                    - The denominator :orange[$\dfrac{\sigma}{\sqrt{n}}$] is the standard error of the mean.
+                    """,
+    },
+    {
+        "name": "One-sample Proportion Test (Binomial Test)",
+        "Objective": "Comparison",
+        "Dependent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Independent_Variable": "None",
+        "Groups": "1",
+        "Relation": "any",
+        "Distribution": ["Normal", "Non-normal", "any"],
+        "Explanation": "One-Sample Proportion Test (Binomial Test) This test is used to determine whether the proportion of successes in a single sample is significantly different from a known or hypothesized population proportion. It is typically used when analyzing categorical data, such as the proportion of patients who respond to a treatment compared to a known response rate.",
+        "Example": "A clinical trial tests a new drug and finds that 18 out of 30 patients respond to the treatment. The researcher wants to determine if this response rate is significantly different from the known response rate of 50% (0.5) for existing treatments. The researcher performs a one-sample proportion test (binomial test) to compare the observed proportion of 0.6 (18/30) against the known population proportion of 0.5.",
+        "Formula": r"""
+                    $$ z = \dfrac{\hat{p} - p_0}{\sqrt{\dfrac{p_0(1 - p_0)}{n}}} $$
+                    where: 
+                    - :orange[$\hat{p}$] is the sample proportion,  
+                    - :orange[$p_0$] is the population proportion, and   
+                    - :orange[$n$] is the sample size.  
+                    - The denominator :orange[$\sqrt{\dfrac{p_0(1 - p_0)}{n}}$] is the standard error of the proportion.
+                    """,
+    },
+    {
+        "name": "One-sample Wilcoxon Signed-Rank Test",
+        "Objective": "Comparison",
+        "Dependent_Variable": ["Ordinal", "Continuous"],
+        "Independent_Variable": "None",
+        "Groups": "1",
+        "Relation": "any",
+        "Distribution": "Non-normal",
+        "Explanation": "One-Sample Wilcoxon Signed-Rank Test This non-parametric test is used to determine whether the median of a single sample is significantly different from a known or hypothesized population median. It is typically used when the data is ordinal or continuous but does not follow a normal distribution.",
+        "Example": "A researcher wants to test if the median pain score of patients after a treatment is significantly different from a known median pain score of 5 on a 10-point scale. The researcher collects pain scores from 30 patients and performs a one-sample Wilcoxon signed-rank test to compare the sample median against the known population median of 5.",
+        "Formula": r"""
+                    $$ W = \sum_{i=1}^{n} R_i \cdot sgn(X_i - M_0) $$
+                    Where:  
+                    - :orange[$R_i$] is the rank of the absolute difference between the observed value  
+                    - :orange[$X_i$] and the hypothesized median :orange[$M_0$], and  
+                    - :orange[$sgn(X_i - M_0)$] is the sign function that indicates whether :orange[$X_i$] is above, below, or equal to :orange[$M_0$].  
+                    - The test statistic :orange[$W$] is then compared to a critical value from the Wilcoxon signed-rank distribution to determine significance.
+                    """,
+    },
+    {
+        "name": "Student's t-test (Independent)",
+        "Objective": "Comparison",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "2",
+        "Relation": "Independent",
+        "Distribution": "Normal",
+        "Explanation": "Student's t-test (Independent) This test is used to compare the means of two independent groups to determine if there is a statistically significant difference between them. It assumes that the data is continuous, follows a normal distribution, and that the variances of the two groups are equal.",
+        "Example": "A researcher wants to compare the average blood pressure between two groups of patients: those who received a new drug and those who received a placebo. The researcher collects blood pressure readings from 30 patients in each group and performs an independent t-test to determine if there is a significant difference in mean blood pressure between the two groups.",
+        "Formula": r"""
+                    $$ t = \dfrac{\bar{x}_1 - \bar{x}_2}{s_p \sqrt{\dfrac{1}{n_1} + \dfrac{1}{n_2}}} $$ 
+                    Where:  
+                    - :orange[$\bar{x}_1$] and :orange[$\bar{x}_2$] are the sample means of the two groups,  
+                    - :orange[$n_1$] and :orange[$n_2$] are the sample sizes of the two groups, and  
+                    - :orange[$s_p$] is the pooled standard deviation calculated as: $$ s_p = \sqrt{\dfrac{(n_1 - 1)s_1^2 + (n_2 - 1)s_2^2}{n_1 + n_2 - 2}} $$ 
+                    where  
+                    - :orange[$s_1^2$] and :orange[$s_2^2$] are the sample variances of the two groups.
+                    """,
+    },
+    {
+        "name": "Welch's t-test (Independent, Unequal Variances)",
+        "Objective": "Comparison",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "2",
+        "Relation": "Independent",
+        "Distribution": "Normal",
+        "Explanation": "Welch's t-test (Independent, Unequal Variances) This test is used to compare the means of two independent groups when the variances are assumed to be unequal. It is a modification of the Student's t-test.",
+        "Example": "A researcher wants to compare the average blood pressure between two groups of patients: those who received a new drug and those who received a placebo. The researcher collects blood pressure readings from 30 patients in each group and performs Welch's t-test to determine if there is a significant difference in mean blood pressure between the two groups.",
+        "Formula": r"""
+                    $$ t = \dfrac{\bar{x}_1 - \bar{x}_2}{\sqrt{\dfrac{s_1^2}{n_1} + \dfrac{s_2^2}{n_2}}} $$ 
+                    Where: 
+                    - :orange[$\bar{x}_1$] and :orange[$\bar{x}_2$] are the sample means of the two groups, 
+                    - :orange[$n_1$] and :orange[$n_2$] are the sample sizes of the two groups, and 
+                    - :orange[$s_1^2$] and :orange[$s_2^2$] are the sample variances of the two groups.
+                    """,
+    },
+    {
+        "name": "Paired t-test",
+        "Objective": "Comparison",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "2",
+        "Relation": "Dependent",
+        "Distribution": "Normal",
+        "Explanation": "Paired t-test This test is used to compare the means of two related groups to determine if there is a statistically significant difference between them. It assumes that the data is continuous, follows a normal distribution, and that the pairs are dependent (e.g., measurements taken from the same subjects before and after a treatment).",
+        "Example": "A researcher wants to test if a new drug reduces blood pressure in patients. The researcher measures the blood pressure of 30 patients before and after administering the drug. The researcher performs a paired t-test to determine if there is a significant difference in mean blood pressure before and after the treatment.",
+        "Formula": r"""
+                    $$ t = \dfrac{\bar{d}}{s_d / \sqrt{n}} $$ 
+                    Where: 
+                    - :orange[$\bar{d}$] is the mean of the differences between paired observations, 
+                    - :orange[$s_d$] is the standard deviation of the differences, and 
+                    - :orange[$n$] is the number of pairs. 
+                    - The test statistic :orange[$t$] is then compared to a critical value from the t-distribution with :orange[$n-1$] degrees of freedom to determine significance.
+                    """,
+    },
+    {
+        "name": "One-way ANOVA",
+        "Objective": "Comparison",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "More than 2",
+        "Relation": "Independent",
+        "Distribution": "Normal",
+        "Explanation": "One-way ANOVA This test is used to compare the means of three or more independent groups to determine if there is a statistically significant difference between them. It assumes that the data is continuous, follows a normal distribution, that the variances are equal across groups (homogeneity of variance), and that the groups are independent.",
+        "Example": "A researcher wants to compare the average blood pressure between three groups of patients: those who received a new drug, those who received a different drug, and those who received a placebo. The researcher collects blood pressure readings from 30 patients in each group and performs one-way ANOVA to determine if there is a significant difference in mean blood pressure between the three groups.",
+        "Formula": r"""
+                    $$ F = \dfrac{MS_{between}}{MS_{within}} $$ 
+                    Where: 
+                    - :orange[$F$] is the F-statistic, 
+                    - :orange[$MS_{between}$] is the mean square between groups, and 
+                    - :orange[$MS_{within}$] is the mean square within groups. 
+                    Mean squares are calculated as: 
+                    - $$ MS_{between} = \dfrac{SS_{between}}{df_{between}} $$ and 
+                    - $$ MS_{within} = \dfrac{SS_{within}}{df_{within}} $$ 
+                    where:
+                    - :orange[$SS$] is the sum of squares and :orange[$df$] is the degrees of freedom for between and within groups.
+                    """,
+    },
+    {
+        "name": "Wilcoxon Signed-Rank Test",
+        "Objective": "Comparison",
+        "Dependent_Variable": ["Ordinal", "Continuous"],
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "2",
+        "Relation": "Dependent",
+        "Distribution": "Non-normal",
+        "Explanation": "Wilcoxon Signed-Rank Test This test is used to compare the medians of two related groups to determine if there is a statistically significant difference between them. It assumes that the data is ordinal or continuous but not normally distributed, and that the pairs are dependent.",
+        "Example": "A researcher wants to test if a new drug reduces pain levels in patients. The researcher measures the pain levels of 30 patients before and after administering the drug. The researcher performs a Wilcoxon signed-rank test to determine if there is a significant difference in median pain levels before and after the treatment.",
+        "Formula": r"""
+                    $$ W = \sum_{i=1}^{n} R_i $$ 
+                    Where: 
+                    - :orange[$W$] is the test statistic, 
+                    - :orange[$R_i$] is the rank of the :orange[$i$]-th difference, and 
+                    - :orange[$n$] is the number of pairs. 
+                    - The test statistic :orange[$W$] is then compared to a critical value from the Wilcoxon signed-rank distribution to determine significance. :orange[$R$] is calculated by ranking the absolute differences between paired observations and assigning ranks accordingly, with ties receiving average ranks. The sign of the difference is also considered when calculating the test statistic.
+                    """,
+    },
+    {
+        "name": "Mann-Whitney U Test",
+        "Objective": "Comparison",
+        "Dependent_Variable": ["Ordinal", "Continuous"],
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "2",
+        "Relation": "Independent",
+        "Distribution": "Non-normal",
+        "Explanation": "Mann-Whitney U Test This test is used to compare the medians of two independent groups to determine if there is a statistically significant difference between them. It assumes that the data is ordinal or continuous but not normally distributed, and that the groups are independent.",
+        "Example": "A researcher wants to compare the pain levels between two groups of patients: those who received a new drug and those who received a placebo. The researcher measures the pain levels of 30 patients in each group and performs a Mann-Whitney U test to determine if there is a significant difference in median pain levels between the two groups.",
+        "Formula": r"""
+                    $$ U = \sum_{i=1}^{n_1} R_i - \dfrac{n_1(n_1+1)}{2} $$ 
+                    Where: 
+                    - :orange[$U$] is the test statistic, 
+                    - :orange[$R_i$] is the rank of the :orange[$i$]-th observation in the combined dataset, 
+                    - :orange[$n_1$] is the number of observations in group 1, and 
+                    - :orange[$n_2$] is the number of observations in group 2. 
+                    - The test statistic :orange[$U$] is then compared to a critical value from the Mann-Whitney U distribution to determine significance. :orange[$R$] is calculated by ranking all observations from both groups together and assigning ranks accordingly, with ties receiving average ranks. The U statistic is calculated based on the sum of ranks for one of the groups and adjusted for the number of observations in that group.
+                    """,
+    },
+    {
+        "name": "Kruskal-Wallis Test",
+        "Objective": "Comparison",
+        "Dependent_Variable": ["Ordinal", "Continuous"],
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "More than 2",
+        "Relation": "Independent",
+        "Distribution": "Non-normal",
+        "Explanation": "Kruskal-Wallis Test This test is used to compare the medians of more than two independent groups to determine if there is a statistically significant difference between them. It assumes that the data is ordinal or continuous but not normally distributed, and that the groups are independent.",
+        "Example": "A researcher wants to compare the pain levels between three groups of patients: those who received a new drug, those who received a different drug, and those who received a placebo. The researcher measures the pain levels of 30 patients in each group and performs a Kruskal-Wallis test to determine if there is a significant difference in median pain levels between the three groups.",
+        "Formula": r"""
+                    $$ H = \dfrac{12}{N(N+1)} \sum_{i=1}^{k} \dfrac{R_i^2}{n_i} - 3(N+1) $$ 
+                    Where: 
+                    - :orange[$H$] is the test statistic, 
+                    - :orange[$R_i$] is the sum of ranks for group :orange[$i$], 
+                    - :orange[$n_i$] is the number of observations in group :orange[$i$], 
+                    - :orange[$N$] is the total number of observations, and 
+                    - :orange[$k$] is the number of groups. 
+                    - The test statistic :orange[$H$] is then compared to a critical value from the chi-square distribution with :orange[$k-1$] degrees of freedom to determine significance.
+                    """,
+    },
+    {
+        "name": "Repeated Measures ANOVA",
+        "Objective": "Comparison",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "More than 2",
+        "Relation": "Dependent",
+        "Distribution": "Normal",
+        "Explanation": "Repeated Measures ANOVA This test is used to compare the means of three or more related groups to determine if there is a statistically significant difference between them. It assumes that the data is continuous, follows a normal distribution, that the variances of the differences between all pairs of repeated measures are equal (sphericity), and that the groups are dependent (e.g., measurements taken from the same subjects at multiple time points).",
+        "Example": "A researcher wants to test the effect of a new drug on blood pressure over time. The researcher measures the blood pressure of 30 patients at three different time points: before treatment, after 1 month of treatment, and after 3 months of treatment. The researcher performs a repeated measures ANOVA to determine if there is a significant difference in mean blood pressure across the three time points.",
+        "Formula": r"""
+                    $$ F = \dfrac{MS_{between}}{MS_{error}} $$ 
+                    Where: 
+                    - :orange[$F$] is the F-statistic, 
+                    - :orange[$MS_{between}$] is the mean square between groups (calculated based on the variability of the group means), and 
+                    - :orange[$MS_{error}$] is the mean square error (calculated based on the variability of observations within groups). 
+                    - The test statistic :orange[$F$] is then compared to a critical value from the F-distribution with appropriate degrees of freedom to determine significance.
+                    """,
+    },
+    {
+        "name": "MANOVA",
+        "Objective": "Comparison",
+        "Dependent_Variable": "Multiple Continuous",
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "More than 2",
+        "Relation": "Independent",
+        "Distribution": "Normal",
+        "Explanation": "MANOVA (Multivariate Analysis of Variance) This test is used to compare the means of multiple dependent variables across two or more independent groups. It assumes that the data is continuous, follows a multivariate normal distribution, and that the groups are independent.",
+        "Example": "A researcher wants to compare the effects of three different diets on both weight loss and cholesterol levels. The researcher collects data on weight loss and cholesterol levels from 30 patients in each diet group and performs a MANOVA to determine if there are significant differences in the combined dependent variables (weight loss and cholesterol levels) across the three diet groups.",
+        "Formula": r"""
+                    $$ \Lambda = \dfrac{|\mathbf{E}|}{|\mathbf{E} + \mathbf{H}|} $$ 
+                    Where: 
+                    - :orange[$\Lambda$] is the test statistic (Wilks' Lambda), 
+                    - :orange[$\mathbf{E}$] is the error sum of squares and cross-products matrix, and 
+                    - :orange[$\mathbf{H}$] is the hypothesis sum of squares and cross-products matrix. 
+                    - The test statistic :orange[$\Lambda$] is then transformed into an F-statistic for significance testing.
+                    """,
+    },
+    {
+        "name": "Friedman Test",
+        "Objective": "Comparison",
+        "Dependent_Variable": ["Ordinal", "Continuous"],
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "More than 2",
+        "Relation": "Dependent",
+        "Distribution": "Non-normal",
+        "Explanation": "Friedman Test This test is used to compare the medians of three or more related groups to determine if there is a statistically significant difference between them. It assumes that the data is ordinal or continuous but not normally distributed, and that the groups are dependent.",
+        "Example": "A researcher wants to compare the effectiveness of three different teaching methods on student performance. The researcher measures the performance of 30 students using each teaching method and performs a Friedman Test to determine if there is a significant difference in median performance across the three methods.",
+        "Formula": r"""
+                    $$ \chi^2 = \dfrac{12}{N(N+1)} \sum_{j=1}^{k} R_j^2 - 3N(N+1) $$ 
+                    Where: 
+                    - :orange[$\chi^2$] is the test statistic, 
+                    - :orange[$N$] is the number of subjects, 
+                    - :orange[$k$] is the number of treatments, and 
+                    - :orange[$R_j$] is the sum of ranks for the :orange[$j$]-th treatment. 
+                    - The test statistic :orange[$\chi^2$] is then compared to a critical value from the chi-square distribution with :orange[$k-1$] degrees of freedom to determine significance.
+                    """,
+    },
+    {
+        "name": "Permutation MANOVA or Non-Parametric MANOVA",
+        "Objective": "Comparison",
+        "Dependent_Variable": "Multiple Continuous",
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "More than 2",
+        "Relation": "Independent",
+        "Distribution": "Non-normal",
+        "Explanation": "Permutation MANOVA or Non-Parametric MANOVA These tests are used to compare multivariate distributions across two or more independent groups when the assumptions of traditional MANOVA are not met. They do not assume a specific distribution for the data.",
+        "Example": "A researcher wants to compare the effects of three different diets on both weight loss and cholesterol levels, but the data does not follow a normal distribution. The researcher performs a Permutation MANOVA to determine if there are significant differences in the combined dependent variables (weight loss and cholesterol levels) across the three diet groups.",
+        "Formula": r"""
+                    $$ F = \dfrac{MS_{between}}{MS_{error}} $$
+                    Where:
+                    - :orange[$F$] is the pseudo-F-statistic,
+                    - :orange[$MS_{between}$] is the mean square between groups, and
+                    - :orange[$MS_{error}$] is the mean square error.
+                    - The test statistic :orange[$F$] is then evaluated using a permutation-based null distribution (data is randomly reshuffled many times) to compute the p-value, rather than comparing to a theoretical F-distribution.
+                    """,
+    },
+    {
+        "name": "Chi-Square Goodness-of-Fit Test",
+        "Objective": "Comparison",
+        "Dependent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Independent_Variable": "None",
+        "Groups": "1",
+        "Relation": ["Independent", "Dependent", "any"],
+        "Distribution": ["Non-normal", "Normal", "any"],
+        "Explanation": "Chi-Square Goodness-of-Fit Test This test is used to determine if a sample data fits a particular distribution. It compares the observed frequencies with the expected frequencies under the null hypothesis.",
+        "Example": "A researcher wants to test if the distribution of blood types in a sample of 100 people matches the expected distribution in the general population. The researcher performs a Chi-Square Goodness-of-Fit Test to determine if there is a significant difference between the observed and expected distributions.",
+        "Formula": r"""
+                    $$ \chi^2 = \sum_{i=1}^{k} \dfrac{(O_i - E_i)^2}{E_i} $$
+                    Where:
+                    - :orange[$\chi^2$] is the test statistic,
+                    - :orange[$O_i$] is the observed frequency for category :orange[$i$],
+                    - :orange[$E_i$] is the expected frequency for category :orange[$i$], and
+                    - :orange[$k$] is the number of categories.
+                    - The test statistic :orange[$\chi^2$] is then compared to a critical value from the chi-square distribution with :orange[$k-1$] degrees of freedom to determine significance.
+                    """,
+    },
+    {
+        "name": "Chi-Square Test",
+        "Objective": "Comparison",
+        "Dependent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": ["any", "2", "More than 2"],
+        "Relation": "Independent",
+        "Distribution": ["Non-normal", "Normal", "any"],
+        "Explanation": "Chi-Square Test This test is used to determine if there is a significant association between two categorical variables. It compares the observed frequencies with the expected frequencies under the null hypothesis.",
+        "Example": "A researcher wants to test if there is a significant association between gender and smoking status. The researcher collects data on gender and smoking status from 200 participants and performs a Chi-Square Test to determine if there is a significant relationship between these two variables.",
+        "Formula": r"""
+                    $$ \chi^2 = \sum_{i=1}^{r} \sum_{j=1}^{c} \dfrac{(O_{ij} - E_{ij})^2}{E_{ij}} $$
+                    Where:
+                    - :orange[$\chi^2$] is the test statistic,
+                    - :orange[$O_{ij}$] is the observed frequency for cell :orange[$(i,j)$],
+                    - :orange[$E_{ij}$] is the expected frequency for cell :orange[$(i,j)$],
+                    - :orange[$r$] is the number of rows, and
+                    - :orange[$c$] is the number of columns.
+                    - The test statistic :orange[$\chi^2$] is then compared to a critical value from the chi-square distribution with :orange[$(r-1)(c-1)$] degrees of freedom to determine significance.
+                    """,
+    },
+    {
+        "name": "McNemar's Test",
+        "Objective": "Comparison",
+        "Dependent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "2",
+        "Relation": "Dependent",
+        "Distribution": ["Non-normal", "Normal", "any"],
+        "Explanation": "McNemar's Test This test is used to determine if there is a significant change in proportions for paired nominal data. It is typically used when analyzing before-and-after data or matched pairs.",
+        "Example": "A researcher wants to test if there is a significant change in smoking status before and after a intervention. The researcher collects data on smoking status from 100 participants before and after the intervention and performs a McNemar's Test to determine if there is a significant change.",
+        "Formula": r"""
+                    $$ \chi^2 = \dfrac{(b - c)^2}{b + c} $$
+                    Where:
+                    - :orange[$\chi^2$] is the test statistic,
+                    - :orange[$b$] is the number of pairs where the first condition is positive and the second is negative, and
+                    - :orange[$c$] is the number of pairs where the first condition is negative and the second is positive.
+                    - The test statistic :orange[$\chi^2$] is then compared to a critical value from the chi-square distribution with 1 degree of freedom to determine significance.
+                    """,
+    },
+    {
+        "name": "Cochran's Q Test",
+        "Objective": "Comparison",
+        "Dependent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "More than 2",
+        "Relation": "Dependent",
+        "Distribution": ["Non-normal", "Normal", "any"],
+        "Explanation": "Cochran's Q Test This test is used to determine if there is a significant difference in proportions for three or more related groups. It is an extension of McNemar's Test.",
+        "Example": "A researcher wants to test if there is a significant difference in the proportion of participants who smoke at three different time points (before, during, and after an intervention). The researcher performs a Cochran's Q Test to determine if there is a significant difference.",
+        "Formula": r"""
+                    $$ Q = \dfrac{(k-1) \left( k \sum_{j=1}^{k} G_j^2 - \left( \sum_{j=1}^{k} G_j \right)^2 \right)}{k \sum_{i=1}^{b} L_i - \sum_{i=1}^{b} L_i^2} $$
+                    Where:
+                    - :orange[$Q$] is the test statistic,
+                    - :orange[$k$] is the number of conditions/treatments,
+                    - :orange[$b$] is the number of subjects,
+                    - :orange[$G_j$] is the column total (successes) for condition :orange[$j$], and
+                    - :orange[$L_i$] is the row total (successes) for subject :orange[$i$].
+                    - The test statistic :orange[$Q$] is then compared to a critical value from the chi-square distribution with :orange[$k-1$] degrees of freedom to determine significance.
+                    """,
+    },
+    {
+        "name": "Fisher's Exact Test",
+        "Objective": "Comparison",
+        "Dependent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Groups": "2",
+        "Relation": "Independent",
+        "Distribution": ["Non-normal", "Normal", "any"],
+        "Explanation": "Fisher's Exact Test This test is used to determine if there is a significant association between two categorical variables when sample sizes are small.",
+        "Example": "A researcher wants to test if there is a significant association between gender and smoking status in a small sample of 20 participants. The researcher performs a Fisher's Exact Test to determine if there is a significant relationship between these two variables.",
+        "Formula": r"""
+                    $$ p = \dfrac{(a+b)!\,(c+d)!\,(a+c)!\,(b+d)!}{a!\,b!\,c!\,d!\,n!} $$
+                    
+                    Where:
+                    - :orange[$a, b, c, d$] are the cell frequencies in the 2×2 contingency table,
+                    - :orange[$n = a+b+c+d$] is the total sample size.
+                    - The p-value is calculated by summing the probabilities of all tables with the same marginal totals that are as extreme or more extreme than the observed table.
+                    """,
+    },
+    {
+        "name": "Pearson Correlation",
+        "Objective": "Association/Correlation",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": "Continuous",
+        "Groups": ["any", "2", "More than 2"],
+        "Relation": ["Independent", "Dependent", "any"],
+        "Distribution": "Normal",
+        "Explanation": "Pearson Correlation This test is used to measure the strength and direction of the linear relationship between two continuous variables. It assumes that the data is continuous, follows a normal distribution, and that the relationship between the variables is linear.",
+        "Example": "A researcher wants to test if there is a significant correlation between hours of study and exam scores among students. The researcher collects data on hours of study and exam scores from 100 students and performs a Pearson Correlation to determine if there is a significant relationship between these two variables.",
+        "Formula": r"""
+                    $$ r = \dfrac{\sum_{i=1}^{n} (X_i - \bar{X})(Y_i - \bar{Y})}{\sqrt{\sum_{i=1}^{n} (X_i - \bar{X})^2} \sqrt{\sum_{i=1}^{n} (Y_i - \bar{Y})^2}} $$ 
+                    Where: 
+                    - :orange[$r$] is the Pearson correlation coefficient, 
+                    - :orange[$X_i$] and :orange[$Y_i$] are the individual data points for variables X and Y, 
+                    - :orange[$\bar{X}$] and :orange[$\bar{Y}$] are the means of variables X and Y, and 
+                    - :orange[$n$] is the number of data points. 
+                    - The test statistic :orange[$r$] is then compared to a critical value from the Pearson correlation distribution to determine significance.
+                    """,
+    },
+    {
+        "name": "Spearman Rank Correlation",
+        "Objective": "Association/Correlation",
+        "Dependent_Variable": ["Ordinal", "Continuous"],
+        "Independent_Variable": ["Ordinal", "Continuous"],
+        "Groups": ["any", "2", "More than 2"],
+        "Relation": ["Independent", "Dependent", "any"],
+        "Distribution": "Non-normal",
+        "Explanation": "Spearman Rank Correlation This test is used to measure the strength and direction of the monotonic relationship between two ordinal or continuous variables. It does not assume a linear relationship or a normal distribution.",
+        "Example": "A researcher wants to test if there is a significant correlation between rankings of students in two different subjects. The researcher collects data on the rankings and performs a Spearman Rank Correlation to determine if there is a significant relationship between these two variables.",
+        "Formula": r"""
+                    $$ r_s = 1 - \dfrac{6 \sum d_i^2}{n(n^2 - 1)} $$ 
+                    Where: 
+                    - :orange[$r_s$] is the Spearman rank correlation coefficient, 
+                    - :orange[$d_i$] is the difference in ranks for each pair of observations, 
+                    - :orange[$n$] is the number of observations, and 
+                    - the sum is over all pairs. 
+                    - The test statistic :orange[$r_s$] is then compared to a critical value from the Spearman rank correlation distribution to determine significance.
+                    """,
+    },
+    {
+        "name": "Chi-Square Test of Independence",
+        "Objective": "Association/Correlation",
+        "Dependent_Variable": "Categorical",
+        "Independent_Variable": "Categorical",
+        "Groups": ["any", "2", "More than 2"],
+        "Relation": ["Independent", "Dependent", "any"],
+        "Distribution": ["Non-normal", "Normal", "any"],
+        "Explanation": "Chi-Square Test of Independence This test is used to determine if there is a significant association between two categorical variables. It compares the observed frequencies with the expected frequencies under the null hypothesis.",
+        "Example": "A researcher wants to test if there is a significant association between gender and smoking status. The researcher collects data on gender and smoking status from 200 participants and performs a Chi-Square Test of Independence to determine if there is a significant relationship between these two variables.",
+        "Formula": r"""
+                    $$ \chi^2 = \sum_{i=1}^{r} \sum_{j=1}^{c} \dfrac{(O_{ij} - E_{ij})^2}{E_{ij}} $$ 
+                    Where: 
+                    - :orange[$\chi^2$] is the test statistic, 
+                    - :orange[$O_{ij}$] is the observed frequency for cell :orange[$(i,j)$], and 
+                    - :orange[$E_{ij}$] is the expected frequency for cell :orange[$(i,j)$]. 
+                    - The test statistic :orange[$\chi^2$] is then compared to a critical value from the chi-square distribution with :orange[$(r-1)(c-1)$] degrees of freedom to determine significance.
+                    """,
+    },
+    {
+        "name": "Point-Biserial Correlation",
+        "Objective": "Association/Correlation",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": "Binary/Dichotomous",
+        "Groups": ["any", "2", "More than 2"],
+        "Relation": ["Independent", "Dependent", "any"],
+        "Distribution": ["Non-normal", "Normal", "any"],
+        "Explanation": "Point-Biserial Correlation This test is used to measure the strength and direction of the linear relationship between a continuous variable and a binary variable. It is a special case of the Pearson correlation coefficient.",
+        "Example": "A researcher wants to test if there is a significant correlation between test scores (continuous) and gender (binary). The researcher collects data on test scores and gender from 100 participants and performs a Point-Biserial Correlation to determine if there is a significant relationship between these two variables.",
+        "Formula": r"""
+                    $$ r_{pb} = \dfrac{M_1 - M_0}{s} \sqrt{\dfrac{n_1 n_0}{n(n-1)}} $$ 
+                    Where: 
+                    - :orange[$r_{pb}$] is the Point-Biserial correlation coefficient, 
+                    - :orange[$M_1$] and :orange[$M_0$] are the means of the continuous variable for the two groups, 
+                    - :orange[$s$] is the standard deviation of the continuous variable, 
+                    - :orange[$n_1$] and :orange[$n_0$] are the sample sizes of the two groups, and 
+                    - :orange[$n$] is the total sample size. 
+                    - The test statistic :orange[$r_{pb}$] is then compared to a critical value from the Pearson correlation distribution to determine significance.
+                    """,
+    },
+    # Prediction Tests
+    {
+        "name": "Simple Linear Regression",
+        "Objective": "Prediction",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": "Continuous",
+        "Groups": ["any", "2", "More than 2"],
+        "Relation": ["Independent", "Dependent", "any"],
+        "Distribution": ["Normal", "Non-normal", "any"],
+        "Explanation": "Simple Linear Regression This test is used to model the relationship between a continuous dependent variable and a single continuous independent variable. It assumes that the dependent variable is continuous, that the residuals are normally distributed, and that the relationship between the variables is linear.",
+        "Example": "A researcher wants to predict exam scores based on hours of study. The researcher collects data on hours of study and exam scores from 100 students and performs a Simple Linear Regression to determine if hours of study is a significant predictor of exam scores.",
+        "Formula": r"""
+                    $$ Y = \beta_0 + \beta_1 X + \epsilon $$ 
+                    Where: 
+                    - :orange[$Y$] is the dependent variable, 
+                    - :orange[$X$] is the independent variable, 
+                    - :orange[$\beta_0$] is the intercept, 
+                    - :orange[$\beta_1$] is the slope coefficient, and 
+                    - :orange[$\epsilon$] is the error term. 
+                    - The coefficients :orange[$\beta_0$] and :orange[$\beta_1$] are estimated using the least squares method, and the significance of the predictor is determined by testing if :orange[$\beta_1$] is significantly different from zero.
+                    """,
+    },
+    {
+        "name": "Multiple Linear Regression",
+        "Objective": "Prediction",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": "Multiple Continuous",
+        "Groups": ["any", "2", "More than 2"],
+        "Relation": ["Independent", "Dependent", "any"],
+        "Distribution": ["Normal", "Non-normal", "any"],
+        "Explanation": "Multiple Linear Regression This test is used to model the relationship between a continuous dependent variable and multiple continuous independent variables. It assumes that the dependent variable is continuous, that the residuals are normally distributed, and that the relationship between the variables is linear.",
+        "Example": "A researcher wants to predict exam scores based on hours of study and attendance. The researcher collects data on hours of study, attendance, and exam scores from 100 students and performs a Multiple Linear Regression to determine if hours of study and attendance are significant predictors of exam scores.",
+        "Formula": r"""
+                    $$ Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \ldots + \beta_k X_k + \epsilon $$ 
+                    Where: 
+                    - :orange[$Y$] is the dependent variable, 
+                    - :orange[$X_1, X_2, \ldots, X_k$] are the independent variables, 
+                    - :orange[$\beta_0$] is the intercept, 
+                    - :orange[$\beta_1, \beta_2, \ldots, \beta_k$] are the slope coefficients, and 
+                    - :orange[$\epsilon$] is the error term. 
+                    - The coefficients :orange[$\beta_0, \beta_1, \beta_2, \ldots, \beta_k$] are estimated using the least squares method, and the significance of each predictor is determined by testing if its corresponding coefficient is significantly different from zero.
+                    """,
+    },
+    {
+        "name": "Logistic Regression",
+        "Objective": "Prediction",
+        "Dependent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Independent_Variable": "Continuous",
+        "Groups": ["any", "2", "More than 2"],
+        "Relation": ["Independent", "Dependent", "any"],
+        "Distribution": ["Normal", "Non-normal", "any"],
+        "Explanation": "Logistic Regression This test is used to model the relationship between a binary dependent variable and one or more continuous independent variables. It assumes that the dependent variable is binary, and that the relationship between the independent variables and the log-odds of the dependent variable is linear.",
+        "Example": "A researcher wants to predict the likelihood of a student passing an exam based on hours of study. The researcher collects data on hours of study and pass/fail status from 100 students and performs a Logistic Regression to determine if hours of study is a significant predictor of passing the exam.",
+        "Formula": r"""
+                    $$ \log\left(\dfrac{p}{1-p}\right) = \beta_0 + \beta_1 X $$ 
+                    Where: 
+                    - :orange[$p$] is the probability of the dependent variable being 1 (e.g., passing the exam), 
+                    - :orange[$X$] is the independent variable, 
+                    - :orange[$\beta_0$] is the intercept, and 
+                    - :orange[$\beta_1$] is the slope coefficient. 
+                    - The coefficients :orange[$\beta_0$] and :orange[$\beta_1$] are estimated using maximum likelihood estimation, and the significance of the predictor is determined by testing if :orange[$\beta_1$] is significantly different from zero.
+                    """,
+    },
+    {
+        "name": "Multinomial Logistic Regression",
+        "Objective": "Prediction",
+        "Dependent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Independent_Variable": "Continuous",
+        "Groups": ["any", "2", "More than 2"],
+        "Relation": ["Independent", "Dependent", "any"],
+        "Distribution": ["Normal", "Non-normal", "any"],
+        "Explanation": "Multinomial Logistic Regression This test is used to model the relationship between a categorical dependent variable with more than two categories and one or more continuous independent variables. It assumes that the dependent variable is categorical, and that the relationship between the independent variables and the log-odds of each category of the dependent variable is linear.",
+        "Example": "A researcher wants to predict the choice of transportation (car, bus, bike) based on hours of commute. The researcher collects data on hours of commute and transportation choice from 100 participants and performs a Multinomial Logistic Regression to determine if hours of commute is a significant predictor of transportation choice.",
+        "Formula": r"""
+                    $$ \log\left(\dfrac{p_j}{p_k}\right) = \beta_{0j} + \beta_{1j} X $$ 
+                    Where: 
+                    - :orange[$p_j$] is the probability of the dependent variable being in category :orange[$j$], 
+                    - :orange[$p_k$] is the probability of the dependent variable being in the reference category :orange[$k$], 
+                    - :orange[$X$] is the independent variable, 
+                    - :orange[$\beta_{0j}$] is the intercept for category :orange[$j$], and 
+                    - :orange[$\beta_{1j}$] is the slope coefficient for category :orange[$j$]. 
+                    - The coefficients :orange[$\beta_{0j}$] and :orange[$\beta_{1j}$] are estimated using maximum likelihood estimation, and the significance of the predictor is determined by testing if :orange[$\beta_{1j}$] is significantly different from zero for each category.
+                    """,
+    },
+    {
+        "name": "Ordinal Logistic Regression",
+        "Objective": "Prediction",
+        "Dependent_Variable": "Ordinal",
+        "Independent_Variable": "Continuous",
+        "Groups": ["any", "2", "More than 2"],
+        "Relation": ["Independent", "Dependent", "any"],
+        "Distribution": ["Normal", "Non-normal", "any"],
+        "Explanation": "Ordinal Logistic Regression This test is used to model the relationship between an ordinal dependent variable and one or more continuous independent variables. It assumes that the dependent variable is ordinal, and that the relationship between the independent variables and the log-odds of each category of the dependent variable is linear.",
+        "Example": "A researcher wants to predict the level of satisfaction (very unsatisfied, unsatisfied, neutral, satisfied, very satisfied) based on income. The researcher collects data on income and satisfaction levels from 100 participants and performs an Ordinal Logistic Regression to determine if income is a significant predictor of satisfaction level.",
+        "Formula": r"""
+                    $$ \log\left(\dfrac{P(Y \leq j)}{P(Y > j)}\right) = \beta_{0j} + \beta_{1j} X $$ 
+                    Where: 
+                    - :orange[$P(Y \leq j)$] is the probability of the dependent variable being in category :orange[$j$] or lower, 
+                    - :orange[$P(Y > j)$] is the probability of the dependent variable being in a category higher than :orange[$j$], 
+                    - :orange[$X$] is the independent variable, 
+                    - :orange[$\beta_{0j}$] is the intercept for category :orange[$j$], and 
+                    - :orange[$\beta_{1j}$] is the slope coefficient for category :orange[$j$]. 
+                    - The coefficients :orange[$\beta_{0j}$] and :orange[$\beta_{1j}$] are estimated using maximum likelihood estimation, and the significance of the predictor is determined by testing if :orange[$\beta_{1j}$] is significantly different from zero for each category.
+                    """,
+    },
+    {
+        "name": "Poisson Regression",
+        "Objective": "Prediction",
+        "Dependent_Variable": "Discrete",
+        "Independent_Variable": "Continuous",
+        "Groups": ["any", "2", "More than 2"],
+        "Relation": ["Independent", "Dependent", "any"],
+        "Distribution": ["Normal", "Non-normal", "any"],
+        "Explanation": "Poisson Regression This test is used to model the relationship between a count dependent variable and one or more continuous independent variables. It assumes that the dependent variable is a count variable, and that the relationship between the independent variables and the log of the expected count is linear.",
+        "Example": "A researcher wants to predict the number of hospital visits (0, 1, 2, 3, ...) based on age and income. The researcher collects data on age, income, and hospital visits from 100 participants and performs a Poisson Regression to determine if age and income are significant predictors of hospital visits.",
+        "Formula": r"""
+                    $$ \log(\lambda) = \beta_{0} + \beta_{1} X_1 + \beta_{2} X_2 $$ 
+                    Where: 
+                    - :orange[$\lambda$] is the expected count of the dependent variable, 
+                    - :orange[$X_1$] and :orange[$X_2$] are the independent variables, 
+                    - :orange[$\beta_{0}$] is the intercept, and 
+                    - :orange[$\beta_{1}$] and :orange[$\beta_{2}$] are the slope coefficients for each independent variable. 
+                    - The coefficients :orange[$\beta_{0}$], :orange[$\beta_{1}$], and :orange[$\beta_{2}$] are estimated using maximum likelihood estimation, and the significance of the predictors is determined by testing if they are significantly different from zero.
+                    """,
+    },
+    # Diagnostic Accuracy Tests
+    {
+        "name": "Sensitivity & Specificity Analysis",
+        "Objective": "Diagnostic Accuracy",
+        "Dependent_Variable": "Binary/Dichotomous",
+        "Independent_Variable": "Binary/Dichotomous",
+        "Groups": "any",
+        "Relation": "any",
+        "Distribution": "any",
+        "Explanation": "Sensitivity and Specificity measures the performance of a binary diagnostic test against a gold standard. Sensitivity (True Positive Rate) is the ability to correctly identify those with the disease, while Specificity (True Negative Rate) is the ability to correctly identify those without the disease.",
+        "Example": "A new rapid antigen test is compared against PCR (gold standard) for COVID-19. 100 people known to have the virus and 100 known to be healthy are tested to calculate the accuracy metrics.",
+        "Formula": r"""
+                    $$ \text{Sensitivity} = \dfrac{TP}{TP + FN} $$
+                    $$ \text{Specificity} = \dfrac{TN}{TN + FP} $$
+                    $$ \text{Positive Predictive Value (PPV)} = \dfrac{TP}{TP + FP} $$
+                    $$ \text{Negative Predictive Value (NPV)} = \dfrac{TN}{TN + FN} $$
+                    $$ \text{Accuracy} = \dfrac{TP + TN}{TP + TN + FP + FN} $$
+                    $$ \text{Likelihood ratio for a positive test (LR+)} = \dfrac{\text{Sensitivity}}{1 - \text{Specificity}} $$
+                    $$ \text{Likelihood ratio for a negative test (LR-)} = \dfrac{1 - \text{Sensitivity}}{\text{Specificity}} $$
+                    $$ \text{F1 Score} = 2 \times \dfrac{\text{PPV} \times \text{Sensitivity}}{\text{PPV} + \text{Sensitivity}} $$
+                    $$ \text{Diagnostic Odds Ratio (DOR)} = \dfrac{LR+}{LR-} $$
+                    Where:
+                    - :orange[$TP$]: True Positives
+                    - :orange[$TN$]: True Negatives
+                    - :orange[$FP$]: False Positives
+                    - :orange[$FN$]: False Negatives
+                    """,
+    },
+    {
+        "name": "ROC Curve Analysis",
+        "Objective": "Diagnostic Accuracy",
+        "Dependent_Variable": "Binary/Dichotomous",
+        "Independent_Variable": "Continuous",
+        "Groups": "any",
+        "Relation": "any",
+        "Distribution": "any",
+        "Explanation": "Receiver Operating Characteristic (ROC) analysis is used to evaluate the performance of a continuous diagnostic test. It plots Sensitivity against 1-Specificity at various thresholds. The Area Under the Curve (AUC) represents the overall accuracy.",
+        "Example": "A researcher wants to determine if blood sugar levels can accurately diagnose diabetes. By plotting an ROC curve, they can find the optimal sugar level cut-off that maximizes both sensitivity and specificity.",
+        "Formula": r"""
+                    $$ \text{AUC} = \int_{0}^{1} \text{Sensitivity}(1-\text{Specificity}) d(1-\text{Specificity}) $$
+                    - :orange[AUC = 0.5]: Random guessing
+                    - :orange[AUC = 1.0]: Perfect diagnostic accuracy
+                    """,
+    },
+    {
+        "name": "Likelihood Ratio Analysis",
+        "Objective": "Diagnostic Accuracy",
+        "Dependent_Variable": "Binary/Dichotomous",
+        "Independent_Variable": "Binary/Dichotomous",
+        "Groups": "any",
+        "Relation": "any",
+        "Distribution": "any",
+        "Explanation": "Likelihood Ratios (LR) are used to assess the value of performing a diagnostic test. LR+ indicates how much more likely a positive test is to be found in a person with the disease than in a person without. LR- indicates how much less likely a negative test is to be found in a person with the disease than in a person without.",
+        "Example": "A clinician uses the LR+ of a physical exam finding to update their post-test probability of a patient having appendicitis.",
+        "Formula": r"""
+                    $$ LR+ = \dfrac{\text{Sensitivity}}{1 - \text{Specificity}} $$
+                    $$ LR- = \dfrac{1 - \text{Sensitivity}}{\text{Specificity}} $$
+                    - :orange[LR+ > 10]: Large increase in disease probability
+                    - :orange[LR- < 0.1]: Large decrease in disease probability
+                    """,
+    },
+    {
+        "name": "Cohen's Kappa (Agreement Analysis)",
+        "Objective": "Diagnostic Accuracy",
+        "Dependent_Variable": "Categorical",
+        "Independent_Variable": "Categorical",
+        "Groups": "2",
+        "Relation": "Dependent",
+        "Distribution": "any",
+        "Explanation": "Cohen's Kappa is used to measure inter-rater or intra-rater agreement for categorical variables. It accounts for the agreement occurring by chance.",
+        "Example": "Two radiologists evaluate the same set of X-rays to diagnose a fracture. Cohen's Kappa measures how consistently they agree on the presence or absence of a fracture.",
+        "Formula": r"""
+                    $$ \kappa = \dfrac{p_o - p_e}{1 - p_e} $$
+                    Where:
+                    - :orange[$p_o$]: Observed proportionate agreement
+                    - :orange[$p_e$]: Probability of random agreement
+                    """,
+    },
+    # ========================================================================
+    # TWO-WAY ANOVA
+    # ========================================================================
+    {
+        "name": "Two-way ANOVA",
+        "Objective": "Comparison",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": "Categorical",
+        "Groups": "More than 2",
+        "Relation": "Independent",
+        "Distribution": "Normal",
+        "Explanation": "Two-way ANOVA This test evaluates the effect of two categorical independent variables (factors) on a continuous dependent variable, as well as their interaction. For example, it can test the effect of treatment (drug vs. placebo) and sex (male vs. female) on blood pressure, and whether the treatment effect differs by sex. It assumes normality, homogeneity of variances, and independence of observations.",
+        "Example": "A researcher wants to test the effects of a new drug and sex on blood pressure. 60 patients are divided into drug and placebo groups, each containing equal numbers of males and females. Two-way ANOVA is used to test for main effects of drug and sex, and their interaction.",
+        "Formula": r"""
+                    $$ SS_{total} = SS_A + SS_B + SS_{AB} + SS_{error} $$
+                    $$ F_A = \frac{MS_A}{MS_{error}}, \quad F_B = \frac{MS_B}{MS_{error}}, \quad F_{AB} = \frac{MS_{AB}}{MS_{error}} $$
+                    Where:
+                    - :orange[$SS_A$] and :orange[$SS_B$] are sums of squares for factors A and B,
+                    - :orange[$SS_{AB}$] is the sum of squares for the interaction,
+                    - :orange[$MS$] values are mean squares (SS/df),
+                    - :orange[$F$]-statistics test the main effects and interaction separately,
+                    - Significance is determined by comparing each :orange[$F$] to the F-distribution with appropriate df.
+                    """,
+    },
+    # ========================================================================
+    # ANCOVA
+    # ========================================================================
+    {
+        "name": "ANCOVA",
+        "Objective": "Comparison",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": "Categorical",
+        "Groups": "More than 2",
+        "Relation": "Independent",
+        "Distribution": "Normal",
+        "Explanation": "Analysis of Covariance (ANCOVA) combines ANOVA and linear regression. It compares group means on a continuous dependent variable while statistically controlling for the effect of one or more continuous covariates. This increases statistical power by reducing within-group error variance and adjusts for baseline differences. It assumes normality, homogeneity of variances, homogeneity of regression slopes, and linearity between covariate and outcome.",
+        "Example": "A researcher wants to compare post-treatment blood pressure between three drug groups while controlling for baseline blood pressure. ANCOVA adjusts the post-treatment means for baseline differences, providing a more precise estimate of treatment effects.",
+        "Formula": r"""
+                    $$ F = \frac{MS_{between}}{MS_{error}} $$
+                    Where:
+                    - The dependent variable :orange[$Y$] is modeled as: $$ Y_{ij} = \mu + \tau_j + \beta(X_{ij} - \bar{X}) + \epsilon_{ij} $$
+                    - :orange[$\tau_j$] is the effect of the :orange[$j$]-th group,
+                    - :orange[$\beta$] is the regression coefficient for the covariate :orange[$X$],
+                    - :orange[$MS_{error}$] is reduced by the variance explained by the covariate, increasing power.
+                    """,
+    },
+    # ========================================================================
+    # COX PROPORTIONAL HAZARDS REGRESSION
+    # ========================================================================
+    {
+        "name": "Cox Proportional Hazards Regression",
+        "Objective": "Survival Analysis",
+        "Dependent_Variable": "Time-to-event",
+        "Independent_Variable": "Continuous",
+        "Groups": "any",
+        "Relation": "any",
+        "Distribution": "any",
+        "Explanation": "Cox Proportional Hazards Regression is the most widely used model for survival analysis. It estimates the hazard ratio (HR) for time-to-event outcomes while adjusting for multiple covariates simultaneously. It is a semi-parametric model that makes no assumption about the shape of the baseline hazard function, but assumes proportional hazards (the effect of each predictor is constant over time).",
+        "Example": "A researcher wants to identify predictors of survival time after a cancer diagnosis. They collect data on age, tumor stage, and treatment type from 200 patients and perform Cox regression to estimate the hazard ratios for each predictor, indicating which factors significantly increase or decrease mortality risk.",
+        "Formula": r"""
+                    $$ h(t) = h_0(t) \exp(\beta_1 X_1 + \beta_2 X_2 + \ldots + \beta_k X_k) $$
+                    Where:
+                    - :orange[$h(t)$] is the hazard at time :orange[$t$],
+                    - :orange[$h_0(t)$] is the baseline hazard (when all predictors are zero),
+                    - :orange[$\beta_1, \beta_2, \ldots$] are the log-hazard ratios for predictors :orange[$X_1, X_2, \ldots$],
+                    - :orange[$\exp(\beta_i)$] is the hazard ratio for predictor :orange[$X_i$],
+                    - The proportional hazards assumption means :orange[$h_0(t)$] cancels out when comparing two individuals.
+                    """,
+    },
+    # ========================================================================
+    # LOG-RANK TEST
+    # ========================================================================
+    {
+        "name": "Log-Rank Test",
+        "Objective": "Survival Analysis",
+        "Dependent_Variable": "Time-to-event",
+        "Independent_Variable": "Categorical",
+        "Groups": "2",
+        "Relation": "Independent",
+        "Distribution": "any",
+        "Explanation": "The Log-Rank Test is a non-parametric test that compares the survival distributions of two or more independent groups. It tests whether the time-to-event differs significantly between groups. It makes no assumption about the shape of the survival curves but assumes that the hazard rates are proportional over time. It is commonly used alongside Kaplan-Meier survival curves.",
+        "Example": "A researcher compares survival times between 50 patients receiving a new cancer drug and 50 receiving standard therapy. The Log-Rank Test determines if the survival difference between the two groups is statistically significant.",
+        "Formula": r"""
+                    $$ \chi^2 = \frac{(O_1 - E_1)^2}{E_1} + \frac{(O_2 - E_2)^2}{E_2} $$
+                    Where:
+                    - :orange[$O_1$] and :orange[$O_2$] are the observed number of events in each group,
+                    - :orange[$E_1$] and :orange[$E_2$] are the expected number of events under the null hypothesis of no difference,
+                    - The test statistic is compared to a chi-square distribution with 1 degree of freedom (for two groups).
+                    - For more than two groups, an extension with :orange[$k-1$] degrees of freedom is used.
+                    """,
+    },
+    # ========================================================================
+    # BLAND-ALTMAN ANALYSIS
+    # ========================================================================
+    {
+        "name": "Bland-Altman Analysis",
+        "Objective": "Diagnostic Accuracy",
+        "Dependent_Variable": "Continuous",
+        "Independent_Variable": "Continuous",
+        "Groups": "2",
+        "Relation": "Dependent",
+        "Distribution": "any",
+        "Explanation": "Bland-Altman Analysis is the standard method for assessing agreement between two quantitative measurement techniques. It plots the difference between paired measurements against their mean, calculates the mean difference (bias), and defines limits of agreement (mean difference ± 1.96 SD of differences). Unlike correlation, which measures association, Bland-Altman directly assesses interchangeability. It assumes the differences are approximately normally distributed.",
+        "Example": "A researcher develops a new digital caliper for measuring tooth dimensions and wants to know if it agrees with the traditional mechanical caliper. 50 teeth are measured with both instruments. Bland-Altman Analysis shows a mean difference of 0.02 mm (negligible bias) with limits of agreement from −0.15 to +0.19 mm, confirming the new caliper can replace the old one for clinical purposes.",
+        "Formula": r"""
+                    $$ \bar{d} = \frac{1}{n} \sum_{i=1}^{n} (X_i - Y_i) $$
+                    $$ s_d = \sqrt{\frac{\sum_{i=1}^{n} (d_i - \bar{d})^2}{n-1}} $$
+                    $$ \text{Upper LoA} = \bar{d} + 1.96 \times s_d $$
+                    $$ \text{Lower LoA} = \bar{d} - 1.96 \times s_d $$
+                    Where:
+                    - :orange[$X_i$] and :orange[$Y_i$] are paired measurements from two methods,
+                    - :orange[$\bar{d}$] is the mean difference (bias),
+                    - :orange[$s_d$] is the standard deviation of the differences,
+                    - :orange[LoA] are the limits of agreement (95% tolerance limits).
+                    """,
+    },
+    # ========================================================================
+    # KENDALL'S TAU-B
+    # ========================================================================
+    {
+        "name": "Kendall's Tau-b",
+        "Objective": "Association/Correlation",
+        "Dependent_Variable": ["Ordinal", "Continuous"],
+        "Independent_Variable": ["Ordinal", "Continuous"],
+        "Groups": "any",
+        "Relation": "any",
+        "Distribution": "Non-normal",
+        "Explanation": "Kendall's Tau-b is a non-parametric rank correlation coefficient that measures the strength and direction of monotonic association between two variables. It is more robust than Spearman's ρ when there are many tied ranks and provides a more conservative estimate. Its interpretation is more intuitive: it represents the difference between the probability of concordance and discordance.",
+        "Example": "A researcher wants to assess the association between two ordinal ratings of periodontal disease severity (none, mild, moderate, severe) given by two different examiners on 100 patients. Kendall's Tau-b is preferred over Spearman's ρ due to the high number of expected ties.",
+        "Formula": r"""
+                    $$ \tau_b = \frac{C - D}{\sqrt{(C + D + T_X)(C + D + T_Y)}} $$
+                    Where:
+                    - :orange[$C$] is the number of concordant pairs,
+                    - :orange[$D$] is the number of discordant pairs,
+                    - :orange[$T_X$] is the number of pairs tied only on variable :orange[$X$],
+                    - :orange[$T_Y$] is the number of pairs tied only on variable :orange[$Y$],
+                    - :orange[$\tau_b$] ranges from −1 (perfect disagreement) to +1 (perfect agreement).
+                    """,
+    },
+    # ========================================================================
+    # NEGATIVE BINOMIAL REGRESSION
+    # ========================================================================
+    {
+        "name": "Negative Binomial Regression",
+        "Objective": "Prediction",
+        "Dependent_Variable": "Discrete",
+        "Independent_Variable": "Continuous",
+        "Groups": "any",
+        "Relation": "any",
+        "Distribution": "any",
+        "Explanation": "Negative Binomial Regression is used for modeling count data when the variance exceeds the mean (overdispersion), which violates the Poisson Regression assumption of equal mean and variance. It adds an extra dispersion parameter to account for unobserved heterogeneity. It is commonly used in medical research for counts with many zeros or high variability, such as hospital readmissions, number of seizures, or dental caries counts.",
+        "Example": "A researcher wants to model the number of dental caries (cavities) in children based on sugar consumption, fluoride exposure, and brushing frequency. The count data shows variance much larger than the mean, so Negative Binomial Regression is chosen over Poisson Regression to account for overdispersion.",
+        "Formula": r"""
+                    $$ \log(\lambda_i) = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \ldots + \beta_k X_{ki} $$
+                    $$ \text{Var}(Y_i) = \lambda_i + \alpha \lambda_i^2 $$
+                    Where:
+                    - :orange[$\lambda_i$] is the expected count for observation :orange[$i$],
+                    - :orange[$\alpha$] is the dispersion parameter (:orange[$\alpha = 0$] reduces to Poisson),
+                    - :orange[$\alpha > 0$] indicates overdispersion,
+                    - Coefficients are estimated using maximum likelihood.
+                    """,
+    },
+    # ========================================================================
+    # WEIGHTED KAPPA
+    # ========================================================================
+    {
+        "name": "Weighted Kappa",
+        "Objective": "Diagnostic Accuracy",
+        "Dependent_Variable": "Ordinal",
+        "Independent_Variable": "Ordinal",
+        "Groups": "2",
+        "Relation": "Dependent",
+        "Distribution": "any",
+        "Explanation": "Weighted Kappa extends Cohen's Kappa to ordinal categorical ratings by incorporating partial credit for disagreements that are close (e.g., 'mild' vs. 'moderate' disagreement is penalized less than 'mild' vs. 'severe'). Linear weights penalize disagreements proportionally to their distance; quadratic weights penalize more severely. It is the standard agreement measure for ordinal scales in medical research.",
+        "Example": "Two radiologists independently classify 100 mammograms into four categories: normal, benign, suspicious, and malignant. Weighted Kappa is used to measure their agreement, where a disagreement between 'normal' and 'benign' is penalized less than between 'normal' and 'malignant'.",
+        "Formula": r"""
+                    $$ \kappa_w = 1 - \frac{\sum_{i=1}^{k} \sum_{j=1}^{k} w_{ij} O_{ij}}{\sum_{i=1}^{k} \sum_{j=1}^{k} w_{ij} E_{ij}} $$
+                    Where:
+                    - :orange[$O_{ij}$] and :orange[$E_{ij}$] are observed and expected frequencies for cell :orange[$(i,j)$],
+                    - :orange[$w_{ij}$] is the weight (0 for perfect agreement, 1 for maximum disagreement),
+                    - Linear weights: :orange[$w_{ij} = \frac{|i-j|}{k-1}$],
+                    - Quadratic weights: :orange[$w_{ij} = \frac{(i-j)^2}{(k-1)^2}$].
+                    """,
+    },
+    # ========================================================================
+    # FLEISS' KAPPA
+    # ========================================================================
+    {
+        "name": "Fleiss' Kappa",
+        "Objective": "Diagnostic Accuracy",
+        "Dependent_Variable": "Categorical",
+        "Independent_Variable": "Categorical",
+        "Groups": "More than 2",
+        "Relation": "Dependent",
+        "Distribution": "any",
+        "Explanation": "Fleiss' Kappa is an extension of Cohen's Kappa that measures inter-rater agreement for three or more raters evaluating categorical (nominal) ratings. Unlike Cohen's Kappa, which handles only two raters, Fleiss' Kappa simultaneously assesses agreement among multiple raters while correcting for chance agreement. It ranges from −1 to +1, with +1 indicating perfect agreement.",
+        "Example": "Three oral pathologists independently classify 50 biopsy slides into diagnostic categories (benign, dysplastic, malignant). Fleiss' Kappa measures the overall agreement among all three pathologists simultaneously, correcting for chance.",
+        "Formula": r"""
+                    $$ \kappa = \frac{\bar{P} - \bar{P_e}}{1 - \bar{P_e}} $$
+                    Where:
+                    - :orange[$\bar{P}$] is the mean proportion of observed agreement across all raters,
+                    - :orange[$\bar{P_e}$] is the mean proportion of expected agreement by chance,
+                    - :orange[$\kappa = 1$]: perfect agreement,
+                    - :orange[$\kappa = 0$]: agreement equivalent to chance,
+                    - :orange[$\kappa < 0$]: less than chance agreement.
+                    """,
+    },
+]
+
+
+CRITERIA_FIELDS = [
+    "Objective",
+    "Dependent_Variable",
+    "Independent_Variable",
+    "Groups",
+    "Relation",
+    "Distribution",
+]
+
+
+FIELDS = [
+    "Objective",
+    "Dependent_Variable",
+    "Independent_Variable",
+    "Groups",
+    "Relation",
+    "Distribution",
+]
+
