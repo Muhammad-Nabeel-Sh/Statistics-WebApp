@@ -3,26 +3,33 @@ TEST_TO_SS_TYPE = {
     "One-sample t-test": "One-sample Mean (t/z-test)",
     "One-sample z-test": "One-sample Mean (t/z-test)",
     "Student's t-test (Independent)": "Two Independent Means (t-test)",
-    "Welch's t-test (unequal variances)": "Two Independent Means (t-test)",
+    "Welch's t-test (Independent, Unequal Variances)": "Two Independent Means (t-test)",
     "Paired t-test": "Paired Means (t-test)",
     "One-sample Proportion Test (Binomial Test)": "One-sample Proportion",
-    "Two Proportion Z-test": "Two Proportions",
     "One-way ANOVA": "One-way ANOVA",
     "Pearson Correlation": "Correlation (Pearson)",
     "Multiple Linear Regression": "Multiple Linear Regression",
     "Logistic Regression": "Logistic Regression",
     "Chi-Square Test of Independence": "Chi-Square Test",
-    "Chi-Square Goodness of Fit Test": "Chi-Square Test",
+    "Chi-Square Goodness-of-Fit Test": "Chi-Square Test",
     "Mann-Whitney U Test": "Mann-Whitney / Wilcoxon (Non-parametric)",
     "One-sample Wilcoxon Signed-Rank Test": "Wilcoxon Signed-Rank (paired)",
-    "Log-Rank Test (Survival)": "Log-Rank Test (Survival)",
-    "Cox Regression": "Cox Regression",
+    "Log-Rank Test": "Log-Rank Test (Survival)",
+    "Cox Proportional Hazards Regression": "Cox Regression",
     "Kruskal-Wallis Test": "Kruskal-Wallis Test",
     "Friedman Test": "Friedman Test",
     "McNemar's Test": "McNemar's Test",
     "Fisher's Exact Test": "Fisher's Exact Test",
     "MANOVA": "MANOVA (Multivariate ANOVA)",
-    "Permutation MANOVA": "MANOVA (Multivariate ANOVA)",
+    "Permutation MANOVA or Non-Parametric MANOVA": "MANOVA (Multivariate ANOVA)",
+    "Repeated Measures ANOVA": "Repeated Measures ANOVA",
+    "Two-way ANOVA": "Two-way / Factorial ANOVA",
+    "Spearman Rank Correlation": "Correlation (Pearson)",
+    "Wilcoxon Signed-Rank Test": "Wilcoxon Signed-Rank (paired)",
+    "Simple Linear Regression": "Multiple Linear Regression",
+    "Cochran's Q Test": "Chi-Square Test",
+    "Point-Biserial Correlation": "Correlation (Pearson)",
+    "Chi-Square Test": "Chi-Square Test",
 }
 
 
@@ -99,6 +106,8 @@ rules = [
         "Example": "A researcher wants to test if the median pain score of patients after a treatment is significantly different from a known median pain score of 5 on a 10-point scale. The researcher collects pain scores from 30 patients and performs a one-sample Wilcoxon signed-rank test to compare the sample median against the known population median of 5.",
         "Formula": r"""
                     $$ W = \sum_{i=1}^{n} R_i \cdot sgn(X_i - M_0) $$
+                    $$ R_i = \text{rank}(|X_i - M_0|) $$
+                    $$ sgn(X_i - M_0) = \begin{cases} +1 & \text{if } X_i > M_0 \\ -1 & \text{if } X_i < M_0 \\ 0 & \text{if } X_i = M_0 \end{cases} $$
                     Where:  
                     - :orange[$R_i$] is the rank of the absolute difference between the observed value  
                     - :orange[$X_i$] and the hypothesized median :orange[$M_0$], and  
@@ -175,6 +184,12 @@ rules = [
         "Example": "A researcher wants to compare the average blood pressure between three groups of patients: those who received a new drug, those who received a different drug, and those who received a placebo. The researcher collects blood pressure readings from 30 patients in each group and performs one-way ANOVA to determine if there is a significant difference in mean blood pressure between the three groups.",
         "Formula": r"""
                     $$ F = \dfrac{MS_{between}}{MS_{within}} $$ 
+                    $$ MS_{between} = \dfrac{SS_{between}}{df_{between}} $$
+                    $$ MS_{within} = \dfrac{SS_{within}}{df_{within}} $$
+                    $$ SS_{between} = \sum_{i=1}^{k} n_i (\bar{X}_i - \bar{X})^2 $$
+                    $$ SS_{within} = \sum_{i=1}^{k} \sum_{j=1}^{n_i} (X_{ij} - \bar{X}_i)^2 $$
+                    $$ df_{between} = k - 1 $$
+                    $$ df_{within} = N - k $$
                     Where: 
                     - :orange[$F$] is the F-statistic, 
                     - :orange[$MS_{between}$] is the mean square between groups, and 
@@ -197,12 +212,19 @@ rules = [
         "Explanation": "Wilcoxon Signed-Rank Test This test is used to compare the medians of two related groups to determine if there is a statistically significant difference between them. It assumes that the data is ordinal or continuous but not normally distributed, and that the pairs are dependent.",
         "Example": "A researcher wants to test if a new drug reduces pain levels in patients. The researcher measures the pain levels of 30 patients before and after administering the drug. The researcher performs a Wilcoxon signed-rank test to determine if there is a significant difference in median pain levels before and after the treatment.",
         "Formula": r"""
-                    $$ W = \sum_{i=1}^{n} R_i $$ 
-                    Where: 
-                    - :orange[$W$] is the test statistic, 
-                    - :orange[$R_i$] is the rank of the :orange[$i$]-th difference, and 
-                    - :orange[$n$] is the number of pairs. 
-                    - The test statistic :orange[$W$] is then compared to a critical value from the Wilcoxon signed-rank distribution to determine significance. :orange[$R$] is calculated by ranking the absolute differences between paired observations and assigning ranks accordingly, with ties receiving average ranks. The sign of the difference is also considered when calculating the test statistic.
+                    $$ W = \min(W^+, W^-) $$
+                    $$ W^+ = \sum_{i=1}^{n} R_i^+ $$
+                    $$ W^- = \sum_{i=1}^{n} R_i^- $$
+                    $$ R_i = \text{rank}(|X_i - M_0|) $$
+                    $$ sgn(X_i - M_0) = \begin{cases} +1 & \text{if } X_i > M_0 \\ -1 & \text{if } X_i < M_0 \\ 0 & \text{if } X_i = M_0 \end{cases} $$
+                    Where:
+                    - :orange[$W^+$] is the sum of the positive ranks,
+                    - :orange[$W^-$] is the absolute sum of the negative ranks.
+                    - :orange[$R$] is calculated by ranking the absolute differences between paired observations, excluding ties.
+                    - :orange[$X_i$] is the observed value for the :orange[$i$]-th pair, and :orange[$M_0$] is the hypothesized median.
+                    - :orange[$sgn(X_i - M_0)$] indicates the direction of the difference (positive, negative, or zero).
+                    - :orange[$W$] is the test statistic, which is the smaller of the two sums of ranks (positive and negative).
+                    - The test statistic :orange[$W$] is then compared to a critical value from the Wilcoxon signed-rank distribution to determine significance.
                     """,
     },
     {
@@ -217,6 +239,9 @@ rules = [
         "Example": "A researcher wants to compare the pain levels between two groups of patients: those who received a new drug and those who received a placebo. The researcher measures the pain levels of 30 patients in each group and performs a Mann-Whitney U test to determine if there is a significant difference in median pain levels between the two groups.",
         "Formula": r"""
                     $$ U = \sum_{i=1}^{n_1} R_i - \dfrac{n_1(n_1+1)}{2} $$ 
+                    $$ U' = \sum_{i=1}^{n_2} R_i - \dfrac{n_2(n_2+1)}{2} $$
+                    $$ U = \min(U, U') $$
+                    $$ z = \dfrac{U - \mu_U}{\sigma_U} $$
                     Where: 
                     - :orange[$U$] is the test statistic, 
                     - :orange[$R_i$] is the rank of the :orange[$i$]-th observation in the combined dataset, 
@@ -258,10 +283,22 @@ rules = [
         "Example": "A researcher wants to test the effect of a new drug on blood pressure over time. The researcher measures the blood pressure of 30 patients at three different time points: before treatment, after 1 month of treatment, and after 3 months of treatment. The researcher performs a repeated measures ANOVA to determine if there is a significant difference in mean blood pressure across the three time points.",
         "Formula": r"""
                     $$ F = \dfrac{MS_{between}}{MS_{error}} $$ 
+                    $$ MS_{between} = \dfrac{SS_{between}}{df_{between}} $$
+                    $$ MS_{error} = \dfrac{SS_{error}}{df_{error}} $$
+                    $$ SS_{between} = \sum_{i=1}^{k} n_i (\bar{X}_i - \bar{X})^2 $$
+                    $$ SS_{error} = \sum_{i=1}^{k} \sum_{j=1}^{n_i} (X_{ij} - \bar{X}_i)^2 $$
+                    $$ df_{between} = k - 1 $$
+                    $$ df_{error} = N - k $$
+                    $$ N = \sum_{i=1}^{k} n_i $$
                     Where: 
                     - :orange[$F$] is the F-statistic, 
                     - :orange[$MS_{between}$] is the mean square between groups (calculated based on the variability of the group means), and 
                     - :orange[$MS_{error}$] is the mean square error (calculated based on the variability of observations within groups). 
+                    - :orange[$SS_{between}$] is the sum of squares between groups, calculated by summing the squared differences between each group mean and the overall mean, weighted by the number of observations in each group.
+                    - :orange[$SS_{error}$] is the sum of squares error, calculated by summing the squared differences between each observation and its respective group mean.
+                    - :orange[$df_{between}$] is the degrees of freedom for the between-groups variability, calculated as the number of groups minus one.
+                    - :orange[$df_{error}$] is the degrees of freedom for the error term, calculated as the total number of observations minus the number of groups.
+                    - :orange[$N$] is the total number of observations across all groups.
                     - The test statistic :orange[$F$] is then compared to a critical value from the F-distribution with appropriate degrees of freedom to determine significance.
                     """,
     },
@@ -295,13 +332,13 @@ rules = [
         "Explanation": "Friedman Test This test is used to compare the medians of three or more related groups to determine if there is a statistically significant difference between them. It assumes that the data is ordinal or continuous but not normally distributed, and that the groups are dependent.",
         "Example": "A researcher wants to compare the effectiveness of three different teaching methods on student performance. The researcher measures the performance of 30 students using each teaching method and performs a Friedman Test to determine if there is a significant difference in median performance across the three methods.",
         "Formula": r"""
-                    $$ \chi^2 = \dfrac{12}{N(N+1)} \sum_{j=1}^{k} R_j^2 - 3N(N+1) $$ 
+                    $$ \chi^2_F = \dfrac{12}{N k (k+1)} \sum_{j=1}^{k} R_j^2 - 3N(k+1) $$ 
                     Where: 
-                    - :orange[$\chi^2$] is the test statistic, 
-                    - :orange[$N$] is the number of subjects, 
-                    - :orange[$k$] is the number of treatments, and 
+                    - :orange[$\chi^2_F$] is the test statistic, 
+                    - :orange[$N$] is the number of subjects (blocks), 
+                    - :orange[$k$] is the number of treatments (groups), and 
                     - :orange[$R_j$] is the sum of ranks for the :orange[$j$]-th treatment. 
-                    - The test statistic :orange[$\chi^2$] is then compared to a critical value from the chi-square distribution with :orange[$k-1$] degrees of freedom to determine significance.
+                    - The test statistic :orange[$\chi^2_F$] is then compared to a critical value from the chi-square distribution with :orange[$k-1$] degrees of freedom to determine significance.
                     """,
     },
     {
@@ -316,6 +353,12 @@ rules = [
         "Example": "A researcher wants to compare the effects of three different diets on both weight loss and cholesterol levels, but the data does not follow a normal distribution. The researcher performs a Permutation MANOVA to determine if there are significant differences in the combined dependent variables (weight loss and cholesterol levels) across the three diet groups.",
         "Formula": r"""
                     $$ F = \dfrac{MS_{between}}{MS_{error}} $$
+                    $$ MS_{between} = \dfrac{SS_{between}}{df_{between}} $$
+                    $$ MS_{error} = \dfrac{SS_{error}}{df_{error}} $$
+                    $$ SS_{between} = \sum_{i=1}^{k} n_i (\bar{X}_i - \bar{X})^2 $$
+                    $$ SS_{error} = \sum_{i=1}^{k} \sum_{j=1}^{n_i} (X_{ij} - \bar{X}_i)^2 $$
+                    $$ df_{between} = k - 1 $$
+                    $$ df_{error} = N - k $$
                     Where:
                     - :orange[$F$] is the pseudo-F-statistic,
                     - :orange[$MS_{between}$] is the mean square between groups, and
@@ -466,8 +509,8 @@ rules = [
     {
         "name": "Chi-Square Test of Independence",
         "Objective": "Association/Correlation",
-        "Dependent_Variable": "Categorical",
-        "Independent_Variable": "Categorical",
+        "Dependent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
         "Groups": ["any", "2", "More than 2"],
         "Relation": ["Independent", "Dependent", "any"],
         "Distribution": ["Non-normal", "Normal", "any"],
@@ -550,7 +593,7 @@ rules = [
         "name": "Logistic Regression",
         "Objective": "Prediction",
         "Dependent_Variable": ["Binary/Dichotomous", "Categorical"],
-        "Independent_Variable": "Continuous",
+        "Independent_Variable": ["Continuous", "Multiple Continuous", "Categorical"],
         "Groups": ["any", "2", "More than 2"],
         "Relation": ["Independent", "Dependent", "any"],
         "Distribution": ["Normal", "Non-normal", "any"],
@@ -570,7 +613,7 @@ rules = [
         "name": "Multinomial Logistic Regression",
         "Objective": "Prediction",
         "Dependent_Variable": ["Binary/Dichotomous", "Categorical"],
-        "Independent_Variable": "Continuous",
+        "Independent_Variable": ["Continuous", "Multiple Continuous", "Categorical"],
         "Groups": ["any", "2", "More than 2"],
         "Relation": ["Independent", "Dependent", "any"],
         "Distribution": ["Normal", "Non-normal", "any"],
@@ -591,7 +634,7 @@ rules = [
         "name": "Ordinal Logistic Regression",
         "Objective": "Prediction",
         "Dependent_Variable": "Ordinal",
-        "Independent_Variable": "Continuous",
+        "Independent_Variable": ["Continuous", "Multiple Continuous", "Categorical"],
         "Groups": ["any", "2", "More than 2"],
         "Relation": ["Independent", "Dependent", "any"],
         "Distribution": ["Normal", "Non-normal", "any"],
@@ -612,7 +655,7 @@ rules = [
         "name": "Poisson Regression",
         "Objective": "Prediction",
         "Dependent_Variable": "Discrete",
-        "Independent_Variable": "Continuous",
+        "Independent_Variable": ["Continuous", "Multiple Continuous", "Categorical"],
         "Groups": ["any", "2", "More than 2"],
         "Relation": ["Independent", "Dependent", "any"],
         "Distribution": ["Normal", "Non-normal", "any"],
@@ -667,7 +710,7 @@ rules = [
         "Explanation": "Receiver Operating Characteristic (ROC) analysis is used to evaluate the performance of a continuous diagnostic test. It plots Sensitivity against 1-Specificity at various thresholds. The Area Under the Curve (AUC) represents the overall accuracy.",
         "Example": "A researcher wants to determine if blood sugar levels can accurately diagnose diabetes. By plotting an ROC curve, they can find the optimal sugar level cut-off that maximizes both sensitivity and specificity.",
         "Formula": r"""
-                    $$ \text{AUC} = \int_{0}^{1} \text{Sensitivity}(1-\text{Specificity}) d(1-\text{Specificity}) $$
+                    $$ \text{AUC} = \int_{0}^{1} \text{Sensitivity}(t) \, d(1 - \text{Specificity}(t)) $$
                     - :orange[AUC = 0.5]: Random guessing
                     - :orange[AUC = 1.0]: Perfect diagnostic accuracy
                     """,
@@ -737,7 +780,7 @@ rules = [
         "name": "ANCOVA",
         "Objective": "Comparison",
         "Dependent_Variable": "Continuous",
-        "Independent_Variable": "Categorical",
+        "Independent_Variable": ["Categorical", "Continuous"],
         "Groups": "More than 2",
         "Relation": "Independent",
         "Distribution": "Normal",
@@ -745,6 +788,11 @@ rules = [
         "Example": "A researcher wants to compare post-treatment blood pressure between three drug groups while controlling for baseline blood pressure. ANCOVA adjusts the post-treatment means for baseline differences, providing a more precise estimate of treatment effects.",
         "Formula": r"""
                     $$ F = \frac{MS_{between}}{MS_{error}} $$
+                    $$ MS_{between} = \frac{SS_{between}}{df_{between}}, \quad MS_{error} = \frac{SS_{error}}{df_{error}} $$
+                    $$ SS_{between} = \sum_{j=1}^{k} n_j (\bar{Y}_j - \bar{Y}_{adj})^2 $$
+                    $$ \bar{Y}_{adj} = \bar{Y} - \beta(\bar{X} - \bar{X}_{overall}) $$
+                    $$ SS_{error} = \sum_{i=1}^{n} (Y_i - \hat{Y}_i)^2 $$
+                    $$ \hat{Y}_i = \mu + \tau_j + \beta(X_i - \bar{X}) $$
                     Where:
                     - The dependent variable :orange[$Y$] is modeled as: $$ Y_{ij} = \mu + \tau_j + \beta(X_{ij} - \bar{X}) + \epsilon_{ij} $$
                     - :orange[$\tau_j$] is the effect of the :orange[$j$]-th group,
@@ -759,7 +807,7 @@ rules = [
         "name": "Cox Proportional Hazards Regression",
         "Objective": "Survival Analysis",
         "Dependent_Variable": "Time-to-event",
-        "Independent_Variable": "Continuous",
+        "Independent_Variable": ["Continuous", "Multiple Continuous", "Categorical"],
         "Groups": "any",
         "Relation": "any",
         "Distribution": "any",
@@ -852,7 +900,7 @@ rules = [
         "name": "Negative Binomial Regression",
         "Objective": "Prediction",
         "Dependent_Variable": "Discrete",
-        "Independent_Variable": "Continuous",
+        "Independent_Variable": ["Continuous", "Multiple Continuous", "Categorical"],
         "Groups": "any",
         "Relation": "any",
         "Distribution": "any",
@@ -934,4 +982,3 @@ FIELDS = [
     "Relation",
     "Distribution",
 ]
-

@@ -21,14 +21,27 @@ def main():
     cur_mode = st.session_state.get("app_mode", "Test Finder")
     col_a, col_b, col_c = st.sidebar.columns(3)
     with col_a:
-        tf_btn = st.button("Finder", use_container_width=True,
-                           type="primary" if cur_mode == "Test Finder" else "secondary")
+        tf_btn = st.button(
+            "Finder",
+            use_container_width=True,
+            type="primary" if cur_mode == "Test Finder" else "secondary",
+        )
     with col_b:
-        ge_btn = st.button("Graphs", use_container_width=True,
-                           type="primary" if cur_mode == "Graph Explorer" else "secondary")
+        ge_btn = st.button(
+            "Graphs",
+            use_container_width=True,
+            type="primary" if cur_mode == "Graph Explorer" else "secondary",
+        )
     with col_c:
-        tab_btn = st.button("Tables", use_container_width=True,
-                            type="primary" if cur_mode == "Tabulation & Cross Tabulation" else "secondary")
+        tab_btn = st.button(
+            "Tables",
+            use_container_width=True,
+            type=(
+                "primary"
+                if cur_mode == "Tabulation & Cross Tabulation"
+                else "secondary"
+            ),
+        )
     if tf_btn:
         st.session_state.app_mode = "Test Finder"
         st.rerun()
@@ -691,11 +704,21 @@ def main():
                     st.caption("Small: 0.10 | Medium: 0.25 | Large: 0.40")
                 are_kw = st.number_input(
                     "ARE vs ANOVA (asymptotic relative efficiency)",
-                    0.15, 1.5, 0.955, 0.001,
+                    0.15,
+                    1.5,
+                    0.955,
+                    0.001,
                     help="ARE = 0.955 at normality, lower for heavy-tailed distributions. Inflates N by 1/ARE.",
                 )
-                st.caption(f"Effective inflation = {1/are_kw:.2f}× (N_multiplier = {1/are_kw:.3f})")
-                ss_params = {"type": "kruskal", "k": int(k_kw), "effect_size": f_kw, "are": are_kw}
+                st.caption(
+                    f"Effective inflation = {1/are_kw:.2f}× (N_multiplier = {1/are_kw:.3f})"
+                )
+                ss_params = {
+                    "type": "kruskal",
+                    "k": int(k_kw),
+                    "effect_size": f_kw,
+                    "are": are_kw,
+                }
 
             elif analysis_type == "Friedman Test":
                 c1, c2 = st.columns(2)
@@ -741,7 +764,10 @@ def main():
                     )
                 are_fish = st.number_input(
                     "ARE vs z-test (asymptotic relative efficiency)",
-                    0.5, 1.0, 0.833, 0.001,
+                    0.5,
+                    1.0,
+                    0.833,
+                    0.001,
                     help="ARE ≈ 0.833 is the standard adjustment for Fisher's exact vs z-test. Lower values increase N.",
                 )
                 st.caption(f"Effective inflation = {1/are_fish:.2f}×")
@@ -761,7 +787,12 @@ def main():
                     dv_man = st.number_input("Number of DVs", 2, 20, 3, 1)
                 manova_test = st.selectbox(
                     "Test statistic",
-                    ["Pillai's Trace", "Wilks' Lambda", "Hotelling-Lawley Trace", "Roy's Largest Root"],
+                    [
+                        "Pillai's Trace",
+                        "Wilks' Lambda",
+                        "Hotelling-Lawley Trace",
+                        "Roy's Largest Root",
+                    ],
                     help="Pillai: most robust, recommended. Wilks: traditional. Hotelling: more power when assumptions met. Roy: most powerful when one dimension dominates.",
                 )
                 c1, c2 = st.columns(2)
@@ -798,15 +829,35 @@ def main():
             elif analysis_type == "Simulation-based Power (Monte Carlo)":
                 sim_test = st.selectbox(
                     "Statistical test to simulate",
-                    ["Independent t-test (pooled)", "Welch's t-test", "Mann-Whitney U test", "Two-proportion z-test"],
+                    [
+                        "Independent t-test (pooled)",
+                        "Welch's t-test",
+                        "Mann-Whitney U test",
+                        "Two-proportion z-test",
+                    ],
                 )
-                n_sim = st.number_input("Number of simulations", 100, 10000, 1000, 100, help="Higher = more precise but slower.")
-                if sim_test in ("Independent t-test (pooled)", "Welch's t-test", "Mann-Whitney U test"):
+                n_sim = st.number_input(
+                    "Number of simulations",
+                    100,
+                    10000,
+                    1000,
+                    100,
+                    help="Higher = more precise but slower.",
+                )
+                if sim_test in (
+                    "Independent t-test (pooled)",
+                    "Welch's t-test",
+                    "Mann-Whitney U test",
+                ):
                     c1, c2, c3 = st.columns(3)
                     with c1:
-                        mu1_s = st.number_input("Mean of Group 1", -100.0, 100.0, 0.0, 0.1)
+                        mu1_s = st.number_input(
+                            "Mean of Group 1", -100.0, 100.0, 0.0, 0.1
+                        )
                     with c2:
-                        mu2_s = st.number_input("Mean of Group 2", -100.0, 100.0, 0.5, 0.1)
+                        mu2_s = st.number_input(
+                            "Mean of Group 2", -100.0, 100.0, 0.5, 0.1
+                        )
                     with c3:
                         sd_s = st.number_input("SD (both groups)", 0.1, 100.0, 1.0, 0.1)
                     n_per_s = st.number_input("N per group", 5, 5000, 50, 5)
@@ -820,20 +871,26 @@ def main():
                         "type": "simulation",
                         "sim_test": sim_test,
                         "n_sim": int(n_sim),
-                        "mu1": mu1_s, "mu2": mu2_s,
+                        "mu1": mu1_s,
+                        "mu2": mu2_s,
                         "sd": sd_s,
                         "n_per": int(n_per_s),
                         "dist": dist_type,
                     }
                 else:
-                    p1_s = st.number_input("Proportion in Group 1", 0.01, 0.99, 0.3, 0.01)
-                    p2_s = st.number_input("Proportion in Group 2", 0.01, 0.99, 0.5, 0.01)
+                    p1_s = st.number_input(
+                        "Proportion in Group 1", 0.01, 0.99, 0.3, 0.01
+                    )
+                    p2_s = st.number_input(
+                        "Proportion in Group 2", 0.01, 0.99, 0.5, 0.01
+                    )
                     n_per_s = st.number_input("N per group", 5, 5000, 100, 5)
                     ss_params = {
                         "type": "simulation",
                         "sim_test": sim_test,
                         "n_sim": int(n_sim),
-                        "p1_s": p1_s, "p2_s": p2_s,
+                        "p1_s": p1_s,
+                        "p2_s": p2_s,
                         "n_per": int(n_per_s),
                     }
 
@@ -893,9 +950,7 @@ def main():
                         else 0.0
                     )
 
-                adjust_multiple = st.checkbox(
-                    "Multiple testing correction"
-                )
+                adjust_multiple = st.checkbox("Multiple testing correction")
                 if adjust_multiple:
                     mc_method = st.selectbox(
                         "Correction method",
@@ -1074,7 +1129,10 @@ def main():
                     if conv_dir == "P(X>Y) → d / Cliff's δ":
                         p_xy = st.number_input(
                             "P(X>Y) probability (common language effect size)",
-                            0.51, 0.99, 0.65, 0.01,
+                            0.51,
+                            0.99,
+                            0.65,
+                            0.01,
                             help="Probability that a random observation from Group 1 exceeds one from Group 2.",
                         )
                         d_np = np.sqrt(3) * (p_xy - 0.5) * 2
@@ -1082,21 +1140,28 @@ def main():
                         c1, c2 = st.columns(2)
                         c1.metric("Cohen's d (approx)", f"{d_np:.4f}")
                         c2.metric("Cliff's δ / Glass r_b", f"{cliff_d:.4f}")
-                        if st.button("Apply d to Mann-Whitney/Wilcoxon", key="apply_pxy_d"):
+                        if st.button(
+                            "Apply d to Mann-Whitney/Wilcoxon", key="apply_pxy_d"
+                        ):
                             st.session_state.converted_es = d_np
                             st.session_state.converted_type = "d"
                             st.rerun()
                     else:
                         cliff_in = st.number_input(
                             "Cliff's δ (or Glass rank-biserial r)",
-                            -1.0, 1.0, 0.3, 0.01,
+                            -1.0,
+                            1.0,
+                            0.3,
+                            0.01,
                         )
                         p_xy_out = (cliff_in + 1) / 2
                         d_np_out = np.sqrt(3) * cliff_in
                         c1, c2 = st.columns(2)
                         c1.metric("P(X>Y)", f"{p_xy_out:.4f}")
                         c2.metric("Cohen's d (approx)", f"{d_np_out:.4f}")
-                        if st.button("Apply d to Mann-Whitney/Wilcoxon", key="apply_cliff_d"):
+                        if st.button(
+                            "Apply d to Mann-Whitney/Wilcoxon", key="apply_cliff_d"
+                        ):
                             st.session_state.converted_es = abs(d_np_out)
                             st.session_state.converted_type = "d"
                             st.rerun()
@@ -1236,20 +1301,6 @@ def main():
                                 st.markdown("## Formula:")
                                 render_latex(rule["Formula"])
                             render_test_widget(test)
-                            ss_type = TEST_TO_SS_TYPE.get(test)
-                            if ss_type:
-                                if st.button(
-                                    f"📐 Estimate sample size for this test",
-                                    key=f"ss_link_{test}",
-                                ):
-                                    st.session_state.ss_pending_obj = (
-                                        "Sample Size Estimation"
-                                    )
-                                    st.session_state.ss_pending_at = ss_type
-                                    st.session_state.results = None
-                                    st.session_state.power_params = None
-                                    st.rerun()
-                            st.markdown("---")
 
             else:
                 st.error(
@@ -1274,13 +1325,17 @@ def main():
         # build_tree(rules, FIELDS, user_input)
 
         tab_acc, tab_sun = st.tabs(["Accordion View", "Sunburst Chart"])
-        
+
         with tab_acc:
-            st.write("Expand the branches below to navigate statistical test selection visually.")
+            st.write(
+                "Expand the branches below to navigate statistical test selection visually."
+            )
             build_tree(rules, FIELDS, user_input)
-            
+
         with tab_sun:
-            st.write("A holistic view of the statistical universe. Click on a slice to zoom in.")
+            st.write(
+                "A holistic view of the statistical universe. Click on a slice to zoom in."
+            )
             build_sunburst_chart(rules, FIELDS)
 
     # =========================
@@ -1341,10 +1396,6 @@ def main():
 </div>
 """
     st.markdown(footer_html, unsafe_allow_html=True)
-
-
-
-
 
 
 # =========================
