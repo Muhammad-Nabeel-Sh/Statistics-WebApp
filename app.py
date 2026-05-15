@@ -4,7 +4,7 @@ from data import TEST_TO_SS_TYPE, rules, FIELDS
 from matching import find_matching_tests
 from widgets import render_latex, render_test_widget
 from power_calculator import render_power_calculator
-from flowchart import build_tree
+from flowchart import build_tree, build_sunburst_chart
 from glossary import render_glossary
 from graph_explorer import render_graph_explorer
 from tabulation import render_tabulation
@@ -1271,7 +1271,17 @@ def main():
         st.write(
             "Expand the branches below to navigate statistical test selection visually."
         )
-        build_tree(rules, FIELDS, user_input)
+        # build_tree(rules, FIELDS, user_input)
+
+        tab_acc, tab_sun = st.tabs(["Accordion View", "Sunburst Chart"])
+        
+        with tab_acc:
+            st.write("Expand the branches below to navigate statistical test selection visually.")
+            build_tree(rules, FIELDS, user_input)
+            
+        with tab_sun:
+            st.write("A holistic view of the statistical universe. Click on a slice to zoom in.")
+            build_sunburst_chart(rules, FIELDS)
 
     # =========================
     # FOOTER

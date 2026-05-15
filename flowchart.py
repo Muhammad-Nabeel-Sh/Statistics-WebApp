@@ -1,5 +1,7 @@
 import streamlit as st
 from data import FIELDS
+import pandas as pd
+import plotly.express as px
 
 def build_tree(rule_subset, fields, user_input=None, level=0):
 
@@ -60,9 +62,34 @@ def build_tree(rule_subset, fields, user_input=None, level=0):
 
             build_tree(subrules, fields[1:], user_input, level + 1)
 
+def build_sunburst_chart(rules_data, fields):
+    df = pd.DataFrame(rules_data)
+    for f in fields:
+        if f in df.columns:
+            df[f] = df[f].apply(lambda x: list(x) if isinstance(x, (list, tuple)) else x)
+            df = df.explode(f)
+            df[f] = df[f].fillna("any").astype(str)
+            
+    # Some names might be repeated in different branches due to exploding
+    # Add a count column for values
+    df["count"] = 1
+    
+    fig = px.sunburst(
+        df, 
+        path=fields + ["name"], 
+        values="count",
+        color="Objective",
+        color_discrete_sequence=px.colors.qualitative.Pastel
+    )
+    fig.update_traces(textinfo="label")
+    fig.update_layout(
+        margin=dict(t=0, l=0, r=0, b=0),
+        height=800
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
 # =========================
 # RUN APP
 # =========================
 if __name__ == "__main__":
-    main()
+    pass
