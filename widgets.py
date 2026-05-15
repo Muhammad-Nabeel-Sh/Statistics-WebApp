@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 
+
 def render_latex(formula_text):
     """Render LaTeX formulas from text with $$ delimiters."""
     import re
@@ -1497,7 +1498,13 @@ def render_test_widget(test_name):
 
         sd2 = st.slider("Group 2 SD", 0.5, 8.0, 3.0, 0.1)
 
-        n = st.slider("Sample Size", 10, 300, 50, key="welch_s_t_test_independent_unequal_variances_sample_size")
+        n = st.slider(
+            "Sample Size",
+            10,
+            300,
+            50,
+            key="welch_s_t_test_independent_unequal_variances_sample_size",
+        )
 
         # =========================
         # DATA
@@ -1648,7 +1655,9 @@ def render_test_widget(test_name):
             0.1,
         )
 
-        n = st.slider("Number of Subjects", 10, 200, 40, key="paired_t_test_number_of_subjects")
+        n = st.slider(
+            "Number of Subjects", 10, 200, 40, key="paired_t_test_number_of_subjects"
+        )
 
         # =========================
         # DATA
@@ -3604,10 +3613,18 @@ def render_test_widget(test_name):
         # CONTROLS
         # =========================
 
-        a = st.slider("Cell A", 1, 100, 30, key="chi_square_test_of_independence_cell_a")
-        b = st.slider("Cell B", 1, 100, 20, key="chi_square_test_of_independence_cell_b")
-        c = st.slider("Cell C", 1, 100, 10, key="chi_square_test_of_independence_cell_c")
-        d = st.slider("Cell D", 1, 100, 40, key="chi_square_test_of_independence_cell_d")
+        a = st.slider(
+            "Cell A", 1, 100, 30, key="chi_square_test_of_independence_cell_a"
+        )
+        b = st.slider(
+            "Cell B", 1, 100, 20, key="chi_square_test_of_independence_cell_b"
+        )
+        c = st.slider(
+            "Cell C", 1, 100, 10, key="chi_square_test_of_independence_cell_c"
+        )
+        d = st.slider(
+            "Cell D", 1, 100, 40, key="chi_square_test_of_independence_cell_d"
+        )
 
         # =========================
         # TABLE
@@ -3731,10 +3748,19 @@ def render_test_widget(test_name):
         col1, col2 = st.columns(2)
 
         with col1:
-            beta0 = st.slider("Intercept (β₀)", -10.0, 10.0, 0.0, 0.1, key="logistic_regression_intercept")
+            beta0 = st.slider(
+                "Intercept (β₀)",
+                -10.0,
+                10.0,
+                0.0,
+                0.1,
+                key="logistic_regression_intercept",
+            )
 
         with col2:
-            beta1 = st.slider("Slope (β₁)", -5.0, 5.0, 1.0, 0.1, key="logistic_regression_slope")
+            beta1 = st.slider(
+                "Slope (β₁)", -5.0, 5.0, 1.0, 0.1, key="logistic_regression_slope"
+            )
 
         # =========================
         # DATA
@@ -3790,10 +3816,24 @@ def render_test_widget(test_name):
         col1, col2 = st.columns(2)
 
         with col1:
-            beta0 = st.slider("Intercept (β₀)", -20.0, 20.0, 0.0, 0.1, key="simple_linear_regression_intercept")
+            beta0 = st.slider(
+                "Intercept (β₀)",
+                -20.0,
+                20.0,
+                0.0,
+                0.1,
+                key="simple_linear_regression_intercept",
+            )
 
         with col2:
-            beta1 = st.slider("Slope (β₁)", -10.0, 10.0, 1.0, 0.1, key="simple_linear_regression_slope")
+            beta1 = st.slider(
+                "Slope (β₁)",
+                -10.0,
+                10.0,
+                1.0,
+                0.1,
+                key="simple_linear_regression_slope",
+            )
 
         # =========================
         # DATA
@@ -3840,7 +3880,9 @@ def render_test_widget(test_name):
         # CONTROLS
         # =========================
 
-        beta0 = st.slider("β₀", -20.0, 20.0, 0.0, 0.1, key="multiple_linear_regression_beta0")
+        beta0 = st.slider(
+            "β₀", -20.0, 20.0, 0.0, 0.1, key="multiple_linear_regression_beta0"
+        )
 
         beta1 = st.slider("β₁ (x₁ coefficient)", -10.0, 10.0, 1.0, 0.1)
 
@@ -4037,7 +4079,13 @@ def render_test_widget(test_name):
 
         hazard_ratio = st.slider("True Hazard Ratio (exp(β))", 0.5, 4.0, 2.0, 0.1)
 
-        n_subjects = st.slider("Number of Subjects", 20, 500, 100, key="cox_proportional_hazards_regression_number_of_subjects")
+        n_subjects = st.slider(
+            "Number of Subjects",
+            20,
+            500,
+            100,
+            key="cox_proportional_hazards_regression_number_of_subjects",
+        )
 
         # =========================
         # DATA
@@ -4098,13 +4146,12 @@ def render_test_widget(test_name):
         # =========================
         # CONTROLS
         # =========================
-
-        c1, c2 = st.columns([1, 2.5])
-        with c1:
-            n = st.slider("Patients per Group", 10, 200, 50, key="km_n_pat")
-            hr = st.slider("Hazard Ratio (Trt/Control)", 0.2, 2.0, 0.5, 0.05, key="km_hr_ratio")
-            cens = st.slider("Censoring Rate", 0.0, 0.5, 0.2, 0.05, key="km_cens_rate")
-            show_ci = st.toggle("Show 95% CI", True, key="km_ci_toggle")
+        n = st.slider("Patients per Group", 10, 200, 50, key="km_n_pat")
+        hr = st.slider(
+            "Hazard Ratio (Trt/Control)", 0.2, 2.0, 0.5, 0.05, key="km_hr_ratio"
+        )
+        cens = st.slider("Censoring Rate", 0.0, 0.5, 0.2, 0.05, key="km_cens_rate")
+        show_ci = st.toggle("Show 95% CI", True, key="km_ci_toggle")
 
         # =========================
         # DATA
@@ -4188,7 +4235,7 @@ def render_test_widget(test_name):
                 v1 += ne * n1 * n2 * (nr - ne) / (nr * nr * (nr - 1))
             if v1 <= 0:
                 return 0.0, 1.0
-            chi2 = (o1 - e1)**2 / v1
+            chi2 = (o1 - e1) ** 2 / v1
             return chi2, 1 - _chi2.cdf(chi2, 1)
 
         # =========================
@@ -4210,40 +4257,51 @@ def render_test_widget(test_name):
 
         fig = go.Figure()
         colors = {"Control": "#4C78A8", "Treatment": "#E45756"}
-        fill_colors = {"Control": "rgba(76,120,168,0.15)", "Treatment": "rgba(228,87,86,0.15)"}
+        fill_colors = {
+            "Control": "rgba(76,120,168,0.15)",
+            "Treatment": "rgba(228,87,86,0.15)",
+        }
 
         for grp, name in [(0, "Control"), (1, "Treatment")]:
             t_, s_, lo_, hi_ = _km_ci(obs[groups == grp], event[groups == grp])
             if show_ci:
-                fig.add_trace(go.Scatter(
-                    x=np.concatenate([t_, t_[::-1]]),
-                    y=np.concatenate([hi_, lo_[::-1]]),
-                    fill="toself",
-                    fillcolor=fill_colors[name],
-                    line=dict(width=0),
-                    name=f"{name} 95% CI",
-                    showlegend=True,
-                ))
-            fig.add_trace(go.Scatter(
-                x=t_, y=s_,
-                mode="lines",
-                line=dict(color=colors[name], width=2.5),
-                name=name,
-                hovertemplate="Time=%{x:.1f}<br>Survival=%{y:.3f}<extra></extra>",
-                legendgroup=name,
-            ))
+                fig.add_trace(
+                    go.Scatter(
+                        x=np.concatenate([t_, t_[::-1]]),
+                        y=np.concatenate([hi_, lo_[::-1]]),
+                        fill="toself",
+                        fillcolor=fill_colors[name],
+                        line=dict(width=0),
+                        name=f"{name} 95% CI",
+                        showlegend=True,
+                    )
+                )
+            fig.add_trace(
+                go.Scatter(
+                    x=t_,
+                    y=s_,
+                    mode="lines",
+                    line=dict(color=colors[name], width=2.5),
+                    name=name,
+                    hovertemplate="Time=%{x:.1f}<br>Survival=%{y:.3f}<extra></extra>",
+                    legendgroup=name,
+                )
+            )
             mask = groups == grp
             cens_t = obs[mask & (event == 0)]
             if len(cens_t) > 0:
                 idxs = np.searchsorted(t_, cens_t, side="right") - 1
                 cs = s_[np.maximum(0, idxs)]
-                fig.add_trace(go.Scatter(
-                    x=cens_t, y=cs,
-                    mode="markers",
-                    marker=dict(color=colors[name], symbol="line-ns", size=7),
-                    showlegend=False,
-                    hoverinfo="skip",
-                ))
+                fig.add_trace(
+                    go.Scatter(
+                        x=cens_t,
+                        y=cs,
+                        mode="markers",
+                        marker=dict(color=colors[name], symbol="line-ns", size=7),
+                        showlegend=False,
+                        hoverinfo="skip",
+                    )
+                )
 
         events_pct = int(event.mean() * 100)
         fig.update_xaxes(tickformat=".2f")
@@ -4256,21 +4314,25 @@ def render_test_widget(test_name):
             yaxis_title="Survival Probability",
             hovermode="x unified",
         )
-        with c2:
-            st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True)
 
         # =========================
         # METRICS
         # =========================
 
         m1 = st.columns(4)
-        m1[0].metric("Control Median Survival",
-                      f"{med1:.1f}" if med1 is not None else "Not reached")
-        m1[1].metric("Treatment Median Survival",
-                      f"{med2:.1f}" if med2 is not None else "Not reached")
+        m1[0].metric(
+            "Control Median Survival",
+            f"{med1:.1f}" if med1 is not None else "Not reached",
+        )
+        m1[1].metric(
+            "Treatment Median Survival",
+            f"{med2:.1f}" if med2 is not None else "Not reached",
+        )
         m1[2].metric("Log-Rank χ²", f"{chi2:.3f}")
-        m1[3].metric("Log-Rank p-value",
-                      f"{p_val:.4f}" if p_val >= 0.0001 else "<0.0001")
+        m1[3].metric(
+            "Log-Rank p-value", f"{p_val:.4f}" if p_val >= 0.0001 else "<0.0001"
+        )
 
         # =========================
         # INTERPRETATION
@@ -4283,29 +4345,37 @@ def render_test_widget(test_name):
             """)
             col_i, col_w, col_t, col_m = st.columns(4)
             with col_i:
-                st.info("**Interpretation**\n\n"
-                        "- Step down = event\n"
-                        "- Tick marks = censored\n"
-                        "- Lower curve = worse survival\n"
-                        "- HR < 1 favors treatment")
+                st.info(
+                    "**Interpretation**\n\n"
+                    "- Step down = event\n"
+                    "- Tick marks = censored\n"
+                    "- Lower curve = worse survival\n"
+                    "- HR < 1 favors treatment"
+                )
             with col_w:
-                st.success("**When To Use**\n\n"
-                           "- Time-to-event data\n"
-                           "- Censored observations\n"
-                           "- Compare survival curves\n"
-                           "- Estimate median survival")
+                st.success(
+                    "**When To Use**\n\n"
+                    "- Time-to-event data\n"
+                    "- Censored observations\n"
+                    "- Compare survival curves\n"
+                    "- Estimate median survival"
+                )
             with col_t:
-                st.warning("**Associated**\n\n"
-                           "- Log-Rank Test\n"
-                           "- Cox PH Regression\n"
-                           "- Nelson-Aalen Plot\n"
-                           "- Hazard Ratio")
+                st.warning(
+                    "**Associated**\n\n"
+                    "- Log-Rank Test\n"
+                    "- Cox PH Regression\n"
+                    "- Nelson-Aalen Plot\n"
+                    "- Hazard Ratio"
+                )
             with col_m:
-                st.error("**Caution**\n\n"
-                         "KM beyond last event is "
-                         "unstable. Always show "
-                         "number at risk. "
-                         "CI widens at late times.")
+                st.error(
+                    "**Caution**\n\n"
+                    "KM beyond last event is "
+                    "unstable. Always show "
+                    "number at risk. "
+                    "CI widens at late times."
+                )
 
     elif test_name == "Log-Rank Test":
 
@@ -4591,7 +4661,9 @@ def render_test_widget(test_name):
 
         agreement_sd = st.slider("SD of Differences", 0.1, 5.0, 1.0, 0.1)
 
-        n = st.slider("Sample Size", 10, 200, 50, key="bland_altman_analysis_sample_size")
+        n = st.slider(
+            "Sample Size", 10, 200, 50, key="bland_altman_analysis_sample_size"
+        )
 
         # =========================
         # DATA
@@ -4653,5 +4725,3 @@ def render_test_widget(test_name):
 
     else:
         st.info("Interactive widget coming soon for this test.")
-
-
