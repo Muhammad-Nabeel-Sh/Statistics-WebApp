@@ -1,54 +1,58 @@
-# Statistical Test Finder
+# Statistical Test Finder & Tabulation WebApp
 
-🔬 **Statistical Test Finder** is a comprehensive Streamlit-based web application designed to help researchers, students, and data scientists identify the appropriate statistical test for their study design and data characteristics.
+A comprehensive Streamlit-based platform for statistical test selection, interactive visualization, and tabulation/cross-tabulation analysis. Designed for researchers, students, and data scientists.
 
-## 🚀 Features
+## Modes
 
-- **Interactive Test Matching**: Select your research objective, variable types, and experimental design to receive tailored statistical test recommendations.
-- **Two-Column Layout**: Optimized for wide screens, keeping input parameters on the left and results/educational content on the right for a seamless user experience.
-- **Comprehensive Test Library**: Covers over 30 statistical tests, including:
-    - **Comparison Tests**: t-tests, ANOVA, MANOVA, Wilcoxon, Mann-Whitney, Kruskal-Wallis, Friedman, Chi-Square, etc.
-    - **Association/Correlation Tests**: Pearson, Spearman, Point-Biserial, etc.
-    - **Prediction Tests**: Simple/Multiple Linear Regression, Logistic Regression (Multinomial/Ordinal), Poisson Regression, etc.
-- **Educational Content**: Each recommended test comes with:
-    - Detailed **Explanations** of its purpose and assumptions.
-    - Practical **Examples** of use cases.
-    - Mathematical **Formulas** rendered in LaTeX.
-- **Interactive Visualizations**: Real-time interactive widgets for most tests using synthetic data. Adjust sliders to see how parameters (like mean shift, noise, or correlation) affect test statistics and p-values.
-- **Visual Flowchart**: An interactive tree-based flowchart to explore the statistical decision-making process visually.
+### Test Finder
+Rule-based engine matching study design inputs (objective, variables, groups, relation, distribution) to 30+ statistical tests with explanations, examples, and LaTeX formulas. Includes interactive widgets with real-time parameter sliders for most tests.
 
-## 🛠️ Installation & Setup
+### Graph Explorer
+Interactive plot generation with educational guidance:
+- **Distribution Plots**: Histogram, KDE, Boxplot, Violin, Q-Q
+- **Comparison Plots**: Grouped Bar, Error Bar, Paired Line, Boxplot Comparison, Violin Comparison
+- **Correlation Plots**: Scatterplot, Correlation Heatmap, Bubble Plot, Monotonic vs Linear
+- **Regression Plots**: Linear Regression, Multiple Regression Surface, Logistic Sigmoid
 
-1. **Clone the repository**:
-   ```bash
-   git clone <repository-url>
-   cd "Statistics WebApp"
-   ```
+Each plot includes interpretation notes, when-to-use guidance, associated tests, and common mistakes.
 
-2. **Install dependencies**:
-   Ensure you have Python installed, then install the required packages:
-   ```bash
-   pip install streamlit numpy pandas matplotlib plotly scipy statsmodels
-   ```
+### Tabulation & Cross Tabulation
+Eight comprehensive sections:
 
-3. **Run the application**:
-   ```bash
-   streamlit run app.py
-   ```
+1. **Descriptive Tabulation** — Frequency, Relative Frequency, Cumulative Frequency tables; Descriptive Statistics (mean, median, skewness, kurtosis, CI); Grouped Summary; Pivot Tables; Distribution Summary (percentiles)
 
-## 📂 Project Structure
+2. **Cross-Tabulation** — 2×2 and RxC contingency tables with χ², Cramér's V, Odds Ratio; Proportion/Row%/Col% tables; Marginal Totals; Expected Frequency tables with observed vs expected comparison and cell-wise χ² contribution breakdown
 
-- `app.py`: The core application containing the matching engine, UI, and interactive widgets.
-- `Condtional_Logic.py`: A simplified version of the test selection logic and UI.
+3. **Diagnostic Accuracy** — Confusion matrix; Sensitivity, Specificity, PPV, NPV, LR+/LR−; Bayesian updating from pre-test to post-test probability
 
-## 🧪 How It Works
+4. **Agreement Tables** — Observer Agreement Matrix; Cohen's Kappa with SE/z/p and Landis & Koch interpretation; ICC Reliability
 
-The app uses a rule-based matching engine defined in `app.py`. Each statistical test is defined as a rule with specific criteria:
-- **Objective**: Comparison, Association/Correlation, or Prediction.
-- **Dependent Variable**: Continuous, Categorical, Ordinal, etc.
-- **Independent Variable**: Type of predictor or grouping variable.
-- **Groups**: Number of groups involved (1, 2, or more).
-- **Relation**: Whether the samples are independent or dependent (paired).
-- **Distribution**: Normal or Non-normal.
+5. **Regression Summary Tables** — Coefficient tables with forest plots; Odds Ratio tables; Model Fit (R², AIC, BIC); ANOVA decomposition; Residual diagnostics with Shapiro-Wilk test
 
-When you make selections in the UI, the engine filters the rules to find the most appropriate test(s) for your specific scenario.
+6. **Effect Size Tables** — Cohen's d with overlapping distribution plot; η²/Eta-squared; Cramér's V; Odds Ratio with RR/ARR/RRR/NNT; Relative Risk
+
+7. **Educational Modules** — Interactive Frequency Explorer; Cross-Tabulation Explorer; Expected Frequency Explorer (cell-wise χ² contributions); OR/RR/RRR/NNT Explorer; Conditional Probability Explorer; Bayesian Updating Table
+
+8. **APA/Journal Export** — Generate publication-ready tables (Descriptive, Correlation Matrix, Regression, ANOVA, Contingency, Effect Sizes) with configurable decimals, significance stars, CI, and CSV download
+
+### Sample Size Estimator
+Power analysis and sample size estimation for 25+ analysis types including means, proportions, ANOVA, regression, survival, equivalence, ROC, kappa, cluster RCT, and simulation-based Monte Carlo power. Includes effect size converter, dropout/multiple-testing adjustments, and budget feasibility.
+
+## Installation
+
+```bash
+pip install streamlit numpy pandas plotly scipy statsmodels scikit-learn
+streamlit run app.py
+```
+
+## Project Structure
+
+- `app.py` — Main application with UI, matching engine, and routing
+- `data.py` — Test rule definitions and mappings
+- `widgets.py` — Interactive test widgets with real-time controls
+- `graph_explorer.py` — Graph Explorer section with all plot widgets
+- `tabulation.py` — Tabulation & Cross Tabulation section (8 modules)
+- `power_calculator.py` — Sample size and power calculator
+- `flowchart.py` — Interactive decision tree for test selection
+- `glossary.py` — Statistical terms glossary sidebar
+- `matching.py` — Rule-based test matching logic
