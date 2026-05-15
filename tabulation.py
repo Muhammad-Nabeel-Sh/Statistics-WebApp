@@ -108,6 +108,7 @@ def descriptive_tabulation():
             "Grouped Summary Tables",
             "Pivot Tables",
             "Distribution Summary Tables",
+            "Outlier Detection Table",
         ],
         "desc_tab",
     )
@@ -126,6 +127,8 @@ def descriptive_tabulation():
         _pivot_table_widget()
     elif tab == "Distribution Summary Tables":
         _dist_summary_widget()
+    elif tab == "Outlier Detection Table":
+        _outlier_detection_widget()
 
 
 def _generate_sample_data(n, dist="Normal", seed=42):
@@ -1236,6 +1239,7 @@ def regression_tables():
             "Model Fit Tables",
             "ANOVA Tables",
             "Residual Summary Tables",
+            "Post-hoc Comparison Tables",
         ],
         "reg_tab",
     )
@@ -1250,6 +1254,8 @@ def regression_tables():
         _anova_table_widget()
     elif tab == "Residual Summary Tables":
         _residual_table_widget()
+    elif tab == "Post-hoc Comparison Tables":
+        _posthoc_tables_widget()
 
 
 def _coeff_table_widget():
@@ -2646,6 +2652,403 @@ def apa_export():
 
 
 # =====================
+# OUTLIER DETECTION TABLE
+# =====================
+
+
+def _outlier_detection_widget():
+    c1, c2 = st.columns([1, 2])
+    with c1:
+        n = st.slider("Sample Size", 10, 500, 100, key="od_n")
+        dist = st.selectbox("Distribution", ["Normal", "Skewed", "Heavy-tailed (t)"], key="od_dist")
+        method = st.selectbox("Method", ["Z-score (±3σ)", "Modified Z-score", "IQR (1.5×)", "IQR (3×)"], key="od_method")
+        inject_outliers = st.toggle("Inject Outliers", True, key="od_inject")
+    np.random.seed(42)
+    if dist == "Normal":
+        data = np.random.normal(50, 10, n)
+    elif dist == "Skewed":
+        data = np.random.gamma(2, 15, n) + 10
+    else:
+        data = np.random.standard_t(3, n) * 10 + 50
+    if inject_outliers:
+        idx = np.random.choice(n, max(3, int(n * 0.03)), replace=False)
+        data[idx] = data[idx] + np.random.choice([-1, 1], len(idx)) * np.random.uniform(3, 5, len(idx)) * np.std(data)
+    if method == "Z-score (±3σ)":
+        scores = np.abs(stats.zscore(data))
+        flags = scores > 3
+        col_name = "|Z|"
+    elif method == "Modified Z-score":
+        median = np.median(data)
+        mad = np.median(np.abs(data - median))
+        scores = 0.6745 * (data - median) / (mad if mad > 0 else 1)
+        flags = np.abs(scores) > 3.5
+        col_name = "M-Zscore"
+    elif method == "IQR (1.5×)":
+        q1, q3 = np.percentile(data, [25, 75])
+        iqr = q3 - q1
+        scores = None
+        flags = (data < q1 - 1.5 * iqr) | (data > q3 + 1.5 * iqr)
+        col_name = "IQR flag"
+    else:
+        q1, q3 = np.percentile(data, [25, 75])
+        iqr = q3 - q1
+        scores = None
+        flags = (data < q1 - 3 * iqr) | (data > q3 + 3 * iqr)
+        col_name = "IQR flag"
+    col_vals = np.round(scores, 3) if scores is not None else flags.astype(int)
+    outlier_df = pd.DataFrame({
+        "Index": range(1, n + 1),
+        "Value": np.round(data, 3),
+        col_name: col_vals,
+        "Outlier": ["⚠️" if f else "" for f in flags]
+    })
+    n_out = flags.sum()
+    with c2:
+        _apa_table(outlier_df.head(20), f"Outlier Detection — {method} (showing first 20 of {n})")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Total Observations", n)
+    with col2:
+        st.metric("Outliers Detected", n_out)
+    with col3:
+        st.metric("Outlier Rate", f"{n_out / n * 100:.2f}%")
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=list(range(n)), y=data, mode="markers",
+                              marker=dict(color=["#E45756" if f else "#4C78A8" for f in flags], size=7),
+                              hovertemplate="Index: %{x}<br>Value: %{y:.2f}<extra></extra>"))
+    fig.update_layout(template="plotly_dark", height=250, margin=dict(l=10, r=10, t=10, b=10),
+                      xaxis_title="Index", yaxis_title="Value")
+    st.plotly_chart(fig, use_container_width=True)
+    with st.expander(" Educational Notes - Outlier Detection", expanded=True):
+        st.info(f"""
+        **Outlier Detection Methods:**
+        - **Z-score > 3**: values more than 3 SD from mean ( assumes normality)
+        - **Modified Z-score > 3.5**: uses MAD instead of SD (more robust)
+        - **IQR 1.5×**: values outside Q1-1.5×IQR or Q3+1.5×IQR (Tukey's method)
+        - **IQR 3×**: extreme outliers (far outside)
+        - **{n_out} outliers ({n_out/n*100:.1f}%)** detected using {method}
+        """)
+
+
+# =====================
+# POST-HOC COMPARISON TABLES
+# =====================
+
+
+def _posthoc_tables_widget():
+    c1, c2 = st.columns([1, 2])
+    with c1:
+        k = st.selectbox("Number of Groups", [3, 4, 5], index=0, key="ph_k")
+        f_effect = st.slider("Overall ANOVA Effect (Cohen's f)", 0.1, 1.0, 0.4, 0.05, key="ph_f")
+        n_per = st.slider("Per Group", 10, 100, 25, key="ph_n")
+        method = st.selectbox("Correction", ["Tukey HSD", "Bonferroni", "Holm"], key="ph_method")
+    np.random.seed(42)
+    ng = int(k)
+    means = [f_effect * i for i in range(ng)]
+    data = [np.random.normal(m, 1, n_per) for m in means]
+    all_data = np.concatenate(data)
+    grand_mean = np.mean(all_data)
+    ss_b = sum(n_per * (m - grand_mean)**2 for m in means)
+    ss_w = sum(np.sum((d - m)**2) for d, m in zip(data, means))
+    df_b = ng - 1
+    df_w = ng * n_per - ng
+    ms_w = ss_w / df_w
+    from itertools import combinations
+    pairs = list(combinations(range(ng), 2))
+    results = []
+    for i, j in pairs:
+        diff = means[i] - means[j]
+        se = np.sqrt(ms_w * (1 / n_per + 1 / n_per))
+        t_val = diff / se if se > 0 else 0
+        if method == "Tukey HSD":
+            q_val = abs(diff) / (np.sqrt(ms_w / n_per))
+            p_adj = 1 - stats.studentized_range.cdf(q_val, ng, df_w)
+        elif method == "Bonferroni":
+            p_raw = 2 * (1 - stats.t.cdf(abs(t_val), df_w))
+            p_adj = min(p_raw * len(pairs), 1.0)
+        else:
+            p_raw = 2 * (1 - stats.t.cdf(abs(t_val), df_w))
+            p_adj = p_raw
+        ci = se * stats.t.ppf(1 - 0.05 / (2 * len(pairs)), df_w)
+        results.append({
+            "Comparison": f"{chr(65+i)} vs {chr(65+j)}",
+            "Mean Diff": f"{diff:.3f}",
+            "SE": f"{se:.3f}",
+            "t": f"{t_val:.3f}",
+            "p-adjusted": f"{p_adj:.4f}",
+            "95% CI": f"[{diff - ci:.3f}, {diff + ci:.3f}]",
+            "": "***" if p_adj < 0.001 else "**" if p_adj < 0.01 else "*" if p_adj < 0.05 else ""
+        })
+    df = pd.DataFrame(results)
+    with c2:
+        _apa_table(df, f"Post-hoc Comparisons — {method}")
+    with st.expander(" Educational Notes - Post-hoc Tests", expanded=True):
+        st.info(f"""
+        **Post-hoc comparisons** are conducted after a significant ANOVA to identify which groups differ.
+        - **Tukey HSD**: controls FWER for all pairwise comparisons (most powerful for all pairs)
+        - **Bonferroni**: divides α by number of comparisons (most conservative)
+        - **Holm**: sequential Bonferroni (more powerful than Bonferroni)
+        - **{method}** was used with {ng} groups and {n_per} observations per group
+        """)
+
+
+# =====================
+# SURVIVAL / LIFE TABLES
+# =====================
+
+
+def _survival_life_tables():
+    st.header("Survival / Life Tables")
+    st.info("""
+    Life tables describe the survival experience of a cohort over time.
+    The Kaplan-Meier method estimates the survival function from observed data,
+    accounting for censoring.
+    """)
+    c1, c2 = st.columns([1, 2])
+    with c1:
+        n = st.slider("Sample Size", 20, 500, 100, key="surv_n")
+        event_rate = st.slider("Event Rate (hazard)", 0.02, 0.3, 0.1, 0.01, key="surv_hr",
+                                help="Higher = more events per time unit")
+        censoring = st.slider("Censoring Rate", 0.0, 0.5, 0.15, 0.05, key="surv_cens",
+                               help="Proportion lost to follow-up")
+        n_intervals = st.selectbox("Time Intervals", [5, 10, 15, 20], index=1, key="surv_int")
+    np.random.seed(42)
+    times = np.random.exponential(1 / event_rate, n)
+    censored = np.random.rand(n) < censoring
+    obs_time = np.where(censored, times * np.random.uniform(0.3, 0.8, n), times)
+    event = (~censored).astype(int)
+    max_t = np.percentile(obs_time, 95)
+    n_int = int(n_intervals)
+    cut_points = np.linspace(0, max_t, n_int + 1)
+    life_rows = []
+    n_at_risk = n
+    prev_surv = 1.0
+    for i in range(n_int):
+        t_start = cut_points[i]
+        t_end = cut_points[i + 1]
+        in_interval = (obs_time >= t_start) & (obs_time < t_end)
+        n_events = event[in_interval].sum()
+        n_censored_interval = censored[in_interval].sum() + (obs_time >= t_end).sum() - (obs_time >= t_end).sum()
+        n_exit = n_events + n_censored_interval
+        if n_at_risk > 0:
+            surv_prob = 1 - n_events / n_at_risk
+            cum_surv = prev_surv * surv_prob
+        else:
+            surv_prob = 1
+            cum_surv = prev_surv
+        se_surv = cum_surv * np.sqrt(sum(
+            event[(obs_time >= cut_points[j]) & (obs_time < cut_points[j + 1])].sum() /
+            (n_at_risk_actual * (n_at_risk_actual - event[(obs_time >= cut_points[j]) & (obs_time < cut_points[j + 1])].sum()))
+            for j in range(i + 1) if (n_at_risk_actual := max(1, (obs_time >= cut_points[j]).sum())) > 1
+        )) if max(1, (obs_time >= cut_points[0]).sum()) > 1 else 0
+        life_rows.append({
+            "Interval": f"{t_start:.1f}–{t_end:.1f}",
+            "At Risk": n_at_risk,
+            "Events": n_events,
+            "Censored": n_censored_interval,
+            "Survival Prob": f"{surv_prob:.4f}",
+            "Cum. Survival": f"{cum_surv:.4f}",
+        })
+        n_at_risk -= n_exit
+        prev_surv = cum_surv
+    df = pd.DataFrame(life_rows)
+    with c2:
+        _apa_table(df, "Life Table")
+    fig = go.Figure()
+    km_times = [0]
+    km_surv = [1.0]
+    for row in life_rows:
+        km_times.append(float(row["Interval"].split("–")[1]))
+        km_surv.append(float(row["Cum. Survival"]))
+        km_times.append(float(row["Interval"].split("–")[1]))
+        km_surv.append(float(row["Cum. Survival"]))
+    fig.add_trace(go.Scatter(x=km_times, y=km_surv, mode="lines",
+                              name="Kaplan-Meier", line=dict(color="#4C78A8", width=2)))
+    fig.update_layout(template="plotly_dark", height=300, margin=dict(l=10, r=10, t=10, b=10),
+                      xaxis_title="Time", yaxis_title="Survival Probability", yaxis=dict(range=[0, 1]))
+    st.plotly_chart(fig, use_container_width=True)
+    median_time = None
+    for row in life_rows:
+        if float(row["Cum. Survival"]) <= 0.5:
+            median_time = row["Interval"]
+            break
+    st.metric("Median Survival Time", median_time or "Not reached")
+    with st.expander(" Educational Notes - Life Tables", expanded=True):
+        st.info("""
+        **Life Table / Kaplan-Meier** estimates survival from censored data.
+        - **At Risk**: number still under observation at interval start
+        - **Events**: number who experienced the event
+        - **Censored**: lost to follow-up or event-free at study end
+        - **Survival Prob**: conditional probability of surviving the interval
+        - **Cum. Survival**: product of interval survival probabilities (Kaplan-Meier estimate)
+        - **Median Survival**: time when cumulative survival drops to 50%
+        """)
+
+
+# =====================
+# MULTIPLE TESTING CORRECTION TABLES
+# =====================
+
+
+def _multiple_testing_correction():
+    st.header("Multiple Testing Correction")
+    st.info("""
+    When conducting multiple statistical tests, the chance of false positives (Type I errors)
+    inflates. Correction methods control the family-wise error rate (FWER) or false discovery rate (FDR).
+    """)
+    c1, c2 = st.columns([1, 2])
+    with c1:
+        n_tests = st.slider("Number of Tests", 5, 100, 20, key="mt_n")
+        n_true = st.slider("True Effects", 0, int(n_tests), int(n_tests * 0.3), key="mt_true",
+                            help="How many null hypotheses are truly false")
+        alpha = st.slider("α Level", 0.001, 0.10, 0.05, 0.001, key="mt_alpha")
+        show_methods = st.multiselect("Correction Methods",
+                                       ["Bonferroni", "Holm", "BH-FDR"],
+                                       default=["Bonferroni", "Holm", "BH-FDR"], key="mt_methods")
+    np.random.seed(42)
+    p_values = np.random.uniform(0, 1, n_tests)
+    for i in range(min(n_true, n_tests)):
+        p_values[i] = np.random.beta(1, 20)
+    p_values = np.clip(p_values, 0.0001, 0.9999)
+    raw_sig = p_values < alpha
+    results = []
+    if "Bonferroni" in show_methods:
+        bonf = np.clip(p_values * n_tests, 0, 1)
+        bonf_sig = bonf < alpha
+    if "Holm" in show_methods:
+        sorted_idx = np.argsort(p_values)
+        holm = np.ones(n_tests)
+        for rank, idx in enumerate(sorted_idx):
+            holm[idx] = min(p_values[idx] * (n_tests - rank), 1.0)
+            if rank > 0:
+                holm[idx] = max(holm[idx], holm[sorted_idx[rank - 1]])
+        holm_sig = holm < alpha
+    if "BH-FDR" in show_methods:
+        sorted_idx = np.argsort(p_values)
+        bh = np.ones(n_tests)
+        for rank, idx in enumerate(sorted_idx):
+            bh[idx] = min(p_values[idx] * n_tests / (rank + 1), 1.0)
+        bh_sig = bh < alpha
+    test_df = pd.DataFrame({"Test #": range(1, n_tests + 1), "Raw p": np.round(p_values, 4)})
+    if "Bonferroni" in show_methods:
+        test_df["Bonferroni"] = np.round(bonf, 4)
+        test_df["Bonf Sig"] = ["✓" if s else "" for s in bonf_sig]
+    if "Holm" in show_methods:
+        test_df["Holm"] = np.round(holm, 4)
+        test_df["Holm Sig"] = ["✓" if s else "" for s in holm_sig]
+    if "BH-FDR" in show_methods:
+        test_df["BH-FDR"] = np.round(bh, 4)
+        test_df["BH Sig"] = ["✓" if s else "" for s in bh_sig]
+    with c2:
+        _apa_table(test_df.head(15), f"Multiple Testing Corrections (showing first 15 of {n_tests})")
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Raw Significant", f"{raw_sig.sum()}/{n_tests}")
+    with col2:
+        if "Bonferroni" in show_methods:
+            st.metric("Bonferroni Sig", f"{bonf_sig.sum()}/{n_tests}")
+    with col3:
+        if "Holm" in show_methods:
+            st.metric("Holm Sig", f"{holm_sig.sum()}/{n_tests}")
+    with col4:
+        if "BH-FDR" in show_methods:
+            st.metric("BH-FDR Sig", f"{bh_sig.sum()}/{n_tests}")
+    summary = pd.DataFrame({
+        "Method": ["None (raw)"] +
+                   (["Bonferroni"] if "Bonferroni" in show_methods else []) +
+                   (["Holm"] if "Holm" in show_methods else []) +
+                   (["BH-FDR"] if "BH-FDR" in show_methods else []),
+        "Sig Count": [f"{raw_sig.sum()}/{n_tests}"] +
+                      ([f"{bonf_sig.sum()}/{n_tests}"] if "Bonferroni" in show_methods else []) +
+                      ([f"{holm_sig.sum()}/{n_tests}"] if "Holm" in show_methods else []) +
+                      ([f"{bh_sig.sum()}/{n_tests}"] if "BH-FDR" in show_methods else []),
+        "FWER Control": ["No"] + (["Yes"] if "Bonferroni" in show_methods else []) +
+                         (["Yes"] if "Holm" in show_methods else []) +
+                         (["No (FDR)"] if "BH-FDR" in show_methods else []),
+    })
+    st.dataframe(summary, use_container_width=True)
+    with st.expander(" Educational Notes - Multiple Testing", expanded=True):
+        st.info(f"""
+        **Multiple Testing Corrections** control error rates when testing many hypotheses.
+        - **Bonferroni**: α/n — most conservative, controls FWER
+        - **Holm**: sequential Bonferroni — more powerful than Bonferroni, controls FWER
+        - **BH-FDR**: Benjamini-Hochberg — controls false discovery rate (less conservative)
+        - With {n_tests} tests at α = {alpha}, we expect {n_tests * alpha:.1f} false positives by chance
+        """)
+
+
+# =====================
+# POWER CURVE SUMMARY TABLE
+# =====================
+
+
+def _power_curve_summary():
+    st.header("Power Curve Summary")
+    st.info("""
+    Power curves show how statistical power varies with sample size and effect size.
+    Essential for study planning and grant proposals.
+    """)
+    c1, c2 = st.columns([1, 2])
+    with c1:
+        test_type = st.selectbox("Test Type", ["Two-sample t-test", "One-sample t-test", "Two-proportion z-test"], key="pc_test")
+        effect_sizes = st.multiselect("Effect Sizes to Plot",
+                                       [0.2, 0.3, 0.5, 0.8, 1.0, 1.2],
+                                       default=[0.2, 0.5, 0.8], key="pc_es")
+        alpha = st.slider("α Level", 0.001, 0.10, 0.05, 0.001, key="pc_alpha")
+        max_n = st.slider("Max Sample Size (per group)", 20, 500, 200, 10, key="pc_n")
+    from scipy.stats import nct, ncf, ncx2
+    from scipy.stats import norm as norm_dist
+    n_range = np.arange(5, max_n + 1, 5)
+    table_rows = []
+    fig = go.Figure()
+    colors = ["#4C78A8", "#E45756", "#00CC96", "#F58518", "#72B7B2", "#B279A2"]
+    for idx, d in enumerate(effect_sizes):
+        powers = []
+        for n_i in n_range:
+            if test_type == "Two-sample t-test":
+                df = 2 * n_i - 2
+                ncp = d / np.sqrt(2 / n_i)
+                t_crit = stats.t.ppf(1 - alpha / 2, df)
+                power = 1 - stats.nct.cdf(t_crit, df, ncp) + stats.nct.cdf(-t_crit, df, ncp)
+            elif test_type == "One-sample t-test":
+                df = n_i - 1
+                ncp = d * np.sqrt(n_i)
+                t_crit = stats.t.ppf(1 - alpha / 2, df)
+                power = 1 - stats.nct.cdf(t_crit, df, ncp) + stats.nct.cdf(-t_crit, df, ncp)
+            else:
+                p1 = 0.3
+                p2 = p1 + d * 0.15
+                p2 = np.clip(p2, 0.01, 0.99)
+                se = np.sqrt(p1 * (1 - p1) / n_i + p2 * (1 - p2) / n_i)
+                z_crit = norm_dist.ppf(1 - alpha / 2)
+                power = norm_dist.cdf((p2 - p1) / se - z_crit) + norm_dist.cdf(-(p2 - p1) / se - z_crit)
+            powers.append(min(max(power, 0), 1))
+        fig.add_trace(go.Scatter(x=n_range, y=powers, mode="lines", name=f"d = {d}",
+                                  line=dict(color=colors[idx % len(colors)], width=2)))
+        for ni, n_sample in enumerate([20, 50, 100, 200, 500]):
+            if n_sample <= max_n:
+                idx_n = np.where(n_range == min(n_range[n_range >= n_sample]))[0]
+                if len(idx_n) > 0:
+                    table_rows.append({"n/group": n_sample, "Effect (d)": d, "Power": f"{powers[idx_n[0]]:.3f}"})
+    fig.add_hline(y=0.8, line_dash="dash", line_color="gray", opacity=0.5,
+                  annotation_text="80% power")
+    fig.update_layout(template="plotly_dark", height=350, margin=dict(l=10, r=10, t=10, b=10),
+                      xaxis_title="Sample Size (per group)", yaxis_title="Power")
+    with c2:
+        st.plotly_chart(fig, use_container_width=True)
+    if table_rows:
+        _apa_table(pd.DataFrame(table_rows), "Power Values at Selected Sample Sizes")
+    with st.expander(" Educational Notes - Power Analysis", expanded=True):
+        st.info("""
+        **Statistical Power** = 1 − β = probability of detecting a true effect.
+        - **80% power** is the conventional minimum (20% Type II error rate)
+        - Power increases with: larger sample size, larger effect size, higher α, lower variability
+        - Use power curves to find the minimum sample size that achieves 80% power
+        - Underpowered studies waste resources and fail to detect real effects
+        """)
+
+
+# =====================
 # MAIN RENDER FUNCTION
 # =====================
 
@@ -2662,6 +3065,9 @@ def render_tabulation():
             "Agreement Tables",
             "Regression Summary Tables",
             "Effect Size Tables",
+            "Survival / Life Tables",
+            "Multiple Testing Correction",
+            "Power Curve Summary",
             "Educational Modules",
             "APA/Journal Export",
         ],
@@ -2680,6 +3086,12 @@ def render_tabulation():
         regression_tables()
     elif section == "Effect Size Tables":
         effect_size_tables()
+    elif section == "Survival / Life Tables":
+        _survival_life_tables()
+    elif section == "Multiple Testing Correction":
+        _multiple_testing_correction()
+    elif section == "Power Curve Summary":
+        _power_curve_summary()
     elif section == "Educational Modules":
         educational_modules()
     elif section == "APA/Journal Export":
