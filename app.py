@@ -8,6 +8,7 @@ from flowchart import build_tree, build_sunburst_chart
 from glossary import render_glossary
 from graph_explorer import render_graph_explorer
 from tabulation import render_tabulation
+from distributions import render_distributions
 
 
 # =========================
@@ -18,58 +19,41 @@ def main():
     st.set_page_config(page_title="Statistical Test Finder", layout="wide")
 
     st.sidebar.markdown("##### Mode")
-    cur_mode = st.session_state.get("app_mode", "Test Finder")
-    col_a, col_b, col_c = st.sidebar.columns(3)
-    with col_a:
-        tf_btn = st.button(
-            "Finder",
-            use_container_width=True,
-            type="primary" if cur_mode == "Test Finder" else "secondary",
-        )
-    with col_b:
-        ge_btn = st.button(
-            "Graphs",
-            use_container_width=True,
-            type="primary" if cur_mode == "Graph Explorer" else "secondary",
-        )
-    with col_c:
-        tab_btn = st.button(
-            "Tables",
-            use_container_width=True,
-            type=(
-                "primary"
-                if cur_mode == "Tabulation & Cross Tabulation"
-                else "secondary"
-            ),
-        )
-    if tf_btn:
-        st.session_state.app_mode = "Test Finder"
-        st.rerun()
-    if ge_btn:
-        st.session_state.app_mode = "Graph Explorer"
-        st.rerun()
-    if tab_btn:
-        st.session_state.app_mode = "Tabulation & Cross Tabulation"
-        st.rerun()
-    mode = st.session_state.get("app_mode", "Test Finder")
+    mode = st.sidebar.selectbox(
+        "Select Mode",
+        [
+            "Test Finder",
+            "Graph Explorer",
+            "Tabulation & Cross Tabulation",
+            "Probability Distributions",
+        ],
+        index=[
+            "Test Finder",
+            "Graph Explorer",
+            "Tabulation & Cross Tabulation",
+            "Probability Distributions",
+        ].index(st.session_state.get("app_mode", "Test Finder")),
+        key="app_mode",
+        label_visibility="collapsed",
+    )
+
+    # =========================
+    # SIDEBAR GLOSSARY (all modes)
+    # =========================
+    with st.sidebar:
+        render_glossary()
 
     if mode == "Graph Explorer":
-        with st.sidebar:
-            st.markdown("---")
         render_graph_explorer()
         return
 
     if mode == "Tabulation & Cross Tabulation":
-        with st.sidebar:
-            st.markdown("---")
         render_tabulation()
         return
 
-    # =========================
-    # SIDEBAR GLOSSARY
-    # =========================
-    with st.sidebar:
-        render_glossary()
+    if mode == "Probability Distributions":
+        render_distributions()
+        return
 
     st.title("🔬 Statistical Test Finder")
 
