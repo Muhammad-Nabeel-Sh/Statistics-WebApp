@@ -96,10 +96,14 @@ rules = [
         "Example": "A clinical trial tests a new drug and finds that 18 out of 30 patients respond to the treatment. The researcher wants to determine if this response rate is significantly different from the known response rate of 50% (0.5) for existing treatments. The researcher performs a one-sample proportion test (binomial test) to compare the observed proportion of 0.6 (18/30) against the known population proportion of 0.5.",
         "Formula": r"""
                     $$ z = \dfrac{\hat{p} - p_0}{\sqrt{\dfrac{p_0(1 - p_0)}{n}}} $$
+                    $$ P(X = k) = \binom{n}{k} p_0^k (1 - p_0)^{n-k} $$
                     where: 
                     - :orange[$\hat{p}$] is the sample proportion,  
                     - :orange[$p_0$] is the population proportion, and   
                     - :orange[$n$] is the sample size.  
+                    - :orange[$P(X = k)$] is the probability of observing exactly :orange[$k$] successes in :orange[$n$] trials under the null hypothesis, calculated using the binomial distribution.
+                    - :orange[$z$] is the test statistic.
+                    - :orange[$k$] is the number of successes observed in the sample.
                     - The denominator :orange[$\sqrt{\dfrac{p_0(1 - p_0)}{n}}$] is the standard error of the proportion.
                     """,
     },
