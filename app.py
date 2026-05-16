@@ -40,8 +40,6 @@ def main():
     # =========================
     # SIDEBAR GLOSSARY (all modes)
     # =========================
-    with st.sidebar:
-        render_glossary()
 
     if mode == "Graph Explorer":
         render_graph_explorer()
@@ -54,6 +52,9 @@ def main():
     if mode == "Probability Distributions":
         render_distributions()
         return
+
+    with st.sidebar:
+        render_glossary()
 
     st.title("🔬 Statistical Test Finder")
 
