@@ -56,7 +56,7 @@ def main():
     with st.sidebar:
         render_glossary()
 
-    st.title("🔬 Statistical Test Finder")
+    st.title("Statistical Test Finder")
 
     st.write(
         "Select your study characteristics to identify the appropriate statistical test."
@@ -1303,7 +1303,7 @@ def main():
 
     if Objective != "Sample Size Estimation":
         st.divider()
-        st.header("🌳 Interactive Statistical Flowchart")
+        st.header("Interactive Statistical Flowchart")
         st.write(
             "Expand the branches below to navigate statistical test selection visually."
         )
