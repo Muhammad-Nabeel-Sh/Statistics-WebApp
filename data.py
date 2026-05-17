@@ -67,7 +67,7 @@ rules = [
                     -  Reject the null hyposthesis $H_0$ if the absolute value of the test statistic :orange[$|t|$] is greater than the critical t-value from the t-distribution with :orange[$n-1$] degrees of freedom at the chosen significance level (e.g., α = 0.05) :orange[$|t| > t_{critical}$].
                     -  Fail to reject the null hypothesis if :orange[$|t|$] is less than or equal to the critical t-value :orange[$|t| \leq t_{critical}$].
                     -  Reject the null hyosthesis $H_0$ if the p-value is less than the chosen significance level (e.g., α = 0.05) :orange[$p < \alpha$].
-                    -  Effect size (Cohen's d) can be calculated as $ d = \dfrac{\bar{x} - \mu_0}{s} $, where :orange[$d$] is the standardized mean difference, providing a measure of the magnitude of the effect independent of sample size.
+                    -  Effect size (Cohen's d) can be calculated as :orange[$ d = \dfrac{\bar{x} - \mu_0}{s} $], where :orange[$d$] is the standardized mean difference, providing a measure of the magnitude of the effect independent of sample size.
         """,
     },
     {
@@ -93,7 +93,7 @@ rules = [
                     - Reject the null hypothesis if the absolute value of the test statistic :orange[$|z|$] is greater than the critical z-value from the standard normal distribution at the chosen significance level (e.g., α = 0.05) :orange[$|z| > z_{critical}$].
                     - Fail to reject the null hypothesis if :orange[$|z|$] is less than or equal to the critical z-value :orange[$|z| \leq z_{critical}$].
                     - Reject the null hypothesis if the p-value is less than the chosen significance level (e.g., α = 0.05) :orange[$p < \alpha$].
-                    - Effect size (Cohen's d) can be calculated as $ d = \dfrac{\bar{x} - \mu_0}{\sigma} $, where :orange[$d$] is the standardized mean difference, providing a measure of the magnitude of the effect independent of sample size.
+                    - Effect size (Cohen's d) can be calculated as :orange[ $ d = \dfrac{\bar{x} - \mu_0}{\sigma} $], where :orange[$d$] is the standardized mean difference, providing a measure of the magnitude of the effect independent of sample size.
         """,
     },
     {

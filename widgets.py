@@ -243,6 +243,7 @@ def render_test_widget(test_name):
             5.0,
             1.0,
             0.1,
+            key="sample_mean_shift_1",
         )
 
         # =========================
@@ -1493,7 +1494,7 @@ def render_test_widget(test_name):
         # CONTROLS
         # =========================
 
-        mean_diff = st.slider("Mean Difference", 0.0, 10.0, 2.0, 0.1)
+        mean_diff = st.slider("Mean Difference", 0.0, 10.0, 2.0, 0.1, key="mean_difference_1")
 
         sd1 = st.slider("Group 1 SD", 0.5, 8.0, 1.0, 0.1)
 
@@ -2143,7 +2144,7 @@ def render_test_widget(test_name):
         # CONTROLS
         # =========================
 
-        treatment_effect = st.slider("Treatment Effect", 0.0, 10.0, 3.0, 0.1)
+        treatment_effect = st.slider("Treatment Effect", 0.0, 10.0, 3.0, 0.1, key="treatment_effect_1")
 
         covariate_strength = st.slider("Covariate Strength (β)", 0.0, 3.0, 1.0, 0.1)
 
@@ -2382,6 +2383,7 @@ def render_test_widget(test_name):
             5.0,
             1.0,
             0.1,
+            key="noise_2",
         )
 
         subjects = st.slider(
@@ -2389,6 +2391,7 @@ def render_test_widget(test_name):
             5,
             100,
             20,
+            key="subjects_1",
         )
 
         # =========================
@@ -2552,6 +2555,7 @@ def render_test_widget(test_name):
             10.0,
             3.0,
             0.1,
+            key="group_separation_1",
         )
 
         # =========================
@@ -2711,6 +2715,7 @@ def render_test_widget(test_name):
             5.0,
             1.0,
             0.1,
+            key="median_shift_1",
         )
 
         noise = st.slider(
@@ -2719,6 +2724,7 @@ def render_test_widget(test_name):
             5.0,
             1.0,
             0.1,
+            key="noise_3",
         )
 
         n = st.slider(
@@ -2726,6 +2732,7 @@ def render_test_widget(test_name):
             10,
             200,
             40,
+            key="sample_size_2",
         )
 
         # =========================
@@ -2880,6 +2887,7 @@ def render_test_widget(test_name):
             10,
             300,
             60,
+            key="sample_size_3",
         )
 
         # =========================
@@ -3006,6 +3014,7 @@ def render_test_widget(test_name):
             10.0,
             2.0,
             0.1,
+            key="group_separation_2",
         )
 
         spread = st.slider(
@@ -3014,6 +3023,7 @@ def render_test_widget(test_name):
             5.0,
             1.0,
             0.1,
+            key="distribution_spread_1",
         )
 
         # =========================
@@ -3153,6 +3163,7 @@ def render_test_widget(test_name):
             5.0,
             1.0,
             0.1,
+            key="noise_4",
         )
 
         subjects = st.slider(
@@ -3160,6 +3171,7 @@ def render_test_widget(test_name):
             5,
             100,
             20,
+            key="subjects_2",
         )
 
         # =========================
@@ -3540,6 +3552,7 @@ def render_test_widget(test_name):
             5.0,
             1.0,
             0.1,
+            key="noise_5",
         )
 
         # =========================
@@ -3719,6 +3732,7 @@ def render_test_widget(test_name):
             5.0,
             1.0,
             0.1,
+            key="noise_7",
         )
 
         # =========================
