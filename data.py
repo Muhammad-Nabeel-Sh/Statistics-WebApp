@@ -269,6 +269,7 @@ rules = [
                     where:
                     - :orange[$SS$] is the sum of squares and :orange[$df$] is the degrees of freedom for between and within groups.
                     """,
+        "Post-Hoc": "Tukey HSD, Bonferroni, Holm-Bonferroni, Šidák, Scheffé, Dunnett, Games-Howell, Fisher LSD, Newman-Keuls",
     },
     # More two-sample tests (Parametric)
     {
@@ -301,6 +302,7 @@ rules = [
                     - :orange[$N$] is the total number of observations across all groups.
                     - The test statistic :orange[$F$] is then compared to a critical value from the F-distribution with appropriate degrees of freedom to determine significance.
                     """,
+        "Post-Hoc": "Pairwise Paired t, Paired t + Bonferroni, Paired t + Holm",
     },
     {
         "name": "Two-way ANOVA",
@@ -322,6 +324,7 @@ rules = [
                     - :orange[$F$]-statistics test the main effects and interaction separately,
                     - Significance is determined by comparing each :orange[$F$] to the F-distribution with appropriate df.
                     """,
+        "Post-Hoc": "Tukey HSD, Bonferroni, Holm-Bonferroni, Šidák, Scheffé, Dunnett, Games-Howell, Fisher LSD, Newman-Keuls",
     },
     {
         "name": "ANCOVA",
@@ -346,6 +349,7 @@ rules = [
                     - :orange[$\beta$] is the regression coefficient for the covariate :orange[$X$],
                     - :orange[$MS_{error}$] is reduced by the variance explained by the covariate, increasing power.
                     """,
+        "Post-Hoc": "Tukey HSD, Bonferroni, Holm-Bonferroni, Šidák (for adjusted group comparisons after covariate adjustment)",
     },
     {
         "name": "MANOVA",
@@ -365,6 +369,7 @@ rules = [
                     - :orange[$\mathbf{H}$] is the hypothesis sum of squares and cross-products matrix. 
                     - The test statistic :orange[$\Lambda$] is then transformed into an F-statistic for significance testing.
                     """,
+        "Post-Hoc": "Discriminant Comparisons (pairwise univariate F), Canonical Contrasts (Bonferroni-corrected)",
     },
     # Two-sample tests (Non-parametric)
     {
@@ -437,6 +442,7 @@ rules = [
                     - :orange[$k$] is the number of groups. 
                     - The test statistic :orange[$H$] is then compared to a critical value from the chi-square distribution with :orange[$k-1$] degrees of freedom to determine significance.
                     """,
+        "Post-Hoc": "Dunn, Conover, DSCF (Dwass-Steel-Critchlow-Fligner)",
     },
     {
         "name": "Friedman Test",
@@ -457,6 +463,7 @@ rules = [
                     - :orange[$R_j$] is the sum of ranks for the :orange[$j$]-th treatment. 
                     - The test statistic :orange[$\chi^2_F$] is then compared to a critical value from the chi-square distribution with :orange[$k-1$] degrees of freedom to determine significance.
                     """,
+        "Post-Hoc": "Nemenyi, Conover-Friedman, Wilcoxon + Bonferroni",
     },
     {
         "name": "Permutation MANOVA or Non-Parametric MANOVA",
@@ -482,6 +489,7 @@ rules = [
                     - :orange[$MS_{error}$] is the mean square error.
                     - The test statistic :orange[$F$] is then evaluated using a permutation-based null distribution (data is randomly reshuffled many times) to compute the p-value, rather than comparing to a theoretical F-distribution.
                     """,
+        "Post-Hoc": "Dunn, Conover, DSCF (Dwass-Steel-Critchlow-Fligner)",
     },
     # Two or More Categorical sample tests
     {
@@ -1027,15 +1035,4 @@ FIELDS = [
     "Groups",
     "Relation",
     "Distribution",
-]
-
-
-FIELDS = [
-    "Objective",
-    "Dependent_Variable",
-    "Independent_Variable",
-    "Groups",
-    "Relation",
-    "Distribution",
-    "Decision Rules",
 ]

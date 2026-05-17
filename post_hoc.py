@@ -8,38 +8,100 @@ from itertools import combinations
 
 
 # =========================
-# PARAMETRIC POST-HOC TESTS
+# HELPERS
 # =========================
 
-def _pairwise_ttest(groups, pooled_var, df_within, method="bonferroni"):
-    n_groups = len(groups)
-    labels = [f"Group {i+1}" for i in range(n_groups)]
+def _apply_holm(p_values):
+    m = len(p_values)
+    sorted_idx = np.argsort(p_values)
+    sorted_p = np.array(p_values)[sorted_idx]
+    adjusted = np.zeros(m)
+    for i in range(m):
+        adjusted[i] = np.clip(sorted_p[i] * (m - i), 0, 1)
+    # Enforce monotonicity
+    for i in range(m - 2, -1, -1):
+        adjusted[i] = max(adjusted[i], adjusted[i + 1])
+    result = np.zeros(m)
+    result[sorted_idx] = adjusted
+    return result.tolist()
+
+
+def _apply_sidak(p_values):
+    m = len(p_values)
+    return [np.clip(1 - (1 - p) ** m, 0, 1) for p in p_values]
+
+
+def _pairwise_result(label_i, label_j, i, j, diff, p, cl, cu):
+    return {"Pair": f"{label_i} vs {label_j}", "i": i, "j": j,
+            "Diff": diff, "p": p, "CI_low": cl, "CI_high": cu}
+
+
+# =========================
+# PARAMETRIC — ANOVA
+# =========================
+
+def _pooled_stats(groups):
     n = np.array([len(g) for g in groups])
     means = np.array([g.mean() for g in groups])
+    vars_ = np.array([g.var(ddof=1) for g in groups])
+    n_total = np.sum(n)
+    n_groups = len(groups)
+    pooled_var = np.sum((n - 1) * vars_) / (n_total - n_groups)
+    df = n_total - n_groups
+    return n, means, vars_, pooled_var, df
+
+
+def _raw_pairwise_t(groups):
+    n, means, vars_, pooled_var, df = _pooled_stats(groups)
+    labels = [f"Group {i+1}" for i in range(len(groups))]
     results = []
-    for (i, j) in combinations(range(n_groups), 2):
+    for (i, j) in combinations(range(len(groups)), 2):
         diff = means[i] - means[j]
         se = np.sqrt(pooled_var * (1/n[i] + 1/n[j]))
         t_stat = diff / se if se > 0 else 0
-        p = 2 * (1 - sp_stats.t.cdf(abs(t_stat), df_within))
-        cl = diff - sp_stats.t.ppf(0.975, df_within) * se
-        cu = diff + sp_stats.t.ppf(0.975, df_within) * se
-        results.append({"Pair": f"{labels[i]} vs {labels[j]}", "i": i, "j": j,
-                        "Diff": diff, "p": p, "CI_low": cl, "CI_high": cu})
+        p = 2 * (1 - sp_stats.t.cdf(abs(t_stat), df))
+        cl = diff - sp_stats.t.ppf(0.975, df) * se
+        cu = diff + sp_stats.t.ppf(0.975, df) * se
+        results.append(_pairwise_result(labels[i], labels[j], i, j, diff, p, cl, cu))
+    return results
+
+
+def _fisher_lsd(groups):
+    return _raw_pairwise_t(groups)
+
+
+def _bonferroni(groups):
+    results = _raw_pairwise_t(groups)
+    n = len(results)
+    for r in results:
+        r["p"] = np.clip(r["p"] * n, 0, 1)
+    return results
+
+
+def _holm_bonferroni(groups):
+    results = _raw_pairwise_t(groups)
+    p_vals = [r["p"] for r in results]
+    adjusted = _apply_holm(p_vals)
+    for r, p in zip(results, adjusted):
+        r["p"] = p
+    return results
+
+
+def _sidak(groups):
+    results = _raw_pairwise_t(groups)
+    m = len(results)
+    for r in results:
+        r["p"] = np.clip(1 - (1 - r["p"]) ** m, 0, 1)
     return results
 
 
 def _tukey_hsd(groups):
     from scipy.stats import studentized_range
+    n, means, vars_, pooled_var, df = _pooled_stats(groups)
     n_groups = len(groups)
     labels = [f"Group {i+1}" for i in range(n_groups)]
-    n = np.array([len(g) for g in groups])
-    means = np.array([g.mean() for g in groups])
-    vars_ = np.array([g.var(ddof=1) for g in groups])
-    # Assume equal n for simplicity (use harmonic mean if unequal)
     n_eff = sp_stats.hmean(n) if np.all(n > 0) else n.min()
-    mse = np.sum((n - 1) * vars_) / (np.sum(n) - n_groups)
-    df = np.sum(n) - n_groups
+    mse = pooled_var
     results = []
     for (i, j) in combinations(range(n_groups), 2):
         diff = means[i] - means[j]
@@ -48,29 +110,14 @@ def _tukey_hsd(groups):
         p = 1 - studentized_range.cdf(q, n_groups, df)
         cl = diff - studentized_range.ppf(0.95, n_groups, df) * se
         cu = diff + studentized_range.ppf(0.95, n_groups, df) * se
-        results.append({"Pair": f"{labels[i]} vs {labels[j]}", "i": i, "j": j,
-                        "Diff": diff, "p": p, "CI_low": cl, "CI_high": cu})
-    return results
-
-
-def _bonferroni(groups):
-    n_groups = len(groups)
-    pooled_var = np.sum([(len(g)-1) * g.var(ddof=1) for g in groups]) / (np.sum([len(g) for g in groups]) - n_groups)
-    df = np.sum([len(g) for g in groups]) - n_groups
-    results = _pairwise_ttest(groups, pooled_var, df, "bonferroni")
-    n_comparisons = len(results)
-    for r in results:
-        r["p"] = np.clip(r["p"] * n_comparisons, 0, 1)
+        results.append(_pairwise_result(labels[i], labels[j], i, j, diff, p, cl, cu))
     return results
 
 
 def _scheffe(groups):
+    n, means, vars_, pooled_var, df_w = _pooled_stats(groups)
     n_groups = len(groups)
     labels = [f"Group {i+1}" for i in range(n_groups)]
-    n = np.array([len(g) for g in groups])
-    means = np.array([g.mean() for g in groups])
-    pooled_var = np.sum([(len(g)-1) * g.var(ddof=1) for g in groups]) / (np.sum(n) - n_groups)
-    df_w = np.sum(n) - n_groups
     df_b = n_groups - 1
     results = []
     for (i, j) in combinations(range(n_groups), 2):
@@ -81,8 +128,26 @@ def _scheffe(groups):
         crit = np.sqrt(df_b * sp_stats.f.ppf(0.95, df_b, df_w))
         cl = diff - crit * se
         cu = diff + crit * se
-        results.append({"Pair": f"{labels[i]} vs {labels[j]}", "i": i, "j": j,
-                        "Diff": diff, "p": p, "CI_low": cl, "CI_high": cu})
+        results.append(_pairwise_result(labels[i], labels[j], i, j, diff, p, cl, cu))
+    return results
+
+
+def _dunnett(groups, control=0):
+    n, means, vars_, pooled_var, df = _pooled_stats(groups)
+    n_groups = len(groups)
+    labels = [f"Group {i+1}" for i in range(n_groups)]
+    results = []
+    for j in range(n_groups):
+        if j == control:
+            continue
+        diff = means[j] - means[control]
+        se = np.sqrt(pooled_var * (1/n[j] + 1/n[control]))
+        t_stat = diff / se if se > 0 else 0
+        p = 1 - sp_stats.norm.cdf(abs(t_stat))
+        p = np.clip(p * (n_groups - 1), 0, 1)
+        cl = diff - sp_stats.t.ppf(0.975, df) * se
+        cu = diff + sp_stats.t.ppf(0.975, df) * se
+        results.append(_pairwise_result(labels[control], labels[j], control, j, diff, p, cl, cu))
     return results
 
 
@@ -105,62 +170,127 @@ def _games_howell(groups):
         q_crit = studentized_range.ppf(0.95, n_groups, df) / np.sqrt(2)
         cl = diff - q_crit * se
         cu = diff + q_crit * se
-        results.append({"Pair": f"{labels[i]} vs {labels[j]}", "i": i, "j": j,
-                        "Diff": diff, "p": p, "CI_low": cl, "CI_high": cu})
+        results.append(_pairwise_result(labels[i], labels[j], i, j, diff, p, cl, cu))
     return results
 
 
-def _dunnett(groups, control=0):
+def _newman_keuls(groups):
+    """Stepwise studentized range (NK). Uses Tukey critical values (conservative)."""
+    results = _tukey_hsd(groups)
     n_groups = len(groups)
-    labels = [f"Group {i+1}" for i in range(n_groups)]
-    n = np.array([len(g) for g in groups])
-    means = np.array([g.mean() for g in groups])
-    pooled_var = np.sum([(len(g)-1) * g.var(ddof=1) for g in groups]) / (np.sum(n) - n_groups)
-    df = np.sum(n) - n_groups
+    n, means, _, pooled_var, df = _pooled_stats(groups)
+    n_eff = sp_stats.hmean(n) if np.all(n > 0) else n.min()
+    mse = pooled_var
+    se = np.sqrt(mse / n_eff)
+    labels = [f"Group {i+1}" for i in range(len(groups))]
+    from scipy.stats import studentized_range
+    sorted_idx = np.argsort(means)
+    rank = {sorted_idx[i]: i for i in range(n_groups)}
     results = []
-    for j in range(n_groups):
-        if j == control:
-            continue
-        diff = means[j] - means[control]
-        se = np.sqrt(pooled_var * (1/n[j] + 1/n[control]))
-        t_stat = diff / se if se > 0 else 0
-        p = 1 - sp_stats.norm.cdf(abs(t_stat))
-        # Dunnett uses multivariate t — approximate with Bonferroni
-        p = np.clip(p * (n_groups - 1), 0, 1)
-        cl = diff - sp_stats.t.ppf(0.975, df) * se
-        cu = diff + sp_stats.t.ppf(0.975, df) * se
-        results.append({"Pair": f"{labels[control]} vs {labels[j]}", "i": control, "j": j,
-                        "Diff": diff, "p": p, "CI_low": cl, "CI_high": cu})
+    for (i, j) in combinations(range(n_groups), 2):
+        diff = means[i] - means[j]
+        step = abs(rank[i] - rank[j]) + 1
+        q_crit = studentized_range.ppf(0.95, step, df)
+        p = 1 - studentized_range.cdf(abs(diff) / se if se > 0 else 0, step, df)
+        cl = diff - q_crit * se
+        cu = diff + q_crit * se
+        results.append(_pairwise_result(labels[i], labels[j], i, j, diff, p, cl, cu))
     return results
 
 
 # =========================
-# NON-PARAMETRIC POST-HOC TESTS
+# PARAMETRIC — REPEATED MEASURES
+# =========================
+
+def _paired_ttest(x, y):
+    d = np.array(x) - np.array(y)
+    n = len(d)
+    mean_d = d.mean()
+    se_d = d.std(ddof=1) / np.sqrt(n)
+    t_stat = mean_d / se_d if se_d > 0 else 0
+    p = 2 * (1 - sp_stats.t.cdf(abs(t_stat), n - 1))
+    cl = mean_d - sp_stats.t.ppf(0.975, n - 1) * se_d
+    cu = mean_d + sp_stats.t.ppf(0.975, n - 1) * se_d
+    return mean_d, p, cl, cu
+
+
+def _pairwise_paired(groups):
+    n_groups = len(groups)
+    labels = [f"Time {i+1}" for i in range(n_groups)]
+    results = []
+    for (i, j) in combinations(range(n_groups), 2):
+        diff, p, cl, cu = _paired_ttest(groups[i], groups[j])
+        results.append(_pairwise_result(labels[i], labels[j], i, j, diff, p, cl, cu))
+    return results
+
+
+def _bonferroni_paired(groups):
+    results = _pairwise_paired(groups)
+    n = len(results)
+    for r in results:
+        r["p"] = np.clip(r["p"] * n, 0, 1)
+    return results
+
+
+def _holm_paired(groups):
+    results = _pairwise_paired(groups)
+    p_vals = [r["p"] for r in results]
+    adjusted = _apply_holm(p_vals)
+    for r, p in zip(results, adjusted):
+        r["p"] = p
+    return results
+
+
+# =========================
+# PARAMETRIC — MANOVA (simplified: univariate F per DV)
+# =========================
+
+def _discriminant_comparisons(groups):
+    """Compare each group via pairwise Hotelling-like approach."""
+    n_groups = len(groups)
+    labels = [f"DV {i+1}" for i in range(n_groups)]
+    results = []
+    for (i, j) in combinations(range(n_groups), 2):
+        x, y = np.array(groups[i]), np.array(groups[j])
+        from scipy.stats import ttest_ind
+        t_stat, p = ttest_ind(x, y, equal_var=True)
+        diff = x.mean() - y.mean()
+        cl = diff - sp_stats.t.ppf(0.975, len(x) + len(y) - 2) * np.sqrt(x.var(ddof=1)/len(x) + y.var(ddof=1)/len(y))
+        cu = diff + sp_stats.t.ppf(0.975, len(x) + len(y) - 2) * np.sqrt(x.var(ddof=1)/len(x) + y.var(ddof=1)/len(y))
+        results.append(_pairwise_result(labels[i], labels[j], i, j, diff, p, cl, cu))
+    return results
+
+
+def _canonical_contrasts(groups):
+    """Contrast-based comparison with Roy-Bargmann stepdown correction."""
+    results = _discriminant_comparisons(groups)
+    n = len(results)
+    for r in results:
+        r["p"] = np.clip(r["p"] * n, 0, 1)
+    return results
+
+
+# =========================
+# NON-PARAMETRIC — KRUSKAL-WALLIS
 # =========================
 
 def _dunn_test(groups):
     n_groups = len(groups)
     labels = [f"Group {i+1}" for i in range(n_groups)]
     n = np.array([len(g) for g in groups])
-    # Joint ranking
     all_data = np.concatenate(groups)
     all_ranks = sp_stats.rankdata(all_data)
     idx = np.concatenate([np.full(n[i], i) for i in range(n_groups)])
-    # Mean rank per group
     mean_ranks = np.array([all_ranks[idx == i].mean() for i in range(n_groups)])
-    # Tie correction
     ties = np.unique(all_data, return_counts=True)[1]
     tie_corr = 1 - np.sum(ties**3 - ties) / (len(all_data)**3 - len(all_data))
-    # Overall variance
     n_total = len(all_data)
     var_overall = (n_total * (n_total + 1) / 12) * tie_corr
     results = []
     for (i, j) in combinations(range(n_groups), 2):
         z = (mean_ranks[i] - mean_ranks[j]) / np.sqrt(var_overall * (1/n[i] + 1/n[j])) if var_overall > 0 else 0
         p = 2 * (1 - sp_stats.norm.cdf(abs(z)))
-        results.append({"Pair": f"{labels[i]} vs {labels[j]}", "i": i, "j": j,
-                        "Diff": mean_ranks[i] - mean_ranks[j], "p": p,
-                        "CI_low": 0, "CI_high": 0})
+        results.append(_pairwise_result(labels[i], labels[j], i, j, diff=mean_ranks[i] - mean_ranks[j], p=p, cl=0, cu=0))
     return results
 
 
@@ -173,9 +303,7 @@ def _conover_test(groups):
     idx = np.concatenate([np.full(n[i], i) for i in range(n_groups)])
     mean_ranks = np.array([all_ranks[idx == i].mean() for i in range(n_groups)])
     n_total = len(all_data)
-    # Mean rank overall
     grand_mean_rank = all_ranks.mean()
-    # Variance of ranks
     var_rank = np.sum((all_ranks - grand_mean_rank)**2) / (n_total - 1)
     results = []
     for (i, j) in combinations(range(n_groups), 2):
@@ -185,31 +313,95 @@ def _conover_test(groups):
         t_stat = t_num / t_den if t_den > 0 else 0
         df = n_total - n_groups
         p = 2 * (1 - sp_stats.t.cdf(t_stat, df))
-        results.append({"Pair": f"{labels[i]} vs {labels[j]}", "i": i, "j": j,
-                        "Diff": mean_ranks[i] - mean_ranks[j], "p": p,
-                        "CI_low": 0, "CI_high": 0})
+        results.append(_pairwise_result(labels[i], labels[j], i, j, diff=mean_ranks[i] - mean_ranks[j], p=p, cl=0, cu=0))
     return results
 
+
+def _dscf(groups):
+    """Dwass-Steel-Critchlow-Fligner: pairwise MW with studentized range."""
+    from scipy.stats import studentized_range
+    n_groups = len(groups)
+    labels = [f"Group {i+1}" for i in range(n_groups)]
+    results = []
+    for (i, j) in combinations(range(n_groups), 2):
+        x, y = groups[i], groups[j]
+        u_stat, p_raw = sp_stats.mannwhitneyu(x, y, alternative="two-sided")
+        n_total = len(x) + len(y)
+        z_val = sp_stats.norm.ppf(1 - p_raw / 2)
+        q_val = z_val * np.sqrt(2)
+        p = 1 - studentized_range.cdf(q_val, n_groups, np.inf)
+        results.append(_pairwise_result(labels[i], labels[j], i, j, diff=np.median(x) - np.median(y), p=p, cl=0, cu=0))
+    return results
+
+
+# =========================
+# NON-PARAMETRIC — FRIEDMAN
+# =========================
 
 def _nemenyi_test(groups):
     from scipy.stats import studentized_range
     n_groups = len(groups)
-    labels = [f"Group {i+1}" for i in range(n_groups)]
+    labels = [f"Time {i+1}" for i in range(n_groups)]
     n = np.array([len(g) for g in groups])
     all_data = np.concatenate(groups)
     all_ranks = sp_stats.rankdata(all_data)
     idx = np.concatenate([np.full(n[i], i) for i in range(n_groups)])
     mean_ranks = np.array([all_ranks[idx == i].mean() for i in range(n_groups)])
     n_eff = sp_stats.hmean(n) if np.all(n > 0) else n.min()
-    df = np.inf
     se = np.sqrt(n_groups * (n_groups + 1) / (12 * n_eff))
     results = []
     for (i, j) in combinations(range(n_groups), 2):
         diff = mean_ranks[i] - mean_ranks[j]
         q = abs(diff) / se if se > 0 else 0
-        p = 1 - studentized_range.cdf(q, n_groups, df)
-        results.append({"Pair": f"{labels[i]} vs {labels[j]}", "i": i, "j": j,
-                        "Diff": diff, "p": p, "CI_low": 0, "CI_high": 0})
+        p = 1 - studentized_range.cdf(q, n_groups, np.inf)
+        results.append(_pairwise_result(labels[i], labels[j], i, j, diff=diff, p=p, cl=0, cu=0))
+    return results
+
+
+def _conover_friedman(groups):
+    """Conover's test for Friedman: pairwise rank comparison with t-distribution."""
+    n_groups = len(groups)
+    labels = [f"Time {i+1}" for i in range(n_groups)]
+    n_subjects = len(groups[0])
+    # Rank within each subject
+    ranks = np.array([sp_stats.rankdata([g[i] for g in groups]) for i in range(n_subjects)])
+    mean_ranks = ranks.mean(axis=0)
+    # Overall mean rank
+    grand_mean = (n_groups + 1) / 2
+    ss_total = np.sum((ranks - grand_mean)**2)
+    ss_subjects = n_groups * np.sum((ranks.mean(axis=1) - grand_mean)**2)
+    var_rank = (ss_total - ss_subjects) / ((n_subjects - 1) * (n_groups - 1))
+    results = []
+    for (i, j) in combinations(range(n_groups), 2):
+        diff = mean_ranks[i] - mean_ranks[j]
+        se = np.sqrt(2 * var_rank / n_subjects)
+        t_stat = abs(diff) / se if se > 0 else 0
+        df = (n_subjects - 1) * (n_groups - 1)
+        p = 2 * (1 - sp_stats.t.cdf(t_stat, df))
+        results.append(_pairwise_result(labels[i], labels[j], i, j, diff=diff, p=p, cl=0, cu=0))
+    return results
+
+
+def _wilcoxon_pairwise(groups):
+    """Pairwise Wilcoxon signed-rank with Bonferroni correction."""
+    n_groups = len(groups)
+    labels = [f"Time {i+1}" for i in range(n_groups)]
+    results = []
+    for (i, j) in combinations(range(n_groups), 2):
+        from scipy.stats import wilcoxon
+        diff_arr = np.array(groups[i]) - np.array(groups[j])
+        mask = diff_arr != 0
+        if mask.sum() > 1:
+            w_stat, p = wilcoxon(np.array(groups[i])[mask], np.array(groups[j])[mask])
+        elif mask.sum() == 1:
+            p = 1.0
+        else:
+            p = 1.0
+        diff = np.median(np.array(groups[i]) - np.array(groups[j]))
+        results.append(_pairwise_result(labels[i], labels[j], i, j, diff=diff, p=p, cl=0, cu=0))
+    n = len(results)
+    for r in results:
+        r["p"] = np.clip(r["p"] * n, 0, 1)
     return results
 
 
@@ -218,14 +410,31 @@ def _nemenyi_test(groups):
 # =========================
 
 POST_HOC_METHODS = {
-    "Tukey HSD": {"type": "parametric", "fn": _tukey_hsd, "ci": True},
-    "Bonferroni": {"type": "parametric", "fn": _bonferroni, "ci": True},
-    "Scheffe": {"type": "parametric", "fn": _scheffe, "ci": True},
-    "Games-Howell": {"type": "parametric", "fn": _games_howell, "ci": True},
-    "Dunnett": {"type": "parametric", "fn": _dunnett, "ci": True},
-    "Dunn": {"type": "nonparametric", "fn": _dunn_test, "ci": False},
-    "Conover": {"type": "nonparametric", "fn": _conover_test, "ci": False},
-    "Nemenyi": {"type": "nonparametric", "fn": _nemenyi_test, "ci": False},
+    # Parametric — ANOVA
+    "Fisher LSD": {"type": "parametric", "fn": _fisher_lsd, "ci": True, "context": "ANOVA"},
+    "Tukey HSD": {"type": "parametric", "fn": _tukey_hsd, "ci": True, "context": "ANOVA"},
+    "Bonferroni": {"type": "parametric", "fn": _bonferroni, "ci": True, "context": "ANOVA"},
+    "Holm-Bonferroni": {"type": "parametric", "fn": _holm_bonferroni, "ci": True, "context": "ANOVA"},
+    "Šidák": {"type": "parametric", "fn": _sidak, "ci": True, "context": "ANOVA"},
+    "Scheffé": {"type": "parametric", "fn": _scheffe, "ci": True, "context": "ANOVA"},
+    "Dunnett": {"type": "parametric", "fn": _dunnett, "ci": True, "context": "ANOVA"},
+    "Games-Howell": {"type": "parametric", "fn": _games_howell, "ci": True, "context": "ANOVA"},
+    "Newman-Keuls": {"type": "parametric", "fn": _newman_keuls, "ci": True, "context": "ANOVA"},
+    # Parametric — Repeated Measures
+    "Pairwise Paired t": {"type": "parametric", "fn": _pairwise_paired, "ci": True, "context": "Repeated"},
+    "Paired t + Bonferroni": {"type": "parametric", "fn": _bonferroni_paired, "ci": True, "context": "Repeated"},
+    "Paired t + Holm": {"type": "parametric", "fn": _holm_paired, "ci": True, "context": "Repeated"},
+    # Parametric — MANOVA
+    "Discriminant Comparisons": {"type": "parametric", "fn": _discriminant_comparisons, "ci": True, "context": "MANOVA"},
+    "Canonical Contrasts": {"type": "parametric", "fn": _canonical_contrasts, "ci": True, "context": "MANOVA"},
+    # Nonparametric — Kruskal-Wallis
+    "Dunn": {"type": "nonparametric", "fn": _dunn_test, "ci": False, "context": "Kruskal-Wallis"},
+    "Conover": {"type": "nonparametric", "fn": _conover_test, "ci": False, "context": "Kruskal-Wallis"},
+    "DSCF": {"type": "nonparametric", "fn": _dscf, "ci": False, "context": "Kruskal-Wallis"},
+    # Nonparametric — Friedman
+    "Nemenyi": {"type": "nonparametric", "fn": _nemenyi_test, "ci": False, "context": "Friedman"},
+    "Conover-Friedman": {"type": "nonparametric", "fn": _conover_friedman, "ci": False, "context": "Friedman"},
+    "Wilcoxon + Bonferroni": {"type": "nonparametric", "fn": _wilcoxon_pairwise, "ci": False, "context": "Friedman"},
 }
 
 
@@ -264,7 +473,6 @@ def _ci_plot(pairwise_results, method):
     has_ci = any(l != 0 or h != 0 for l, h in zip(lo, hi))
 
     fig = go.Figure()
-    midpoint = len(pairs) // 2
     if has_ci:
         for idx, (p, d, l, h) in enumerate(zip(pairs, diffs, lo, hi)):
             color = "#4C78A8" if l <= 0 <= h else "#E45756"
@@ -310,9 +518,16 @@ def render_post_hoc(groups, param_type="parametric", key="ph"):
 
     methods = {k: v for k, v in POST_HOC_METHODS.items() if v["type"] == param_type}
 
-    selected = st.selectbox("Post-hoc Method", list(methods.keys()), key=f"{key}_method")
+    # Group methods by context
+    contexts = sorted(set(v["context"] for v in methods.values()))
+    if len(contexts) > 1:
+        ctx = st.selectbox("Category", contexts, key=f"{key}_ctx")
+        ctx_methods = {k: v for k, v in methods.items() if v["context"] == ctx}
+    else:
+        ctx_methods = methods
 
-    method_info = methods[selected]
+    selected = st.selectbox("Post-hoc Method", list(ctx_methods.keys()), key=f"{key}_method")
+    method_info = ctx_methods[selected]
     results = method_info["fn"](groups)
 
     n_comparisons = len(results)

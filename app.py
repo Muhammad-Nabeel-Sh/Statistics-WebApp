@@ -1288,6 +1288,9 @@ def main():
                             if "Decision Rules" in rule:
                                 st.markdown("## Decision Rules:")
                                 st.info(rule["Decision Rules"])
+                            if "Post-Hoc" in rule:
+                                st.markdown("## Available Post-Hoc Tests:")
+                                st.info("\n".join(f"- {m.strip()}" for m in rule["Post-Hoc"].split(",")))
                             render_test_widget(test)
 
             else:

@@ -33,32 +33,35 @@ def _tab_buttons(options, key, default=None):
 def _apa_table(df, title="Table"):
     """Render a DataFrame as an APA-style formatted table."""
     st.markdown(f"**{title}**")
-    styled = df.style.set_table_attributes(
-        'style="border-collapse: collapse; width: 100%;"'
-    )
-    styled = styled.set_properties(
-        **{
-            "border": "1px solid #555",
-            "padding": "6px",
-            "text-align": "center",
-            "font-size": "14px",
-        }
-    )
-    styled = styled.set_table_styles(
-        [
-            {
-                "selector": "th",
-                "props": [
-                    ("background-color", "#1e1e1e"),
-                    ("color", "white"),
-                    ("font-weight", "bold"),
-                    ("border", "1px solid #555"),
-                    ("padding", "8px"),
-                    ("text-align", "center"),
-                ],
+    if isinstance(df, pd.DataFrame):
+        styled = df.style.set_table_attributes(
+            'style="border-collapse: collapse; width: 100%;"'
+        )
+        styled = styled.set_properties(
+            **{
+                "border": "1px solid #555",
+                "padding": "6px",
+                "text-align": "center",
+                "font-size": "14px",
             }
-        ]
-    )
+        )
+        styled = styled.set_table_styles(
+            [
+                {
+                    "selector": "th",
+                    "props": [
+                        ("background-color", "#1e1e1e"),
+                        ("color", "white"),
+                        ("font-weight", "bold"),
+                        ("border", "1px solid #555"),
+                        ("padding", "8px"),
+                        ("text-align", "center"),
+                    ],
+                }
+            ]
+        )
+    else:
+        styled = df
     st.dataframe(styled, use_container_width=True)
     return styled
 
@@ -3367,6 +3370,325 @@ def _epidemiology_table_widget():
 
 
 # =====================
+# POST-HOC TABLES SECTION
+# =====================
+
+def _ph_compute_results(n_groups, effect_size_label, n_per_group):
+    _rng_ph = np.random.default_rng(42 + n_groups)
+    effect_map = {"None": 0.0, "Small": 0.2, "Medium": 0.5, "Large": 0.8}
+    effect_mult = effect_map[effect_size_label]
+    base_means = np.array([0, 0.2, 0.5, 0.8, 1.2, 1.6][:n_groups]) * effect_mult
+    base_means -= base_means.mean()
+    group_data = []
+    for i in range(n_groups):
+        group_data.append(base_means[i] + _rng_ph.standard_normal(n_per_group))
+    group_stats = []
+    for i, g in enumerate(group_data):
+        group_stats.append({
+            "Group": f"Group {i+1}",
+            "N": len(g), "Mean": g.mean(), "SD": g.std(ddof=1), "SE": g.std(ddof=1) / math.sqrt(len(g))
+        })
+    pairs = []
+    for i in range(n_groups):
+        for j in range(i + 1, n_groups):
+            x, y = group_data[i], group_data[j]
+            n1 = n2 = n_per_group
+            m1, m2 = x.mean(), y.mean()
+            s1, s2 = x.std(ddof=1), y.std(ddof=1)
+            sp = math.sqrt(((n1 - 1) * s1**2 + (n2 - 1) * s2**2) / (n1 + n2 - 2))
+            se = sp * math.sqrt(1 / n1 + 1 / n2)
+            md = m1 - m2
+            d = md / sp
+            g = d * (1 - 3 / (4 * (n1 + n2) - 9))
+            t_stat = md / se
+            p_val = 2 * stats.t.sf(abs(t_stat), n1 + n2 - 2)
+            u_stat, _ = stats.mannwhitneyu(x, y, alternative="two-sided")
+            rb = 1 - (2 * u_stat) / (n1 * n2)
+            cd = (2 * u_stat) / (n1 * n2) - 1
+            pairs.append({
+                "Pair": f"{i+1} vs {j+1}",
+                "Group 1": i + 1, "Group 2": j + 1,
+                "Mean 1": m1, "Mean 2": m2,
+                "Mean Diff": md, "SE": se,
+                "CI Lower": md - 1.96 * se,
+                "CI Upper": md + 1.96 * se,
+                "t": t_stat, "df": n1 + n2 - 2,
+                "p (unadj)": p_val,
+                "Cohen's d": d,
+                "Hedges' g": g,
+                "Rank Biserial r": rb,
+                "Cliff's δ": cd,
+            })
+    df_pairs = pd.DataFrame(pairs)
+    m = len(df_pairs)
+    df_pairs["p (Bonferroni)"] = np.clip(df_pairs["p (unadj)"] * m, 0, 1)
+    sorted_idx = np.argsort(df_pairs["p (unadj)"].values)
+    holm = np.zeros(m)
+    for rank, idx in enumerate(sorted_idx):
+        holm[idx] = np.clip(df_pairs["p (unadj)"].iloc[idx] * (m - rank), 0, 1)
+    df_pairs["p (Holm)"] = holm
+    sorted_idx = np.argsort(df_pairs["p (unadj)"].values)
+    bh = np.zeros(m)
+    for rank, idx in enumerate(sorted_idx):
+        bh[idx] = np.clip(df_pairs["p (unadj)"].iloc[idx] * m / (rank + 1), 0, 1)
+    df_pairs["p (BH)"] = bh
+    pval_mat = np.eye(n_groups)
+    es_mat = np.eye(n_groups)
+    for _, row in df_pairs.iterrows():
+        i, j = int(row["Group 1"]) - 1, int(row["Group 2"]) - 1
+        pval_mat[i, j] = pval_mat[j, i] = row["p (unadj)"]
+        es_mat[i, j] = es_mat[j, i] = row["Cohen's d"]
+    return df_pairs, pval_mat, es_mat, [f"Group {i+1}" for i in range(n_groups)], pd.DataFrame(group_stats)
+
+
+def _ph_style_table(df, alpha, p_cols=None, es_cols=None):
+    styles = pd.DataFrame("", index=df.index, columns=df.columns)
+    if p_cols:
+        for col in p_cols:
+            if col in df.columns:
+                styles.loc[df[col] <= alpha, col] = "background-color: rgba(0,200,0,0.2)"
+                styles.loc[df[col] > alpha, col] = "background-color: rgba(200,0,0,0.15)"
+    if es_cols:
+        for col in es_cols:
+            if col in df.columns:
+                large = df[col].abs() >= 0.8
+                medium = (df[col].abs() >= 0.5) & (df[col].abs() < 0.8)
+                styles.loc[large, col] = "background-color: rgba(0,200,0,0.25)"
+                styles.loc[medium, col] = "background-color: rgba(200,200,0,0.2)"
+    return df.style.apply(lambda _: styles, axis=None)
+
+
+def _ph_pairwise_table(results):
+    st.subheader("Pairwise Comparison Table")
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        alpha = st.slider("α", 0.001, 0.10, 0.05, 0.001, key="ph_pp_alpha")
+    with c2:
+        sort_by = st.selectbox("Sort by", ["p (unadj)", "Mean Diff", "Cohen's d", "Pair"], key="ph_pp_sort")
+    with c3:
+        asc = st.checkbox("Ascending", True, key="ph_pp_asc")
+    with c4:
+        sig_only = st.checkbox("Sig only", False, key="ph_pp_sig")
+    min_es = st.slider("Min |Cohen's d|", 0.0, 2.0, 0.0, 0.1, key="ph_pp_mines",
+                       help="Filter out comparisons with effect size below this threshold")
+    df_pairs, _, _, _, _ = results
+    df = df_pairs[["Pair", "Mean Diff", "Cohen's d", "Hedges' g", "Rank Biserial r", "Cliff's δ",
+                    "p (unadj)", "p (Bonferroni)", "p (Holm)", "p (BH)"]].copy()
+    if sig_only:
+        df = df[df["p (unadj)"] <= alpha]
+    if min_es > 0:
+        df = df[df["Cohen's d"].abs() >= min_es]
+    df = df.sort_values(sort_by, ascending=asc)
+    p_cols = ["p (unadj)", "p (Bonferroni)", "p (Holm)", "p (BH)"]
+    es_cols = ["Cohen's d", "Hedges' g", "Rank Biserial r", "Cliff's δ"]
+    styled = _ph_style_table(df, alpha, p_cols, es_cols)
+    styled = styled.format({c: "{:.4f}" for c in df.columns if c != "Pair"}, precision=4)
+    _apa_table(styled, "Pairwise Comparisons")
+    with st.expander("Interpretation"):
+        sig_count = int((df_pairs["p (unadj)"] <= alpha).sum())
+        st.markdown(f"- **{sig_count}** of **{len(df_pairs)}** comparisons significant at α = {alpha}")
+
+
+def _ph_adjusted_pvals(results):
+    st.subheader("Adjusted vs Unadjusted p-values")
+    alpha = st.slider("α", 0.001, 0.10, 0.05, 0.001, key="ph_adj_alpha")
+    df_pairs, _, _, _, _ = results
+    df = df_pairs[["Pair", "p (unadj)", "p (Bonferroni)", "p (Holm)", "p (BH)"]].copy()
+    for col in ["p (unadj)", "p (Bonferroni)", "p (Holm)", "p (BH)"]:
+        df[f"{col} ✓"] = df[col].apply(lambda v: "✓Sig" if v <= alpha else "✗")
+    p_cols = ["p (unadj)", "p (Bonferroni)", "p (Holm)", "p (BH)"]
+    styles = pd.DataFrame("", index=df.index, columns=df.columns)
+    for col in p_cols:
+        styles.loc[df[col] <= alpha, col] = "background-color: rgba(0,200,0,0.2)"
+        styles.loc[df[col] > alpha, col] = "background-color: rgba(200,0,0,0.15)"
+    styled = df.style.apply(lambda _: styles, axis=None)
+    styled = styled.format({c: "{:.4f}" for c in p_cols}, precision=4)
+    _apa_table(styled, "Multiple Testing Correction Comparison")
+    with st.expander("Understanding Corrections"):
+        st.markdown("""
+        - **Unadjusted**: raw p-values — inflated Type I error risk
+        - **Bonferroni**: p × n comparisons (most conservative)
+        - **Holm**: sequential Bonferroni — less conservative, more power
+        - **Benjamini-Hochberg**: controls FDR (least conservative)
+        """)
+
+
+def _ph_ci_tables(results):
+    st.subheader("Confidence Interval Tables")
+    ci_level = st.slider("Confidence Level", 0.80, 0.99, 0.95, 0.01, key="ph_ci_level")
+    z = stats.norm.ppf(1 - (1 - ci_level) / 2)
+    df_pairs, _, _, _, _ = results
+    df = df_pairs[["Pair", "Mean Diff", "SE", "t", "df", "p (unadj)"]].copy()
+    df["CI Lower"] = df_pairs["Mean Diff"] - z * df_pairs["SE"]
+    df["CI Upper"] = df_pairs["Mean Diff"] + z * df_pairs["SE"]
+    styles = pd.DataFrame("", index=df.index, columns=df.columns)
+    for idx in df.index:
+        if df.loc[idx, "CI Lower"] > 0 or df.loc[idx, "CI Upper"] < 0:
+            styles.loc[idx, ["CI Lower", "CI Upper"]] = "background-color: rgba(0,200,0,0.2)"
+    styled = df.style.apply(lambda _: styles, axis=None)
+    styled = styled.format({"Mean Diff": "{:.3f}", "SE": "{:.3f}", "t": "{:.3f}",
+                            "CI Lower": "{:.3f}", "CI Upper": "{:.3f}", "p (unadj)": "{:.4f}"}, precision=4)
+    _apa_table(styled, f"Confidence Intervals ({ci_level*100:.0f}%)")
+    # Forest plot
+    fig = go.Figure()
+    for _, row in df_pairs.iterrows():
+        lo = row["Mean Diff"] - z * row["SE"]
+        hi = row["Mean Diff"] + z * row["SE"]
+        color = "#00CC96" if lo > 0 or hi < 0 else "#E45756"
+        fig.add_trace(go.Scatter(
+            x=[row["Mean Diff"]], y=[row["Pair"]],
+            mode="markers", marker=dict(size=10, color=color),
+            showlegend=False,
+            error_x=dict(type="data", symmetric=False,
+                         array=[[hi - row["Mean Diff"]]],
+                         arrayminus=[[row["Mean Diff"] - lo]],
+                         color=color, thickness=2, width=8),
+        ))
+    fig.add_vline(x=0, line_dash="dash", line_color="gray", opacity=0.5)
+    fig.update_layout(template="plotly_dark", height=300,
+                      title=f"Forest Plot — Mean Differences ({ci_level*100:.0f}% CI)",
+                      xaxis_title="Mean Difference", yaxis_title="Comparison",
+                      margin=dict(l=10, r=10, t=30, b=10))
+    st.plotly_chart(fig, use_container_width=True)
+    with st.expander("Interpretation"):
+        sig_ci = int(((df["CI Lower"] > 0) | (df["CI Upper"] < 0)).sum())
+        st.markdown(f"- **{sig_ci}** of **{len(df_pairs)}** CIs exclude zero at {ci_level*100:.0f}% confidence")
+
+
+def _ph_effect_sizes(results):
+    st.subheader("Effect Size Tables")
+    df_pairs, _, _, _, _ = results
+    es_cols = ["Cohen's d", "Hedges' g", "Rank Biserial r", "Cliff's δ"]
+    df = df_pairs[["Pair"] + es_cols].copy()
+    for col in es_cols:
+        df[f"{col} Label"] = df[col].apply(
+            lambda v: "Large" if abs(v) >= 0.8 else ("Medium" if abs(v) >= 0.5 else ("Small" if abs(v) >= 0.2 else "Negligible"))
+        )
+    styled = _ph_style_table(df, 0.05, es_cols=es_cols)
+    styled = styled.format({c: "{:.4f}" for c in es_cols}, precision=4)
+    _apa_table(styled, "Effect Sizes for Pairwise Comparisons")
+    with st.expander("Effect Size Guidelines"):
+        st.markdown("""
+        | Measure | Small | Medium | Large | Interpretation |
+        |---|---|---|---|---|
+        | Cohen's d | 0.2 | 0.5 | 0.8 | Std. mean difference |
+        | Hedges' g | 0.2 | 0.5 | 0.8 | Bias-corrected d |
+        | Rank Biserial r | 0.1 | 0.3 | 0.5 | Non-parametric correlation |
+        | Cliff's δ | 0.147 | 0.33 | 0.474 | Non-parametric dominance |
+        """)
+
+
+def _ph_significance_matrix(results):
+    st.subheader("Significance Matrix")
+    alpha = st.slider("α", 0.001, 0.10, 0.05, 0.001, key="ph_sm_alpha")
+    show_p = st.checkbox("Show p-values", True, key="ph_sm_showp")
+    _, pval_mat, _, labels, _ = results
+    n = len(labels)
+    sig_text = np.empty((n, n), dtype=object)
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                sig_text[i, j] = "—"
+            elif pval_mat[i, j] <= alpha:
+                sig_text[i, j] = f"p={pval_mat[i, j]:.4f}<br>***" if show_p else "***"
+            else:
+                sig_text[i, j] = f"p={pval_mat[i, j]:.4f}" if show_p else "ns"
+    fig = go.Figure(data=go.Heatmap(
+        z=pval_mat, x=labels, y=labels,
+        text=sig_text, texttemplate="%{text}",
+        colorscale=[[0, "green"], [alpha, "yellow"], [1, "red"]],
+        zmin=0, zmax=1,
+        hovertemplate="%{x} vs %{y}<br>p = %{z:.4f}<extra></extra>",
+    ))
+    fig.update_layout(template="plotly_dark", height=400,
+                      title=f"Significance Matrix (α = {alpha})",
+                      margin=dict(l=10, r=10, t=30, b=10))
+    st.plotly_chart(fig, use_container_width=True)
+    with st.expander("Interpretation"):
+        sig_pairs = sum(1 for i in range(n) for j in range(i + 1, n) if pval_mat[i, j] <= alpha)
+        st.markdown(f"- **{sig_pairs}** of **{n * (n - 1) // 2}** comparisons significant at α = {alpha}")
+
+
+def _ph_heatmap(results):
+    st.subheader("Heatmap for Significance")
+    display_opt = st.selectbox("Display", ["p-values", "Cohen's d", "Significance (binary)"], key="ph_hm_display")
+    alpha = st.slider("α", 0.001, 0.10, 0.05, 0.001, key="ph_hm_alpha")
+    _, pval_mat, es_mat, labels, _ = results
+    n = len(labels)
+    if display_opt == "p-values":
+        z = np.where(np.eye(n, dtype=bool), np.nan, pval_mat)
+        colorscale = [[0, "green"], [alpha, "yellow"], [1, "red"]]
+        title = "Pairwise p-values Heatmap"
+        zmin, zmax = 0, 1
+        texttemplate = "%{z:.4f}"
+    elif display_opt == "Cohen's d":
+        z = np.where(np.eye(n, dtype=bool), np.nan, es_mat)
+        vmax = max(np.nanmax(np.abs(z)), 0.01)
+        colorscale = "RdBu_r"
+        title = "Pairwise Cohen's d Heatmap"
+        zmin, zmax = -vmax, vmax
+        texttemplate = "%{z:.3f}"
+    else:
+        z = np.where(np.eye(n, dtype=bool), np.nan, (pval_mat <= alpha).astype(float))
+        colorscale = [[0, "red"], [1, "green"]]
+        title = f"Significance Binary (α = {alpha})"
+        zmin, zmax = 0, 1
+        texttemplate = "%{z}"
+    fig = go.Figure(data=go.Heatmap(
+        z=z, x=labels, y=labels,
+        texttemplate=texttemplate,
+        colorscale=colorscale,
+        zmin=zmin, zmax=zmax,
+        hovertemplate="%{x} vs %{y}<br>%{z:.4f}<extra></extra>",
+    ))
+    fig.update_layout(template="plotly_dark", height=400,
+                      title=title, margin=dict(l=10, r=10, t=30, b=10))
+    st.plotly_chart(fig, use_container_width=True)
+    with st.expander("Interpretation"):
+        st.markdown(f"""
+        - **p-values**: green ≤ {alpha} (sig), yellow borderline, red > {alpha} (not sig)
+        - **Cohen's d**: diverging blue-red shows direction and magnitude
+        - **Binary**: green = significant, red = not (at α = {alpha})
+        """)
+
+
+def _ph_group_stats(results):
+    _, _, _, _, df_groups = results
+    _apa_table(df_groups, "Group Descriptive Statistics")
+
+
+def _post_hoc_tables():
+    st.header("Post-Hoc Tables")
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        n_groups = st.selectbox("Number of Groups", [3, 4, 5, 6], index=1, key="ph_ngroups")
+    with c2:
+        n_per_group = st.slider("Observations per Group", 10, 100, 30, 5, key="ph_npergroup")
+    with c3:
+        effect_size = st.selectbox("Effect Size", ["None", "Small", "Medium", "Large"], index=2, key="ph_effect")
+    results = _ph_compute_results(n_groups, effect_size, n_per_group)
+    _ph_group_stats(results)
+    tab = _tab_buttons(
+        ["Pairwise Comparison Table", "Adjusted vs Unadjusted p-values",
+         "Confidence Interval Tables", "Effect Size Tables",
+         "Significance Matrix", "Heatmap for Significance"],
+        "posthoc_tab",
+    )
+    if tab == "Pairwise Comparison Table":
+        _ph_pairwise_table(results)
+    elif tab == "Adjusted vs Unadjusted p-values":
+        _ph_adjusted_pvals(results)
+    elif tab == "Confidence Interval Tables":
+        _ph_ci_tables(results)
+    elif tab == "Effect Size Tables":
+        _ph_effect_sizes(results)
+    elif tab == "Significance Matrix":
+        _ph_significance_matrix(results)
+    else:
+        _ph_heatmap(results)
+
+
+# =====================
 # MAIN RENDER FUNCTION
 # =====================
 
@@ -3387,6 +3709,7 @@ def render_tabulation():
             "Survival / Life Tables",
             "Multiple Testing Correction",
             "Power Curve Summary",
+            "Post-Hoc Tables",
             "Educational Modules",
             "APA/Journal Export",
         ],
@@ -3413,6 +3736,8 @@ def render_tabulation():
         _multiple_testing_correction()
     elif section == "Power Curve Summary":
         _power_curve_summary()
+    elif section == "Post-Hoc Tables":
+        _post_hoc_tables()
     elif section == "Educational Modules":
         educational_modules()
     elif section == "APA/Journal Export":
