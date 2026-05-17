@@ -322,7 +322,16 @@ SECTIONS = [
 def render_glossary():
     st.header(":orange[🕮 &ensp; Statistical Glossary]")
 
-    query = st.text_input("Search", key="glossary_search").strip().lower()
+    query = (
+        st.text_input(
+            "Search",
+            key="glossary_search",
+            label_visibility="collapsed",
+            placeholder="🔍︎",
+        )
+        .strip()
+        .lower()
+    )
 
     if query:
         st.markdown(f'**Search results for "{query}":**')

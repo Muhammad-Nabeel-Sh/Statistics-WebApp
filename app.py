@@ -1285,6 +1285,9 @@ def main():
                             if "Formula" in rule:
                                 st.markdown("## Formula:")
                                 render_latex(rule["Formula"])
+                            if "Decision Rules" in rule:
+                                st.markdown("## Decision Rules:")
+                                st.info(rule["Decision Rules"])
                             render_test_widget(test)
 
             else:

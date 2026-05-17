@@ -63,6 +63,12 @@ rules = [
                     - :orange[$n$] is the sample size 
                     - :orange[$\dfrac{s}{\sqrt{n}}$] is the standard error of the mean.
                     """,
+        "Decision Rules": r"""
+                    -  Reject the null hyposthesis $H_0$ if the absolute value of the test statistic :orange[$|t|$] is greater than the critical t-value from the t-distribution with :orange[$n-1$] degrees of freedom at the chosen significance level (e.g., α = 0.05) :orange[$|t| > t_{critical}$].
+                    -  Fail to reject the null hypothesis if :orange[$|t|$] is less than or equal to the critical t-value :orange[$|t| \leq t_{critical}$].
+                    -  Reject the null hyosthesis $H_0$ if the p-value is less than the chosen significance level (e.g., α = 0.05) :orange[$p < \alpha$].
+                    -  Effect size (Cohen's d) can be calculated as $ d = \dfrac{\bar{x} - \mu_0}{s} $, where :orange[$d$] is the standardized mean difference, providing a measure of the magnitude of the effect independent of sample size.
+        """,
     },
     {
         "name": "One-sample z-test",
@@ -83,6 +89,12 @@ rules = [
                     - :orange[$n$] is the sample size.
                     - The denominator :orange[$\dfrac{\sigma}{\sqrt{n}}$] is the standard error of the mean.
                     """,
+        "Decision Rules": r"""
+                    - Reject the null hypothesis if the absolute value of the test statistic :orange[$|z|$] is greater than the critical z-value from the standard normal distribution at the chosen significance level (e.g., α = 0.05) :orange[$|z| > z_{critical}$].
+                    - Fail to reject the null hypothesis if :orange[$|z|$] is less than or equal to the critical z-value :orange[$|z| \leq z_{critical}$].
+                    - Reject the null hypothesis if the p-value is less than the chosen significance level (e.g., α = 0.05) :orange[$p < \alpha$].
+                    - Effect size (Cohen's d) can be calculated as $ d = \dfrac{\bar{x} - \mu_0}{\sigma} $, where :orange[$d$] is the standardized mean difference, providing a measure of the magnitude of the effect independent of sample size.
+        """,
     },
     {
         "name": "One-sample Proportion Test (Binomial Test)",
@@ -118,15 +130,38 @@ rules = [
         "Explanation": "One-Sample Wilcoxon Signed-Rank Test This non-parametric test is used to determine whether the median of a single sample is significantly different from a known or hypothesized population median. It is typically used when the data is ordinal or continuous but does not follow a normal distribution.",
         "Example": "A researcher wants to test if the median pain score of patients after a treatment is significantly different from a known median pain score of 5 on a 10-point scale. The researcher collects pain scores from 30 patients and performs a one-sample Wilcoxon signed-rank test to compare the sample median against the known population median of 5.",
         "Formula": r"""
-                    $$ W = \sum_{i=1}^{n} R_i \cdot sgn(X_i - M_0) $$
-                    $$ R_i = \text{rank}(|X_i - M_0|) $$
-                    $$ sgn(X_i - M_0) = \begin{cases} +1 & \text{if } X_i > M_0 \\ -1 & \text{if } X_i < M_0 \\ 0 & \text{if } X_i = M_0 \end{cases} $$
+                    $$ W = \min(W^+, W^-) $$
+                    $$ W^+ = \sum_{D_i>0} \text{Rank}(|D_i|) $$
+                    $$ W^- = \sum_{D_i<0} \text{Rank}(|D_i|) $$
+                    $$ D_i = X_i - \theta_0 $$
+                    $$ sgn(X_i - \theta_0) = \begin{cases} +1 & \text{if } X_i > \theta_0 \\ -1 & \text{if } X_i < \theta_0 \\ 0 & \text{if } X_i = \theta_0 \end{cases} $$
                     Where:  
-                    - :orange[$R_i$] is the rank of the absolute difference between the observed value  
-                    - :orange[$X_i$] and the hypothesized median :orange[$M_0$], and  
-                    - :orange[$sgn(X_i - M_0)$] is the sign function that indicates whether :orange[$X_i$] is above, below, or equal to :orange[$M_0$].  
+                    - :orange[$D_i$] is the absolute difference between the observed value :orange[$X_i$] and the hypothesized median :orange[$\theta_0$] for the :orange[$i$]-th observation,
+                    - :orange[$X_i$] is the observed value for the :orange[$i$]-th observation, 
+                    - :orange[$\theta_0$] is the hypothesized median
+                    - :orange[$sgn(X_i - \theta_0)$] is the sign function that indicates whether :orange[$X_i$] is above, below, or equal to :orange[$\theta_0$].  
                     - The test statistic :orange[$W$] is then compared to a critical value from the Wilcoxon signed-rank distribution to determine significance.
+
+                    Large Sample Approximation
+                    $$ z = \frac{W - \mu_W}{\sigma_W} $$
+                    $$ \mu_W = \frac{n(n+1)}{4} $$
+                    $$ \sigma_W = \sqrt{\frac{n(n+1)(2n+1)}{24}}  \quad \text{if no ties} $$
+                    $$ \sigma_W = \sqrt{\frac{n(n+1)(2n+1)}{24} - \sum_{t} \frac{t(t^2 - 1)}{48}} \quad \text{if ties exist} $$
+                    $$ \sigma_W = \sqrt{\frac{n(n+1)(2n+1)-\frac{1}{2}\sum^g_{j=1}{(t^3_j-t_j)}}{24}} \quad \text{if ties exist} $$
+                    Where:
+                    - :orange[$n$] is the number of non-zero differences,
+                    - :orange[$t$] is the number of tied ranks for a particular value,
+                    - :orange[$g$] is the number of groups of tied ranks.
+                    - :orange[$\mu_W$] is the mean of the test statistic under the null hypothesis,
+                    - :orange[$\sigma_W$] is the standard deviation of the test statistic under the null hypothesis, adjusted for ties if necessary.
+                    - The test statistic :orange[$z$] is then compared to a standard normal distribution to determine significance when the sample size is large (typically n > 20).
+                    - The large sample approximation is used when the sample size is sufficiently large, allowing the distribution of the test statistic to be approximated by a normal distribution, which simplifies the calculation of p-values and critical values for hypothesis testing.
                     """,
+        "Decision Rules": r"""
+                    - Reject the null hypothesis if the test statistic :orange[$W$] is less than or equal to the critical value from the Wilcoxon signed-rank distribution for a given significance level (e.g., α = 0.05) :orange[$W \leq W_{critical}$]. 
+                    - For large samples, reject the null hypothesis if the z-score is greater than or equal to the critical z-value corresponding to the chosen significance level :orange[$ |z| \geq z_{critical} $].
+                    - Fail to reject the null hypothesis if the test statistic :orange[$W$] is greater than the critical value, or if the z-score is less than the critical z-value (for larger samples).
+                    - Effect size (r) can be calculated as: :orange[$$ r = \dfrac{z}{\sqrt{n}} $$]""",
     },
     {
         "name": "Chi-Square Goodness-of-Fit Test",
@@ -985,6 +1020,15 @@ CRITERIA_FIELDS = [
     "Distribution",
 ]
 
+FIELDS = [
+    "Objective",
+    "Dependent_Variable",
+    "Independent_Variable",
+    "Groups",
+    "Relation",
+    "Distribution",
+]
+
 
 FIELDS = [
     "Objective",
@@ -993,4 +1037,5 @@ FIELDS = [
     "Groups",
     "Relation",
     "Distribution",
+    "Decision Rules",
 ]

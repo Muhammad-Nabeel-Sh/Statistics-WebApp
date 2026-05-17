@@ -3049,6 +3049,324 @@ def _power_curve_summary():
 
 
 # =====================
+# ONE-WAY & TWO-WAY TABLES
+# =====================
+
+
+def _oneway_twoway_tables():
+    st.header("One-way & Two-way Tables")
+
+    tab = _tab_buttons(
+        [
+            "One-way Frequency Tables",
+            "Two-way Contingency Tables",
+            "Healthcare Example",
+            "Epidemiology Example",
+        ],
+        "onetwo_tab",
+    )
+
+    if tab == "One-way Frequency Tables":
+        _oneway_table_widget()
+    elif tab == "Two-way Contingency Tables":
+        _twoway_table_widget()
+    elif tab == "Healthcare Example":
+        _healthcare_table_widget()
+    else:
+        _epidemiology_table_widget()
+
+
+def _oneway_table_widget():
+    c1, c2 = st.columns([1, 2])
+    with c1:
+        n = st.slider("Sample Size", 10, 500, 100, key="ow_n")
+        cats = st.selectbox("Number of Categories", [3, 4, 5, 6], index=0, key="ow_cats")
+        probs_opt = st.selectbox(
+            "Distribution",
+            ["Equal", "Skewed", "Dominant", "Custom"],
+            key="ow_probs",
+        )
+        if probs_opt == "Equal":
+            probs = np.ones(cats) / cats
+        elif probs_opt == "Skewed":
+            probs = np.array([1, 2, 3, 4, 5, 6][:cats], dtype=float)
+            probs = probs / probs.sum()
+        elif probs_opt == "Dominant":
+            probs = np.array([5] + [1] * (cats - 1), dtype=float)
+            probs = probs / probs.sum()
+        else:
+            raw = np.array([st.slider(f"p({i+1})", 0.0, 1.0, 1.0 / cats, 0.05, key=f"ow_p{i}") for i in range(cats)])
+            probs = raw / raw.sum()
+        transpose = st.toggle("Transpose", key="ow_transpose")
+
+    labels = [f"Level {i+1}" for i in range(cats)]
+    data = _rng.choice(labels, size=n, p=probs)
+    counts = pd.Series(data).value_counts().reindex(labels, fill_value=0)
+    pct = counts / n * 100
+
+    df = pd.DataFrame(
+        {
+            "Variable 1": labels,
+            "Frequency": counts.values,
+            "Percentage": [f"{v:.1f}%" for v in pct.values],
+            "Cumulative Freq": np.cumsum(counts.values),
+            "Cumulative %": [f"{v:.1f}%" for v in np.cumsum(pct.values)],
+        }
+    )
+
+    if transpose:
+        df = df.set_index("Variable 1").T.reset_index().rename(columns={"index": "Measure"})
+
+    with c2:
+        _apa_table(df, "One-way Frequency Table")
+        fig = go.Figure(data=[go.Bar(x=labels, y=counts.values, marker_color="#4C78A8")])
+        fig.update_layout(
+            template="plotly_dark", height=280,
+            margin=dict(l=10, r=10, t=10, b=60),
+            xaxis_title="Variable 1", yaxis_title="Frequency",
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Total N", str(n))
+    with col2:
+        st.metric("Categories", str(cats))
+    with st.expander("Interpretation"):
+        st.markdown(f"""
+        - One-way frequency table shows distribution across {cats} categories of **Variable 1**
+        - **Total**: {n} observations, no missing values
+        - Most frequent: **{labels[np.argmax(counts.values)]}** ({pct.max():.1f}%)
+        - Use **Transpose** to swap rows and columns for alternative layout
+        """)
+
+
+def _twoway_table_widget():
+    c1, c2 = st.columns([1, 2])
+    with c1:
+        n = st.slider("Sample Size", 20, 500, 200, key="tw_n")
+        rows = st.selectbox("Row Categories", [2, 3, 4], index=0, key="tw_rows")
+        cols = st.selectbox("Column Categories", [2, 3, 4], index=0, key="tw_cols")
+        assoc = st.slider("Association Strength", 0.0, 1.0, 0.3, 0.05, key="tw_assoc")
+        show = st.selectbox("Show", ["Counts", "Row %", "Column %", "Expected"], key="tw_show")
+        transpose = st.toggle("Transpose", key="tw_transpose")
+
+    row_labels = [f"Level {i+1}" for i in range(rows)]
+    col_labels = [f"Level {i+1}" for i in range(cols)]
+
+    base_probs = np.ones((rows, cols)) / (rows * cols)
+    diag_assoc = np.zeros((rows, cols))
+    for i in range(min(rows, cols)):
+        diag_assoc[i, i] = assoc
+    probs = base_probs + diag_assoc / (rows * cols)
+    probs = probs / probs.sum()
+
+    joint = np.random.multinomial(n, probs.flatten()).reshape(rows, cols)
+    row_tot = joint.sum(axis=1, keepdims=True)
+    col_tot = joint.sum(axis=0, keepdims=True)
+    grand = joint.sum()
+
+    if show == "Counts":
+        display = joint
+    elif show == "Row %":
+        display = np.where(row_tot > 0, joint / row_tot * 100, 0)
+    elif show == "Column %":
+        display = np.where(col_tot > 0, joint / col_tot * 100, 0)
+    else:
+        exp = row_tot @ col_tot / grand
+        display = exp
+
+    df = pd.DataFrame(display, index=row_labels, columns=col_labels)
+    df.index.name = "Variable 1"
+    df.columns.name = "Variable 2"
+    if show != "Expected":
+        df["Total"] = df.sum(axis=1).round(1) if show != "Counts" else df.sum(axis=1).astype(int)
+        total_row = pd.Series(
+            df.sum(axis=0).round(1) if show != "Counts" else df.sum(axis=0).astype(int)
+        )
+        total_row.name = "Total"
+        df = pd.concat([df, total_row.to_frame().T])
+    else:
+        df["Row Total"] = joint.sum(axis=1)
+
+    if transpose:
+        df = df.T
+
+    with c2:
+        _apa_table(df, f"Two-way Contingency Table ({show})")
+        if show != "Expected":
+            fig = _heatmap_fig(
+                display, col_labels, row_labels,
+                title=f"Two-way Table — {show}", colorscale="Viridis",
+            )
+            st.plotly_chart(fig, use_container_width=True)
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Total N", str(grand))
+    with col2:
+        st.metric("Rows × Cols", f"{rows} × {cols}")
+    with col3:
+        from scipy.stats import chi2_contingency
+        chi2, p_val, dof, _ = chi2_contingency(joint)
+        st.metric("χ² p-value", f"{p_val:.4f}")
+    with st.expander("Interpretation"):
+        st.markdown(f"""
+        - Two-way contingency table: **Variable 1** ({rows} levels) × **Variable 2** ({cols} levels)
+        - **Total**: {grand} observations
+        - Association strength slider biases diagonal cells
+        - Use **Transpose** to swap Variable 1 ↔ Variable 2
+        - Switch view between Counts, Row %, Column %, or Expected frequencies
+        """)
+
+
+def _healthcare_table_widget():
+    c1, c2 = st.columns([1, 2])
+    with c1:
+        n = st.slider("Total Patients", 50, 2000, 500, 50, key="hc_n")
+        base_rate = st.slider("Baseline Recovery Rate", 0.1, 0.9, 0.4, 0.05, key="hc_base")
+        treat_effect = st.slider("Treatment Effect", 0.0, 0.5, 0.2, 0.05, key="hc_effect")
+        show_pct = st.toggle("Show Percentages", key="hc_pct")
+        transpose = st.toggle("Transpose", key="hc_transpose")
+
+    np.random.seed(42)
+    treatment = np.random.binomial(1, min(base_rate + treat_effect, 0.99), n // 2)
+    control = np.random.binomial(1, base_rate, n // 2)
+
+    treat_rec = treatment.sum()
+    treat_not = (n // 2) - treat_rec
+    ctrl_rec = control.sum()
+    ctrl_not = (n // 2) - ctrl_rec
+
+    joint = np.array([[treat_rec, treat_not], [ctrl_rec, ctrl_not]])
+    row_labels = ["Treatment", "Control"]
+    col_labels = ["Recovered", "Not Recovered"]
+
+    if show_pct:
+        row_tot = joint.sum(axis=1, keepdims=True)
+        display = np.where(row_tot > 0, joint / row_tot * 100, 0)
+        display = np.round(display, 1)
+    else:
+        display = joint
+
+    df = pd.DataFrame(display, index=row_labels, columns=col_labels)
+    df["Total"] = df.sum(axis=1).round(1) if show_pct else df.sum(axis=1).astype(int)
+    total_row = pd.Series(
+        df.sum(axis=0).round(1) if show_pct else df.sum(axis=0).astype(int)
+    )
+    total_row.name = "Total"
+    df = pd.concat([df, total_row.to_frame().T])
+
+    if transpose:
+        df = df.T
+
+    with c2:
+        _apa_table(df, "Clinical Trial Outcomes")
+        heat = display if not show_pct else joint
+        fig = _heatmap_fig(
+            joint, col_labels, row_labels,
+            title="Treatment × Recovery", colorscale="Blues",
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        rr = (treat_rec / (n // 2)) / (ctrl_rec / (n // 2)) if ctrl_rec > 0 else float("inf")
+        st.metric("Risk Ratio", f"{rr:.3f}")
+    with col2:
+        or_val = (treat_rec * ctrl_not) / (ctrl_rec * treat_not) if ctrl_rec > 0 and treat_not > 0 else float("inf")
+        st.metric("Odds Ratio", f"{or_val:.3f}")
+    with col3:
+        from scipy.stats import chi2_contingency
+        chi2, p_val, _, _ = chi2_contingency(joint)
+        st.metric("χ² p-value", f"{p_val:.4f}")
+    with st.expander("Interpretation"):
+        st.markdown(f"""
+        - **Clinical trial** — {n} patients randomized to Treatment or Control
+        - Recovery rate: Treatment **{treat_rec/(n//2)*100:.1f}%** vs Control **{ctrl_rec/(n//2)*100:.1f}%**
+        - Risk Ratio = {rr:.3f} — {'favours treatment' if rr > 1 else 'favours control' if rr < 1 else 'no effect'}
+        - Use **Transpose** to swap treatment arms with outcomes
+        """)
+
+
+def _epidemiology_table_widget():
+    c1, c2 = st.columns([1, 2])
+    with c1:
+        n = st.slider("Total Subjects", 100, 5000, 1000, 100, key="epi_n")
+        exposure_rate = st.slider("Exposure Rate", 0.1, 0.8, 0.4, 0.05, key="epi_exp")
+        disease_risk_exposed = st.slider("Disease Risk (Exposed)", 0.01, 0.50, 0.15, 0.01, key="epi_risk_e")
+        disease_risk_unexposed = st.slider("Disease Risk (Unexposed)", 0.01, 0.50, 0.05, 0.01, key="epi_risk_u")
+        show_pct = st.toggle("Show Percentages", key="epi_pct")
+        transpose = st.toggle("Transpose", key="epi_transpose")
+
+    n_exp = int(n * exposure_rate)
+    n_unexp = n - n_exp
+    np.random.seed(42)
+    exp_disease = np.random.binomial(1, disease_risk_exposed, n_exp).sum()
+    unexp_disease = np.random.binomial(1, disease_risk_unexposed, n_unexp).sum()
+    exp_healthy = n_exp - exp_disease
+    unexp_healthy = n_unexp - unexp_disease
+
+    joint = np.array([[exp_disease, exp_healthy], [unexp_disease, unexp_healthy]])
+    row_labels = ["Exposed", "Unexposed"]
+    col_labels = ["Disease +", "Disease −"]
+
+    if show_pct:
+        row_tot = joint.sum(axis=1, keepdims=True)
+        display = np.where(row_tot > 0, joint / row_tot * 100, 0)
+        display = np.round(display, 1)
+    else:
+        display = joint
+
+    df = pd.DataFrame(display, index=row_labels, columns=col_labels)
+    df["Total"] = df.sum(axis=1).round(1) if show_pct else df.sum(axis=1).astype(int)
+    total_row = pd.Series(
+        df.sum(axis=0).round(1) if show_pct else df.sum(axis=0).astype(int)
+    )
+    total_row.name = "Total"
+    df = pd.concat([df, total_row.to_frame().T])
+
+    if transpose:
+        df = df.T
+
+    with c2:
+        _apa_table(df, "Disease Exposure Contingency Table")
+        fig = _heatmap_fig(
+            joint, col_labels, row_labels,
+            title="Exposure × Disease Status", colorscale="Reds",
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    # Epidemiologic measures
+    risk_exp = exp_disease / n_exp
+    risk_unexp = unexp_disease / n_unexp
+    rr = risk_exp / risk_unexp if risk_unexp > 0 else float("inf")
+    or_val = (exp_disease * unexp_healthy) / (unexp_disease * exp_healthy) if unexp_disease > 0 and exp_healthy > 0 else float("inf")
+    ar = risk_exp - risk_unexp
+    nnt = 1 / ar if ar > 0 else float("inf")
+    paf = (rr - 1) / rr if rr > 1 else 0
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Risk Ratio", f"{rr:.3f}")
+    col2.metric("Odds Ratio", f"{or_val:.3f}")
+    col3.metric("Attributable Risk", f"{ar:.3f}")
+    col4.metric("NNT", f"{nnt:.0f}" if nnt != float("inf") else "∞")
+    col5, col6, col7 = st.columns(3)
+    col5.metric("Disease Risk (Exposed)", f"{risk_exp:.2%}")
+    col6.metric("Disease Risk (Unexposed)", f"{risk_unexp:.2%}")
+    col7.metric("PAF", f"{paf:.2%}")
+    with st.expander("Interpretation"):
+        st.markdown(f"""
+        - **Cohort study** — {n} subjects classified by exposure and disease status
+        - Exposed group: **{risk_exp:.1%}** disease risk vs Unexposed: **{risk_unexp:.1%}**
+        - Risk Ratio = {rr:.3f} — exposed are **{rr:.1f}×** as likely to develop disease
+        - Attributable Risk = {ar:.2%} — excess risk attributable to exposure
+        - NNT = {nnt:.0f} — number needed to treat to prevent one case
+        - Use **Transpose** to swap exposure with disease status
+        """)
+
+
+# =====================
 # MAIN RENDER FUNCTION
 # =====================
 
@@ -3060,6 +3378,7 @@ def render_tabulation():
         "Section",
         [
             "Descriptive Tabulation",
+            "One-way & Two-way Tables",
             "Cross-Tabulation",
             "Diagnostic Accuracy Tables",
             "Agreement Tables",
@@ -3076,6 +3395,8 @@ def render_tabulation():
 
     if section == "Descriptive Tabulation":
         descriptive_tabulation()
+    elif section == "One-way & Two-way Tables":
+        _oneway_twoway_tables()
     elif section == "Cross-Tabulation":
         cross_tabulation()
     elif section == "Diagnostic Accuracy Tables":

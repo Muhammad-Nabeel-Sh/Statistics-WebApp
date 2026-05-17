@@ -675,81 +675,240 @@ def logistic_widget():
 # EDUCATIONAL FEATURES
 # =========================
 
+def _source_params(source):
+    p_defaults = {
+        "Uniform": (0.0, 1.0),
+        "Exponential": (1.0,),
+        "Bernoulli": (0.3,),
+        "Chi-Square": (2,),
+        "Lognormal": (0.0, 1.0),
+    }
+    p_labels = {
+        "Uniform": ("Min (a)", "Max (b)"),
+        "Exponential": ("Rate (λ)",),
+        "Bernoulli": ("p",),
+        "Chi-Square": ("DF (k)",),
+        "Lognormal": ("μ", "σ"),
+    }
+    p_limits = {
+        "Uniform": ((-10.0, 10.0, 1.0), (-9.0, 20.0, 1.0)),
+        "Exponential": ((0.1, 10.0, 0.1),),
+        "Bernoulli": ((0.05, 0.95, 0.05),),
+        "Chi-Square": ((1, 20, 1),),
+        "Lognormal": ((-3.0, 3.0, 0.1), (0.1, 3.0, 0.1)),
+    }
+    p_key = {
+        "Uniform": ("clt_a", "clt_b"),
+        "Exponential": ("clt_lam",),
+        "Bernoulli": ("clt_p",),
+        "Chi-Square": ("clt_k",),
+        "Lognormal": ("clt_lmu", "clt_ls"),
+    }
+    defaults = p_defaults[source]
+    labels = p_labels[source]
+    limits = p_limits[source]
+    keys = p_key[source]
+    vals = []
+    for i, (lab, lim, key) in enumerate(zip(labels, limits, keys)):
+        lo, hi, step = lim
+        v = st.slider(lab, lo, hi, defaults[i], step, key=key)
+        vals.append(v)
+    return tuple(vals)
+
+
 def clt_simulator():
     st.subheader("Central Limit Theorem Simulator")
     st.markdown("""
-    The CLT states that the **sampling distribution of the mean** approaches a Normal distribution
-    as the sample size increases, **regardless of the source distribution's shape**.
+    The **Central Limit Theorem** states that the *sampling distribution of the mean*
+    approaches a Normal distribution as the sample size increases,
+    **regardless of the source distribution's shape**.
     """)
+
     c1, c2, c3 = st.columns(3)
     with c1:
         source = st.selectbox("Source Distribution", [
             "Uniform", "Exponential", "Bernoulli", "Chi-Square", "Lognormal"
         ], key="clt_source")
-    with c2:
-        n_samples = st.slider("Samples per Mean (n)", 2, 100, 5, 1, key="clt_n")
-    with c3:
-        n_reps = st.slider("Number of Repetitions", 100, 5000, 1000, 100, key="clt_reps")
+
+    n_samples = 5
+    n_reps = 1000
+    c4, c5, c6 = st.columns(3)
+    with c4:
+        n_samples = st.slider("Sample Size (n)", 2, 200, 5, 1, key="clt_n")
+    with c5:
+        n_reps = st.slider("Number of Repetitions", 100, 10000, 1000, 100, key="clt_reps")
+    with c6:
+        n_bins = st.slider("Histogram Bins", 10, 100, 40, 5, key="clt_bins")
+
+    c7, c8, c9 = st.columns(3)
+    with c7:
+        params = _source_params(source)
+    with c8:
+        show_normal = st.checkbox("Show Normal Fit", True, key="clt_norm")
+    with c9:
+        show_qq = st.checkbox("Show Q-Q Plot", True, key="clt_qq")
 
     np.random.seed(42)
-    dist_map = {
-        "Uniform": lambda s: np.random.uniform(0, 1, s),
-        "Exponential": lambda s: np.random.exponential(1, s),
-        "Bernoulli": lambda s: np.random.binomial(1, 0.3, s),
-        "Chi-Square": lambda s: np.random.chisquare(2, s),
-        "Lognormal": lambda s: np.random.lognormal(0, 1, s),
-    }
-    means = np.array([dist_map[source](n_samples).mean() for _ in range(n_reps)])
+    a, b = 0, 1
+    lam, p, k, lmu, ls = 1.0, 0.3, 2, 0.0, 1.0
+    if source == "Uniform":
+        a, b = params
+        dist_map = lambda s: np.random.uniform(a, b, s)
+    elif source == "Exponential":
+        lam, = params
+        dist_map = lambda s: np.random.exponential(1 / lam, s)
+    elif source == "Bernoulli":
+        p, = params
+        dist_map = lambda s: np.random.binomial(1, p, s)
+    elif source == "Chi-Square":
+        k, = params
+        dist_map = lambda s: np.random.chisquare(k, s)
+    else:
+        lmu, ls = params
+        dist_map = lambda s: np.random.lognormal(lmu, ls, s)
+
+    means = np.array([dist_map(n_samples).mean() for _ in range(n_reps)])
     x_fit = np.linspace(means.min(), means.max(), 200)
     mu_sim = means.mean()
     sigma_sim = means.std(ddof=0)
 
-    fig = make_subplots(rows=1, cols=2, subplot_titles=(f"Histogram of {n_reps} Sample Means", "Source Distribution (PDF)"))
-    fig.add_trace(go.Histogram(x=means, nbinsx=40, marker_color="#4C78A8", opacity=0.7,
+    if source == "Bernoulli":
+        theo_mean = p
+        theo_var = p * (1 - p)
+    elif source == "Uniform":
+        theo_mean = (a + b) / 2
+        theo_var = (b - a) ** 2 / 12
+    elif source == "Exponential":
+        theo_mean = 1 / lam
+        theo_var = 1 / lam ** 2
+    elif source == "Chi-Square":
+        theo_mean = k
+        theo_var = 2 * k
+    else:
+        theo_mean = np.exp(lmu + ls ** 2 / 2)
+        theo_var = (np.exp(ls ** 2) - 1) * np.exp(2 * lmu + ls ** 2)
+
+    theo_se = np.sqrt(theo_var / n_samples)
+
+    if show_qq:
+        fig = make_subplots(
+            rows=1, cols=3,
+            subplot_titles=(
+                f"Histogram of {n_reps} Sample Means (n={n_samples})",
+                "Source Distribution (PDF)",
+                "Q-Q Plot (Sample Means vs Normal)",
+            ),
+            column_widths=[0.4, 0.3, 0.3],
+        )
+    else:
+        fig = make_subplots(
+            rows=1, cols=2,
+            subplot_titles=(
+                f"Histogram of {n_reps} Sample Means (n={n_samples})",
+                "Source Distribution (PDF)",
+            ),
+        )
+
+    fig.add_trace(go.Histogram(x=means, nbinsx=n_bins, marker_color="#4C78A8", opacity=0.7,
                                name="Sample Means", histnorm="probability density"), row=1, col=1)
-    fig.add_trace(go.Scatter(x=x_fit, y=sp_stats.norm.pdf(x_fit, mu_sim, sigma_sim),
-                             mode="lines", line=dict(color="#E45756", width=2.5),
-                             name="Normal Fit"), row=1, col=1)
+    if show_normal:
+        fig.add_trace(go.Scatter(x=x_fit, y=sp_stats.norm.pdf(x_fit, mu_sim, sigma_sim),
+                                 mode="lines", line=dict(color="#E45756", width=2.5),
+                                 name="Normal Fit"), row=1, col=1)
 
     x_src = np.linspace(0.001, 5, 500)
+    pdf_src = np.zeros_like(x_src)
     if source == "Uniform":
-        pdf_src = sp_stats.uniform.pdf(x_src, 0, 1)
+        x_src = np.linspace(a - 0.5 * (b - a), b + 0.5 * (b - a), 500)
+        pdf_src = sp_stats.uniform.pdf(x_src, a, b - a)
     elif source == "Exponential":
-        pdf_src = sp_stats.expon.pdf(x_src)
+        pdf_src = sp_stats.expon.pdf(x_src, scale=1 / lam)
     elif source == "Bernoulli":
-        x_src_d = np.array([0, 1])
-        pdf_src_d = sp_stats.bernoulli.pmf(0.3, 0.3)
-        x_src = x_src_d
-        pdf_src = pdf_src_d
+        x_src = np.array([0, 1])
+        pdf_src = sp_stats.bernoulli.pmf(x_src, p)
     elif source == "Chi-Square":
-        pdf_src = sp_stats.chi2.pdf(x_src, 2)
+        pdf_src = sp_stats.chi2.pdf(x_src, k)
     else:
-        pdf_src = sp_stats.lognorm.pdf(x_src, s=1)
+        pdf_src = sp_stats.lognorm.pdf(x_src, s=ls, scale=np.exp(lmu))
     fig.add_trace(go.Scatter(x=x_src, y=pdf_src, mode="lines",
                              line=dict(color="#54A24B", width=2),
                              name=f"{source} PDF"), row=1, col=2)
     if source == "Bernoulli":
         fig.update_xaxes(row=1, col=2, tickformat=".0f", dtick=1)
 
-    fig.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=40, b=10))
+    if show_qq:
+        sorted_means = np.sort(means)
+        theo_qq = sp_stats.norm.ppf(np.linspace(0.001, 0.999, len(sorted_means)), mu_sim, sigma_sim)
+        fig.add_trace(go.Scatter(x=theo_qq, y=sorted_means, mode="markers",
+                                 marker=dict(color="#4C78A8", size=3, opacity=0.5),
+                                 name="Q-Q"), row=1, col=3)
+        qq_min = min(theo_qq.min(), sorted_means.min())
+        qq_max = max(theo_qq.max(), sorted_means.max())
+        fig.add_trace(go.Scatter(x=[qq_min, qq_max], y=[qq_min, qq_max],
+                                 mode="lines", line=dict(color="#E45756", dash="dash"),
+                                 showlegend=False), row=1, col=3)
+        fig.update_xaxes(title_text="Theoretical Quantiles", row=1, col=3)
+        fig.update_yaxes(title_text="Sample Quantiles", row=1, col=3)
+
+    fig.update_layout(template="plotly_dark", height=420, margin=dict(l=10, r=10, t=40, b=10))
     fig.update_xaxes(title_text="Sample Mean", row=1, col=1)
     fig.update_yaxes(title_text="Density", row=1, col=1)
     fig.update_xaxes(title_text="x", row=1, col=2)
     fig.update_yaxes(title_text="Density", row=1, col=2)
     st.plotly_chart(fig, use_container_width=True)
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Mean of Means", f"{mu_sim:.4f}")
-    c2.metric("SD of Means (SE)", f"{sigma_sim:.4f}")
-    c3.metric("Theoretical SE (σ/√n)", f"{np.sqrt(sp_stats.describe(dist_map[source](10000))[3]) / np.sqrt(n_samples):.4f}" if source != "Bernoulli" else "N/A")
 
-    normal_note = ""
-    if n_samples >= 30:
-        normal_note = " The sampling distribution is nearly Normal even for n=30 (the traditional threshold)."
-    elif n_samples >= 10:
-        normal_note = " The CLT is already working — the sampling distribution is becoming bell-shaped."
-    else:
-        normal_note = " With small n, the sampling distribution still resembles the source distribution."
-    _interpret_card("Interpretation", f"Sampling from a **{source}** distribution with **n = {n_samples}** per sample, {n_reps} repetitions. The histogram of sample means {normal_note}")
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Mean of Means", f"{mu_sim:.4f}", delta=f"μ={theo_mean:.4f}" if abs(mu_sim - theo_mean) < 0.01 else None)
+    col2.metric("SD of Means (SE)", f"{sigma_sim:.4f}", delta=f"σ/√n={theo_se:.4f}" if abs(sigma_sim - theo_se) < 0.01 else None)
+    col3.metric("Skewness", f"{sp_stats.skew(means):.3f}")
+    col4.metric("Kurtosis", f"{sp_stats.kurtosis(means):.3f}")
+
+    # Normality test
+    if n_reps >= 3:
+        if n_reps <= 5000:
+            stat_sw, p_sw = sp_stats.shapiro(means)
+            sw_text = f"Shapiro-Wilk W = {stat_sw:.4f}, p = {p_sw:.4f}"
+            sw_norm = p_sw > 0.05
+        else:
+            stat_sw, p_sw = sp_stats.normaltest(means)
+            sw_text = f"D'Agostino-Pearson K² = {stat_sw:.4f}, p = {p_sw:.4f}"
+            sw_norm = p_sw > 0.05
+        if sw_norm:
+            sw_text += "  ✅ Cannot reject Normality"
+        else:
+            sw_text += "  ❌ Reject Normality (p < 0.05)"
+        st.info(f"**Normality Test:** {sw_text}")
+
+    with st.expander("Detailed Theoretical Explanation", expanded=True):
+        st.markdown(f"""
+        ### Source Distribution
+        - **Distribution:** {source}
+        - **Population Mean (μ):** {theo_mean:.4f}
+        - **Population Variance (σ²):** {theo_var:.4f}
+        - **Population SD (σ):** {np.sqrt(theo_var):.4f}
+
+        ### Sampling Distribution of the Mean (n = {n_samples})
+        - **CLT Prediction:** Mean ≈ μ = {theo_mean:.4f}, SE = σ/√n = {theo_se:.4f}
+        - **Observed:** Mean = {mu_sim:.4f}, SE = {sigma_sim:.4f}
+        - **Skewness** = {sp_stats.skew(means):.3f} {'(nearly symmetric)' if abs(sp_stats.skew(means)) < 0.3 else '(moderately skewed)' if abs(sp_stats.skew(means)) < 1 else '(highly skewed)'}
+        - **Excess Kurtosis** = {sp_stats.kurtosis(means):.3f} {'(mesokurtic, near Normal)' if abs(sp_stats.kurtosis(means)) < 0.3 else '(leptokurtic, heavy tails)' if sp_stats.kurtosis(means) > 0.3 else '(platykurtic, light tails)'}
+
+        ### How CLT Works Here
+        """)
+        if n_samples >= 30:
+            st.markdown(f"✅ With n = {n_samples} ≥ 30, the sampling distribution is approximately Normal regardless of the source shape.")
+        elif n_samples >= 10:
+            st.markdown(f"⚠️ With n = {n_samples}, the CLT is working — the distribution is becoming bell-shaped. Try increasing n toward 30.")
+        else:
+            st.markdown(f"⚠️ With n = {n_samples} < 10, the sampling distribution may still resemble the source. Increase n to see the CLT in action.")
+
+        st.markdown(f"""
+        ### Try These Experiments
+        1. **Increase n** from 5 → 30 → 100 and watch the histogram become Normal
+        2. **Compare sources:** a symmetric source (Uniform) converges faster than a skewed one (Exponential, Lognormal)
+        3. **Bernoulli(p):** the most extreme test — a binary distribution; even n=30 gives a nearly Normal sampling distribution
+        4. **Check convergence** by watching Skewness → 0 and Kurtosis → 0
+        """)
 
 
 def overlay_comparison():

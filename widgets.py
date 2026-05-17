@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+from post_hoc import render_post_hoc
 
 
 def render_latex(formula_text):
@@ -1970,6 +1971,10 @@ def render_test_widget(test_name):
 
         st.plotly_chart(fig2, use_container_width=True)
 
+        st.divider()
+        st.subheader("Post-Hoc Tests")
+        render_post_hoc([g1, g2, g3], param_type="parametric", key="anova_ph")
+
     elif test_name == "Two-way ANOVA":
 
         from scipy.stats import f_oneway
@@ -1981,13 +1986,13 @@ def render_test_widget(test_name):
         # CONTROLS
         # =========================
 
-        effect_A = st.slider("Effect of Factor A (Group)", 0.0, 10.0, 2.0, 0.1)
+        effect_A = st.slider("Effect of Factor A (Group)", 0.0, 10.0, 2.0, 0.1, key="tw_effect_A")
 
-        effect_B = st.slider("Effect of Factor B (Sex)", 0.0, 10.0, 1.0, 0.1)
+        effect_B = st.slider("Effect of Factor B (Sex)", 0.0, 10.0, 1.0, 0.1, key="tw_effect_B")
 
-        interaction = st.slider("Interaction (A × B)", -5.0, 5.0, 0.0, 0.1)
+        interaction = st.slider("Interaction (A × B)", -5.0, 5.0, 0.0, 0.1, key="tw_interaction")
 
-        noise = st.slider("Within-group Variability", 0.1, 5.0, 1.0, 0.1)
+        noise = st.slider("Within-group Variability", 0.1, 5.0, 1.0, 0.1, key="tw_noise")
 
         # =========================
         # DATA
@@ -2123,6 +2128,10 @@ def render_test_widget(test_name):
         )
 
         st.plotly_chart(fig2, use_container_width=True)
+
+        st.divider()
+        st.subheader("Post-Hoc Tests")
+        render_post_hoc([A1B1, A1B2, A2B1, A2B2], param_type="parametric", key="tw_anova_ph")
 
     elif test_name == "ANCOVA":
 
@@ -2347,6 +2356,10 @@ def render_test_widget(test_name):
 
         st.plotly_chart(fig2, use_container_width=True)
 
+        st.divider()
+        st.subheader("Post-Hoc Tests")
+        render_post_hoc([control, treatment], param_type="parametric", key="ancova_ph")
+
     elif test_name == "Repeated Measures ANOVA":
 
         st.subheader("Interactive Repeated Measures ANOVA")
@@ -2520,6 +2533,11 @@ def render_test_widget(test_name):
 
         st.plotly_chart(fig2, use_container_width=True)
 
+        st.divider()
+        st.subheader("Post-Hoc Tests (Across Timepoints)")
+        time_groups = [np.array([row[t] for row in data]) for t in range(timepoints)]
+        render_post_hoc(time_groups, param_type="parametric", key="rm_anova_ph")
+
     elif test_name == "MANOVA":
 
         st.subheader("Interactive MANOVA")
@@ -2670,6 +2688,10 @@ def render_test_widget(test_name):
             yaxis_title="Dimension 2",
         )
         st.plotly_chart(fig2, use_container_width=True)
+
+        st.divider()
+        st.subheader("Post-Hoc Tests")
+        render_post_hoc([g1[:, 0], g1[:, 1], g1[:, 2]], param_type="parametric", key="manova_ph")
 
     # Non-parametric Two Sample Tests
 
@@ -3103,6 +3125,10 @@ def render_test_widget(test_name):
 
         st.plotly_chart(fig2, use_container_width=True)
 
+        st.divider()
+        st.subheader("Post-Hoc Tests")
+        render_post_hoc([g1, g2, g3], param_type="nonparametric", key="kw_ph")
+
     elif test_name == "Friedman Test":
 
         from scipy.stats import friedmanchisquare
@@ -3253,6 +3279,10 @@ def render_test_widget(test_name):
         )
 
         st.plotly_chart(fig2, use_container_width=True)
+
+        st.divider()
+        st.subheader("Post-Hoc Tests")
+        render_post_hoc([t1, t2, t3], param_type="nonparametric", key="friedman_ph")
 
     elif test_name == "Permutation MANOVA or Non-Parametric MANOVA":
 
@@ -3421,6 +3451,10 @@ def render_test_widget(test_name):
             yaxis_title="Dimension 2",
         )
         st.plotly_chart(fig2, use_container_width=True)
+
+        st.divider()
+        st.subheader("Post-Hoc Tests")
+        render_post_hoc([g1[:50, 0], g1[50:100, 0], g2[:50, 0]], param_type="nonparametric", key="permanova_ph")
 
     # Correlation and Association Tests
 
