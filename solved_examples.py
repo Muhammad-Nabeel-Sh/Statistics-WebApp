@@ -223,7 +223,13 @@ def _solved_ttest():
     st.subheader("Summary of Results")
     st.dataframe(summary, use_container_width=True)
     csv_data = summary.to_csv(index=False).encode("utf-8")
-    st.download_button("Download as CSV", data=csv_data, file_name="ttest_results.csv", mime="text/csv", key="dl_ttest")
+    st.download_button(
+        "Download as CSV",
+        data=csv_data,
+        file_name="ttest_results.csv",
+        mime="text/csv",
+        key="dl_ttest",
+    )
 
 
 # =========================================================================
@@ -342,7 +348,13 @@ def _solved_ztest():
     st.subheader("Summary of Results")
     st.dataframe(summary, use_container_width=True)
     csv_data = summary.to_csv(index=False).encode("utf-8")
-    st.download_button("Download as CSV", data=csv_data, file_name="ztest_results.csv", mime="text/csv", key="dl_ztest")
+    st.download_button(
+        "Download as CSV",
+        data=csv_data,
+        file_name="ztest_results.csv",
+        mime="text/csv",
+        key="dl_ztest",
+    )
 
 
 # =========================================================================
@@ -466,7 +478,13 @@ def _solved_proportion():
     st.subheader("Summary of Results")
     st.dataframe(summary, use_container_width=True)
     csv_data = summary.to_csv(index=False).encode("utf-8")
-    st.download_button("Download as CSV", data=csv_data, file_name="proportion_test_results.csv", mime="text/csv", key="dl_prop")
+    st.download_button(
+        "Download as CSV",
+        data=csv_data,
+        file_name="proportion_test_results.csv",
+        mime="text/csv",
+        key="dl_prop",
+    )
 
 
 # =========================================================================
@@ -546,8 +564,14 @@ def _solved_binomial_exact():
     df_binom = pd.DataFrame(tbl_data, columns=["k", "P(X = k)", "Included?"])
     st.dataframe(df_binom, use_container_width=True, height=400)
     csv_binom = df_binom.to_csv(index=False).encode("utf-8")
-    st.download_button("Download as CSV", data=csv_binom, file_name="binomial_enumeration.csv", mime="text/csv", key="dl_binom_enum")
-    _step_result(f"Exact two-sided p-value = {p_value:.6f}")
+    st.download_button(
+        "Download as CSV",
+        data=csv_binom,
+        file_name="binomial_enumeration.csv",
+        mime="text/csv",
+        key="dl_binom_enum",
+    )
+    _step_formula(rf"\text{{Exact two-sided p-value}} = {p_value:.6f}")
 
     _step_header(5, "Decision")
     alpha = 0.05
@@ -584,7 +608,13 @@ def _solved_binomial_exact():
     st.subheader("Summary of Results")
     st.dataframe(summary, use_container_width=True)
     csv_data = summary.to_csv(index=False).encode("utf-8")
-    st.download_button("Download as CSV", data=csv_data, file_name="binomial_exact_results.csv", mime="text/csv", key="dl_binom")
+    st.download_button(
+        "Download as CSV",
+        data=csv_data,
+        file_name="binomial_exact_results.csv",
+        mime="text/csv",
+        key="dl_binom",
+    )
 
 
 # =========================================================================
@@ -653,10 +683,18 @@ def _solved_wilcoxon():
     for i, v in enumerate(vals, start=1):
         d = v - theta0
         tbl_dev.append([f"{i}", f"{v:.1f}", f"{d:+.2f}", f"{abs(d):.2f}"])
-    df_dev = pd.DataFrame(tbl_dev, columns=["Observation", "Value", "$d_i = X_i - \\theta_0$", "$|d_i|$"])
+    df_dev = pd.DataFrame(
+        tbl_dev, columns=["Observation", "Value", "dᵢ = Xᵢ − θ₀", "|dᵢ|"]
+    )
     st.dataframe(df_dev, use_container_width=True)
     csv_dev = df_dev.to_csv(index=False).encode("utf-8")
-    st.download_button("Download as CSV", data=csv_dev, file_name="wilcoxon_deviations.csv", mime="text/csv", key="dl_wilcox_dev")
+    st.download_button(
+        "Download as CSV",
+        data=csv_dev,
+        file_name="wilcoxon_deviations.csv",
+        mime="text/csv",
+        key="dl_wilcox_dev",
+    )
 
     _step_header(3, "Rank the absolute deviations (ignoring zeros)")
     tbl_rank = []
@@ -673,10 +711,16 @@ def _solved_wilcoxon():
                 f"{sr:+.1f}",
             ]
         )
-    df_rank = pd.DataFrame(tbl_rank, columns=["$|d_i|$", "Rank", "Sign", "Signed Rank"])
+    df_rank = pd.DataFrame(tbl_rank, columns=["|dᵢ|", "Rank", "Sign", "Signed Rank"])
     st.dataframe(df_rank, use_container_width=True)
     csv_rank = df_rank.to_csv(index=False).encode("utf-8")
-    st.download_button("Download as CSV", data=csv_rank, file_name="wilcoxon_ranks.csv", mime="text/csv", key="dl_wilcox_rank")
+    st.download_button(
+        "Download as CSV",
+        data=csv_rank,
+        file_name="wilcoxon_ranks.csv",
+        mime="text/csv",
+        key="dl_wilcox_rank",
+    )
 
     _step_header(4, "Sum the signed ranks")
     _step_formula(rf"W⁺ = \text{{sum of positive ranks}} = {W_plus:.1f}")
@@ -728,7 +772,13 @@ def _solved_wilcoxon():
     st.subheader("Summary of Results")
     st.dataframe(summary, use_container_width=True)
     csv_data = summary.to_csv(index=False).encode("utf-8")
-    st.download_button("Download as CSV", data=csv_data, file_name="wilcoxon_results.csv", mime="text/csv", key="dl_wilcox")
+    st.download_button(
+        "Download as CSV",
+        data=csv_data,
+        file_name="wilcoxon_results.csv",
+        mime="text/csv",
+        key="dl_wilcox",
+    )
 
 
 # =========================================================================
@@ -823,10 +873,19 @@ def _solved_chisquare_gof():
                 f"{expected[i]:.2f}",
             ]
         )
-    df_exp = pd.DataFrame(tbl_exp, columns=["Category", "Observed (O)", "Expected Proportion", "Expected (E)"])
+    df_exp = pd.DataFrame(
+        tbl_exp,
+        columns=["Category", "Observed (O)", "Expected Proportion", "Expected (E)"],
+    )
     st.dataframe(df_exp, use_container_width=True)
     csv_exp = df_exp.to_csv(index=False).encode("utf-8")
-    st.download_button("Download as CSV", data=csv_exp, file_name="gof_expected.csv", mime="text/csv", key="dl_gof_exp")
+    st.download_button(
+        "Download as CSV",
+        data=csv_exp,
+        file_name="gof_expected.csv",
+        mime="text/csv",
+        key="dl_gof_exp",
+    )
 
     _step_header(3, "Compute the chi-square contributions")
     contributions = (observed - expected) ** 2 / expected
@@ -843,10 +902,18 @@ def _solved_chisquare_gof():
                 f"{contributions[i]:.4f}",
             ]
         )
-    df_contrib = pd.DataFrame(tbl_contrib, columns=["Category", "O", "E", "O−E", "(O−E)²", "(O−E)²/E"])
+    df_contrib = pd.DataFrame(
+        tbl_contrib, columns=["Category", "O", "E", "O−E", "(O−E)²", "(O−E)²/E"]
+    )
     st.dataframe(df_contrib, use_container_width=True)
     csv_contrib = df_contrib.to_csv(index=False).encode("utf-8")
-    st.download_button("Download as CSV", data=csv_contrib, file_name="gof_contributions.csv", mime="text/csv", key="dl_gof_contrib")
+    st.download_button(
+        "Download as CSV",
+        data=csv_contrib,
+        file_name="gof_contributions.csv",
+        mime="text/csv",
+        key="dl_gof_contrib",
+    )
 
     _step_header(4, "Calculate the test statistic")
     _step_formula(rf"\chi^2 = \sum \frac{{(O - E)^2}}{{E}} = {chi_sq:.4f}")
@@ -890,7 +957,13 @@ def _solved_chisquare_gof():
     st.subheader("Summary of Results")
     st.dataframe(summary, use_container_width=True)
     csv_data = summary.to_csv(index=False).encode("utf-8")
-    st.download_button("Download as CSV", data=csv_data, file_name="gof_results.csv", mime="text/csv", key="dl_gof")
+    st.download_button(
+        "Download as CSV",
+        data=csv_data,
+        file_name="gof_results.csv",
+        mime="text/csv",
+        key="dl_gof",
+    )
 
 
 # =========================================================================
@@ -1007,10 +1080,18 @@ def _solved_multinomial():
     tbl_obs = []
     for i in range(n_cats):
         tbl_obs.append([labels[i], observed[i], f"{expected_counts[i]:.2f}"])
-    df_obs = pd.DataFrame(tbl_obs, columns=["Category", "Observed", "Expected (under H₀)"])
+    df_obs = pd.DataFrame(
+        tbl_obs, columns=["Category", "Observed", "Expected (under H₀)"]
+    )
     st.dataframe(df_obs, use_container_width=True)
     csv_obs = df_obs.to_csv(index=False).encode("utf-8")
-    st.download_button("Download as CSV", data=csv_obs, file_name="multinomial_observed.csv", mime="text/csv", key="dl_multi_obs")
+    st.download_button(
+        "Download as CSV",
+        data=csv_obs,
+        file_name="multinomial_observed.csv",
+        mime="text/csv",
+        key="dl_multi_obs",
+    )
 
     _step_header(3, "Probability of the observed outcome under H₀")
     _step_formula(
@@ -1029,10 +1110,17 @@ def _solved_multinomial():
         p = all_probs[idx]
         included = "✓" if p <= obs_prob + 1e-15 else ""
         tbl_enumerate.append([str(c), f"{p:.6e}", included])
-    df_enumerate = pd.DataFrame(tbl_enumerate, columns=["Outcome", "Probability", "≤ Observed?"])
+    df_enumerate = pd.DataFrame(
+        tbl_enumerate, columns=["Outcome", "Probability", "≤ Observed?"]
+    )
     st.dataframe(df_enumerate, use_container_width=True, height=400)
     csv = df_enumerate.to_csv(index=False).encode("utf-8")
-    st.download_button("Download as CSV", data=csv, file_name="multinomial_enumeration.csv", mime="text/csv")
+    st.download_button(
+        "Download as CSV",
+        data=csv,
+        file_name="multinomial_enumeration.csv",
+        mime="text/csv",
+    )
     _step_formula(rf"\text{{Exact multinomial p-value}} = {p_value:.6f}")
 
     _step_header(5, "Chi-square approximation (reference)")
@@ -1073,5 +1161,10 @@ def _solved_multinomial():
     st.subheader("Summary of Results")
     st.dataframe(summary, use_container_width=True)
     csv_data = summary.to_csv(index=False).encode("utf-8")
-    st.download_button("Download as CSV", data=csv_data, file_name="multinomial_results.csv", mime="text/csv", key="dl_multi")
-
+    st.download_button(
+        "Download as CSV",
+        data=csv_data,
+        file_name="multinomial_results.csv",
+        mime="text/csv",
+        key="dl_multi",
+    )
