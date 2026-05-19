@@ -9,6 +9,7 @@ from glossary import render_glossary
 from graph_explorer import render_graph_explorer
 from tabulation import render_tabulation
 from distributions import render_distributions
+from solved_examples import render_solved_examples
 
 
 # =========================
@@ -26,12 +27,14 @@ def main():
             "Graph Explorer",
             "Tabulation & Cross Tabulation",
             "Probability Distributions",
+            "Step-by-Step Solved Examples",
         ],
         index=[
             "Test Finder",
             "Graph Explorer",
             "Tabulation & Cross Tabulation",
             "Probability Distributions",
+            "Step-by-Step Solved Examples",
         ].index(st.session_state.get("app_mode", "Test Finder")),
         key="app_mode",
         label_visibility="collapsed",
@@ -51,6 +54,10 @@ def main():
 
     if mode == "Probability Distributions":
         render_distributions()
+        return
+
+    if mode == "Step-by-Step Solved Examples":
+        render_solved_examples()
         return
 
     with st.sidebar:

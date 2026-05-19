@@ -38,6 +38,8 @@ TEST_TO_SS_TYPE = {
     "Logistic Regression (Multinomial Outcome)": "Logistic Regression",
     "Logistic Regression (Ordinal Outcome)": "Logistic Regression",
     "Cox Proportional Hazards Regression": "Cox Regression",
+    "Binomial Test": "One-sample Proportion",
+    "Multinomial Test": "Chi-Square Test",
 }
 
 
@@ -120,6 +122,34 @@ rules = [
                     """,
     },
     {
+        "name": "Binomial Test",
+        "Objective": "Comparison",
+        "Dependent_Variable": ["Binary/Dichotomous", "Categorical"],
+        "Independent_Variable": "None",
+        "Groups": "1",
+        "Relation": ["Independent", "Dependent", "any"],
+        "Distribution": ["Normal", "Non-normal", "any"],
+        "Explanation": "Binomial Test (Exact) This test is used to determine whether the observed proportion of successes in a single sample differs from a hypothesized population proportion. Unlike the one-sample proportion z-test, the exact binomial test computes the p-value directly from the binomial distribution without relying on a normal approximation, making it more accurate for small sample sizes. It is appropriate when the data are binary (success/failure) and each trial is independent.",
+        "Example": "A researcher wants to test if a coin is fair. They flip it 20 times and observe 15 heads. The exact binomial test calculates the probability of observing 15 or more heads (or 5 or fewer) under the null hypothesis that the true probability of heads is 0.5, providing an exact p-value without relying on the normal approximation.",
+        "Formula": r"""
+                    $$ P(X = k) = \binom{n}{k} p_0^k (1 - p_0)^{n-k} $$
+                    $$ \text{p-value} = \sum_{j \leq k} \binom{n}{j} p_0^j (1 - p_0)^{n-j} \quad \text{(one-sided lower)} $$
+                    $$ \text{p-value} = \sum_{j \geq k} \binom{n}{j} p_0^j (1 - p_0)^{n-j} \quad \text{(one-sided upper)} $$
+                    $$ \text{p-value} = \sum_{j: P(X=j) \leq P(X=k)} \binom{n}{j} p_0^j (1 - p_0)^{n-j} \quad \text{(two-sided)} $$
+                    where:
+                    - :orange[$k$] is the observed number of successes,
+                    - :orange[$n$] is the total number of trials,
+                    - :orange[$p_0$] is the hypothesized probability of success under :orange[$H_0$],
+                    - :orange[$\binom{n}{k}$] is the binomial coefficient.
+                    """,
+        "Decision Rules": r"""
+                    - Reject the null hypothesis :orange[$H_0$] if the exact p-value is less than the chosen significance level (e.g., :orange[$\alpha = 0.05$]).
+                    - The two-sided p-value sums the probabilities of all outcomes as extreme or more extreme than the observed outcome.
+                    - This test does not rely on a normal approximation, making it valid for any sample size.
+                    - Effect size can be reported as the observed proportion :orange[$\hat{p} = k / n$] with a confidence interval (Clopper-Pearson exact interval).
+        """,
+    },
+    {
         "name": "One-sample Wilcoxon Signed-Rank Test",
         "Objective": "Comparison",
         "Dependent_Variable": ["Ordinal", "Continuous"],
@@ -182,6 +212,33 @@ rules = [
                     - :orange[$k$] is the number of categories.
                     - The test statistic :orange[$\chi^2$] is then compared to a critical value from the chi-square distribution with :orange[$k-1$] degrees of freedom to determine significance.
                     """,
+    },
+    {
+        "name": "Multinomial Test",
+        "Objective": "Comparison",
+        "Dependent_Variable": "Categorical",
+        "Independent_Variable": "None",
+        "Groups": "1",
+        "Relation": ["Independent", "Dependent", "any"],
+        "Distribution": ["Non-normal", "Normal", "any"],
+        "Explanation": "Multinomial Test This test is used to determine whether the observed proportions across multiple categories differ from a hypothesized distribution. It is an extension of the binomial test to situations with more than two categories. Unlike the Chi-Square Goodness-of-Fit test (which uses a large-sample approximation), the exact multinomial test computes the p-value by enumerating all possible outcomes consistent with the observed total sample size, summing the probabilities of all outcomes that are as extreme or more extreme than the observed outcome. It is the gold standard when sample sizes are small.",
+        "Example": "A researcher expects that genotypes AA, Aa, and aa occur in a 1:2:1 ratio according to Mendelian inheritance. Among 20 offspring, they observe 8 AA, 10 Aa, and 2 aa. The multinomial test determines whether these observed counts significantly deviate from the expected 1:2:1 ratio, providing an exact p-value.",
+        "Formula": r"""
+                    $$ P(\mathbf{X} = \mathbf{x}) = \dfrac{n!}{x_1! \, x_2! \, \ldots \, x_k!} \, p_1^{x_1} p_2^{x_2} \ldots p_k^{x_k} $$
+                    $$ \text{p-value} = \sum_{\mathbf{y}: \, P(\mathbf{Y}) \leq P(\mathbf{x})} \dfrac{n!}{y_1! \, y_2! \, \ldots \, y_k!} \, p_1^{y_1} p_2^{y_2} \ldots p_k^{y_k} $$
+                    where:
+                    - :orange[$n$] is the total number of trials,
+                    - :orange[$k$] is the number of categories,
+                    - :orange[$x_i$] is the observed count in category :orange[$i$],
+                    - :orange[$p_i$] is the hypothesized probability for category :orange[$i$] under :orange[$H_0$],
+                    - :orange[$\sum_{i=1}^{k} p_i = 1$] and :orange[$\sum_{i=1}^{k} x_i = n$].
+                    """,
+        "Decision Rules": r"""
+                    - Reject the null hypothesis :orange[$H_0$] if the exact p-value is less than the chosen significance level (e.g., :orange[$\alpha = 0.05$]).
+                    - The p-value sums the multinomial probabilities of all possible outcomes that are no more probable than the observed outcome.
+                    - For large sample sizes, the Chi-Square Goodness-of-Fit test can be used as an approximation.
+                    - This test makes no distributional assumptions beyond random sampling and independent trials.
+        """,
     },
     # Two-sample tests (Parametric)
     {
