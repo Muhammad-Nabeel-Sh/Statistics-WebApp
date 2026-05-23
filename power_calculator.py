@@ -4,8 +4,17 @@ import pandas as pd
 import plotly.graph_objects as go
 from scipy.stats import norm
 
-def _solve_with_mode(solver, analysis_mode, effect_size=None, nobs=None, alpha=None, power=None,
-                     nobs_name="nobs", **extra_kw):
+
+def _solve_with_mode(
+    solver,
+    analysis_mode,
+    effect_size=None,
+    nobs=None,
+    alpha=None,
+    power=None,
+    nobs_name="nobs",
+    **extra_kw,
+):
     """Call solver.solve_power with the parameter to solve for set to None."""
     effective = {}
     for k, v in [("effect_size", effect_size), ("alpha", alpha), ("power", power)]:
@@ -39,15 +48,27 @@ def _solve_n_binary(func_n, target_n, lo=2, hi=1000000):
     return hi
 
 
-def _solve_compromise(solver, effect_size, nobs, cost_ratio, alternative="two-sided",
-                      nobs_name="nobs", **extra_kw):
+def _solve_compromise(
+    solver,
+    effect_size,
+    nobs,
+    cost_ratio,
+    alternative="two-sided",
+    nobs_name="nobs",
+    **extra_kw,
+):
     """Brent's method to find α such that β/α = cost_ratio for given N and effect size.
     Returns dict {'alpha': adjusted_alpha, 'power': achieved_power}.
     """
     from scipy.optimize import brentq
 
     def f(alpha_candidate):
-        kw = {nobs_name: nobs, "effect_size": effect_size, "alpha": alpha_candidate, "power": None}
+        kw = {
+            nobs_name: nobs,
+            "effect_size": effect_size,
+            "alpha": alpha_candidate,
+            "power": None,
+        }
         kw.update(extra_kw)
         try:
             achieved = solver.solve_power(**kw)
@@ -61,7 +82,12 @@ def _solve_compromise(solver, effect_size, nobs, cost_ratio, alternative="two-si
     if f_lo * f_hi > 0:
         return None
     alpha_solved = brentq(f, lo, hi)
-    kw = {nobs_name: nobs, "effect_size": effect_size, "alpha": alpha_solved, "power": None}
+    kw = {
+        nobs_name: nobs,
+        "effect_size": effect_size,
+        "alpha": alpha_solved,
+        "power": None,
+    }
     kw.update(extra_kw)
     power_solved = solver.solve_power(**kw)
     return {"alpha": alpha_solved, "power": power_solved}
@@ -117,15 +143,20 @@ def render_power_calculator(params, analysis_mode="A Priori"):
     # Compromise mode: generic solver using z-approximation for all test types
     if analysis_mode == "Compromise":
         from scipy.optimize import brentq
+
         n_total = params.get("n_total", 0)
         if n_total > 0:
             es_val = params.get("effect_size")
             n_eff = n_total
             if atype == "one_prop":
                 from statsmodels.stats.proportion import proportion_effectsize
-                es_val = abs(proportion_effectsize(params["prop_alt"], params["prop_null"]))
+
+                es_val = abs(
+                    proportion_effectsize(params["prop_alt"], params["prop_null"])
+                )
             elif atype == "two_prop":
                 from statsmodels.stats.proportion import proportion_effectsize
+
                 es_val = abs(proportion_effectsize(params["p2"], params["p1"]))
                 ratio = params.get("ratio", 1.0)
                 n_eff = int(n_total / (1 + ratio)) if ratio > 0 else int(n_total / 2)
@@ -145,8 +176,13 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                 es_val = d_cr / se_cr if se_cr > 0 else 0
 
             if es_val is not None and es_val > 0:
+
                 def f(alpha_candidate):
-                    z_a = norm.ppf(1 - alpha_candidate / 2) if alternative == "two-sided" else norm.ppf(1 - alpha_candidate)
+                    z_a = (
+                        norm.ppf(1 - alpha_candidate / 2)
+                        if alternative == "two-sided"
+                        else norm.ppf(1 - alpha_candidate)
+                    )
                     z_b = es_val * np.sqrt(n_eff) - z_a
                     achieved = norm.cdf(z_b)
                     beta = max(1e-10, 1 - achieved)
@@ -156,7 +192,11 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                 try:
                     if f(lo) * f(hi) < 0:
                         alpha_solved = brentq(f, lo, hi)
-                        z_a_solved = norm.ppf(1 - alpha_solved / 2) if alternative == "two-sided" else norm.ppf(1 - alpha_solved)
+                        z_a_solved = (
+                            norm.ppf(1 - alpha_solved / 2)
+                            if alternative == "two-sided"
+                            else norm.ppf(1 - alpha_solved)
+                        )
                         z_b_solved = es_val * np.sqrt(n_eff) - z_a_solved
                         power_solved = norm.cdf(z_b_solved)
                         computed_value = {"alpha": alpha_solved, "power": power_solved}
@@ -186,12 +226,22 @@ def render_power_calculator(params, analysis_mode="A Priori"):
             if analysis_mode == "Compromise":
                 n_total = params.get("n_total", 0)
                 n_per_group = n_total
-                comp = _solve_compromise(solver, d, n_total, params.get("cost_ratio", 1.0), alternative=alternative)
+                comp = _solve_compromise(
+                    solver,
+                    d,
+                    n_total,
+                    params.get("cost_ratio", 1.0),
+                    alternative=alternative,
+                )
                 computed_value = comp
             else:
                 raw = _solve_with_mode(
-                    solver, analysis_mode, effect_size=d,
-                    nobs=params.get("n_total"), alpha=alpha, power=power,
+                    solver,
+                    analysis_mode,
+                    effect_size=d,
+                    nobs=params.get("n_total"),
+                    alpha=alpha,
+                    power=power,
                     alternative=alternative,
                 )
                 if analysis_mode == "A Priori":
@@ -206,21 +256,29 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                 f"Required total sample size for a one-sample {tails.lower()} t-test "
                 f"to detect Cohen's d = {d:.3f} with α = {alpha} and power = {power}."
             )
+            formula_latex = (
+                rf"n = \left( \frac{{{_z_sub} + z_{{1-\beta}}}}{{d}} \right)^2"
+            )
         elif analysis_mode == "Post Hoc":
             explanation = (
                 f"Achieved power for a one-sample {tails.lower()} t-test "
                 f"with N = {n_total}, Cohen's d = {d:.3f}, α = {alpha}."
             )
+            formula_latex = rf"\text{{Power}} = \int_{{t_\text{{crit}}}}^{{\infty}} f(t; n-1, \delta) dt"
         elif analysis_mode == "Sensitivity":
             explanation = (
                 f"Minimum detectable effect size for a one-sample {tails.lower()} t-test "
                 f"with N = {n_total}, α = {alpha}, power = {power}."
+            )
+            formula_latex = (
+                rf"d \approx \frac{{{_z_sub} + z_{{1-\beta}}}}{{\sqrt{{n}}}}"
             )
         elif analysis_mode == "Criterion":
             explanation = (
                 f"Required significance level for a one-sample {tails.lower()} t-test "
                 f"with N = {n_total}, Cohen's d = {d:.3f}, power = {power}."
             )
+            formula_latex = rf"\alpha = \int_{{t_\text{{crit}}}}^{{\infty}} f(t; n-1, \delta = 0) dt \quad \text{{where }} t_\text{{crit}} = t_{{1-\alpha, n-1}}"
         elif analysis_mode == "Compromise" and isinstance(computed_value, dict):
             explanation = (
                 f"Compromise power analysis for a one-sample {tails.lower()} t-test "
@@ -228,7 +286,12 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                 f"cost ratio β/α = {params.get('cost_ratio', 1.0):.2f}. "
                 f"Adjusted α = {computed_value['alpha']:.4f}, achieved power = {computed_value['power']:.1%}."
             )
-        formula_latex = rf"n = \left( \frac{{{_z_sub} + z_{{1-\beta}}}}{{d}} \right)^2"
+            formula_latex = rf"""
+            \beta = q \cdot \alpha \quad \text{{Find }} \alpha, \beta \text{ via } \Phi^{-1}
+            \alpha = 2 \left(1 - \Phi\left(c)\right)
+            \beta = \Phi \left(c - \delta \right) -\Phi\left(-c - \delta \right)
+            \delta = d \sqrt{{n}} \quad c = z_{{1-\alpha/2}} \text{{ or }} z_{{1-\alpha}} 
+"""
 
     elif atype == "two_means":
         d = params["effect_size"]
@@ -238,9 +301,15 @@ def render_power_calculator(params, analysis_mode="A Priori"):
         solver = TTestIndPower()
         if d > 0:
             raw = _solve_with_mode(
-                solver, analysis_mode, effect_size=d,
-                nobs=params.get("n_total"), alpha=alpha, power=power,
-                nobs_name="nobs1", ratio=ratio, alternative=alternative,
+                solver,
+                analysis_mode,
+                effect_size=d,
+                nobs=params.get("n_total"),
+                alpha=alpha,
+                power=power,
+                nobs_name="nobs1",
+                ratio=ratio,
+                alternative=alternative,
             )
             if analysis_mode == "A Priori":
                 n1 = int(np.ceil(raw))
@@ -283,8 +352,12 @@ def render_power_calculator(params, analysis_mode="A Priori"):
         solver = TTestPower()
         if d > 0:
             raw = _solve_with_mode(
-                solver, analysis_mode, effect_size=d,
-                nobs=params.get("n_total"), alpha=alpha, power=power,
+                solver,
+                analysis_mode,
+                effect_size=d,
+                nobs=params.get("n_total"),
+                alpha=alpha,
+                power=power,
                 alternative=alternative,
             )
             if analysis_mode == "A Priori":
@@ -314,7 +387,9 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                 f"Required significance level for a paired {tails.lower()} t-test "
                 f"with {n_total} pairs, Cohen's d_z = {d:.3f}, power = {power}."
             )
-        formula_latex = rf"n = \left( \frac{{{_z_sub} + z_{{1-\beta}}}}{{d_z}} \right)^2"
+        formula_latex = (
+            rf"n = \left( \frac{{{_z_sub} + z_{{1-\beta}}}}{{d_z}} \right)^2"
+        )
 
     elif atype == "one_prop":
         p0 = params["prop_null"]
@@ -326,9 +401,14 @@ def render_power_calculator(params, analysis_mode="A Priori"):
         solver = NormalIndPower()
         if abs(d_eff) > 0:
             raw = _solve_with_mode(
-                solver, analysis_mode, effect_size=abs(d_eff),
-                nobs=params.get("n_total"), alpha=alpha, power=power,
-                nobs_name="nobs1", alternative=alternative,
+                solver,
+                analysis_mode,
+                effect_size=abs(d_eff),
+                nobs=params.get("n_total"),
+                alpha=alpha,
+                power=power,
+                nobs_name="nobs1",
+                alternative=alternative,
             )
             if analysis_mode == "A Priori":
                 n_total = int(np.ceil(raw))
@@ -371,9 +451,15 @@ def render_power_calculator(params, analysis_mode="A Priori"):
         solver = NormalIndPower()
         if abs(d_eff) > 0:
             raw = _solve_with_mode(
-                solver, analysis_mode, effect_size=abs(d_eff),
-                nobs=params.get("n_total"), alpha=alpha, power=power,
-                nobs_name="nobs1", ratio=ratio, alternative=alternative,
+                solver,
+                analysis_mode,
+                effect_size=abs(d_eff),
+                nobs=params.get("n_total"),
+                alpha=alpha,
+                power=power,
+                nobs_name="nobs1",
+                ratio=ratio,
+                alternative=alternative,
             )
             if analysis_mode == "A Priori":
                 n1 = int(np.ceil(raw))
@@ -417,8 +503,12 @@ def render_power_calculator(params, analysis_mode="A Priori"):
         solver = FTestAnovaPower()
         if f_eff > 0:
             raw = _solve_with_mode(
-                solver, analysis_mode, effect_size=f_eff,
-                nobs=params.get("n_total"), alpha=alpha, power=power,
+                solver,
+                analysis_mode,
+                effect_size=f_eff,
+                nobs=params.get("n_total"),
+                alpha=alpha,
+                power=power,
                 k_groups=k,
             )
             if analysis_mode == "A Priori":
@@ -521,20 +611,24 @@ def render_power_calculator(params, analysis_mode="A Priori"):
             elif analysis_mode == "Sensitivity":
                 n_total = params.get("n_total", 0)
                 from scipy.optimize import brentq
+
                 def power_for_f2(f2_try):
                     dfd = n_total - k - 1
                     ncp = f2_try * n_total
                     f_crit = f_dist.ppf(1 - alpha, k, dfd)
                     return 1 - noncentral_f.cdf(f_crit, k, dfd, ncp) - power
+
                 computed_value = brentq(power_for_f2, 1e-6, 5.0)
             elif analysis_mode == "Criterion":
                 n_total = params.get("n_total", 0)
                 from scipy.optimize import brentq
+
                 def power_for_alpha(a_try):
                     dfd = n_total - k - 1
                     ncp = f2 * n_total
                     f_crit = f_dist.ppf(1 - a_try, k, dfd)
                     return 1 - noncentral_f.cdf(f_crit, k, dfd, ncp) - power
+
                 computed_value = brentq(power_for_alpha, 1e-8, 0.5)
             n_per_group = n_total
         if analysis_mode == "A Priori":
@@ -574,9 +668,14 @@ def render_power_calculator(params, analysis_mode="A Priori"):
         d_eff_log = d_log / se if se > 0 else 0
         if d_eff_log > 0:
             raw = _solve_with_mode(
-                solver, analysis_mode, effect_size=d_eff_log,
-                nobs=params.get("n_total"), alpha=alpha, power=power,
-                nobs_name="nobs1", alternative=alternative,
+                solver,
+                analysis_mode,
+                effect_size=d_eff_log,
+                nobs=params.get("n_total"),
+                alpha=alpha,
+                power=power,
+                nobs_name="nobs1",
+                alternative=alternative,
             )
             if analysis_mode == "A Priori":
                 n_base = int(np.ceil(raw))
@@ -620,9 +719,14 @@ def render_power_calculator(params, analysis_mode="A Priori"):
         solver = GofChisquarePower()
         if w > 0:
             raw = _solve_with_mode(
-                solver, analysis_mode, effect_size=w,
-                nobs=params.get("n_total"), alpha=alpha, power=power,
-                nobs_name="nobs", n_bins=df + 1,
+                solver,
+                analysis_mode,
+                effect_size=w,
+                nobs=params.get("n_total"),
+                alpha=alpha,
+                power=power,
+                nobs_name="nobs",
+                n_bins=df + 1,
             )
             if analysis_mode == "A Priori":
                 n_total = int(np.ceil(raw))
@@ -663,9 +767,15 @@ def render_power_calculator(params, analysis_mode="A Priori"):
         d_mw = np.sqrt(3) * (p_val - 0.5)
         if d_mw > 0:
             raw = _solve_with_mode(
-                solver, analysis_mode, effect_size=d_mw,
-                nobs=params.get("n_total"), alpha=alpha, power=power,
-                nobs_name="nobs1", ratio=ratio, alternative=alternative,
+                solver,
+                analysis_mode,
+                effect_size=d_mw,
+                nobs=params.get("n_total"),
+                alpha=alpha,
+                power=power,
+                nobs_name="nobs1",
+                ratio=ratio,
+                alternative=alternative,
             )
             if analysis_mode == "A Priori":
                 n1 = int(np.ceil(raw / are))
@@ -764,6 +874,7 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                 se = np.sqrt(2 * p_bar * (1 - p_bar))
                 es_e = d_e / se if se > 0 else 0
                 from statsmodels.stats.power import NormalIndPower
+
                 n1 = NormalIndPower().solve_power(
                     effect_size=es_e,
                     alpha=alpha,
@@ -780,14 +891,13 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                 f"with margin = {margin:.3f}, p₁ = {p1_eq:.3f}, p₂ = {p2_eq:.3f}, "
                 f"expected difference = {d_prop:.3f}, α = {alpha}, power = {power}, ratio = {ratio:.2f}."
             )
-            formula_latex = (
-                r"n_1 = \frac{(z_{1-\alpha}+z_{1-\beta})^2 \, 2\bar{p}(1-\bar{p})}{(\delta - |p_1-p_2|)^2}"
-            )
+            formula_latex = r"n_1 = \frac{(z_{1-\alpha}+z_{1-\beta})^2 \, 2\bar{p}(1-\bar{p})}{(\delta - |p_1-p_2|)^2}"
 
         else:
             d_e = margin - abs(exp_diff)
             if d_e > 0:
                 from statsmodels.stats.power import NormalIndPower
+
                 es_e = d_e / sd
                 n1 = NormalIndPower().solve_power(
                     effect_size=es_e,
@@ -805,9 +915,7 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                 f"with margin = {margin:.2f}, expected difference = {exp_diff:.2f}, "
                 f"SD = {sd:.1f}, α = {alpha}, power = {power}, ratio = {ratio:.2f}."
             )
-            formula_latex = (
-                r"n_1 = \frac{(z_{1-\alpha}+z_{1-\beta})^2 \sigma^2 (1+1/r)}{(\delta - |d|)^2}"
-            )
+            formula_latex = r"n_1 = \frac{(z_{1-\alpha}+z_{1-\beta})^2 \sigma^2 (1+1/r)}{(\delta - |d|)^2}"
 
     elif atype == "rm_anova":
         f_eff = params["effect_size"]
@@ -962,7 +1070,10 @@ def render_power_calculator(params, analysis_mode="A Priori"):
             sd = params["sd"]
             if sd > 0 and half_width > 0:
                 from scipy.stats import t as t_dist
-                n_total = int(np.ceil((norm.ppf(1 - conf_alpha / 2) * sd / half_width) ** 2))
+
+                n_total = int(
+                    np.ceil((norm.ppf(1 - conf_alpha / 2) * sd / half_width) ** 2)
+                )
                 n_total = max(n_total, 3)
                 for _ in range(20):
                     t_val = t_dist.ppf(1 - conf_alpha / 2, df=n_total - 1)
@@ -976,7 +1087,12 @@ def render_power_calculator(params, analysis_mode="A Priori"):
         else:
             prop = params["prop"]
             if prop > 0 and half_width > 0:
-                n_total = int(np.ceil((norm.ppf(1 - conf_alpha / 2) ** 2 * prop * (1 - prop)) / (half_width**2)))
+                n_total = int(
+                    np.ceil(
+                        (norm.ppf(1 - conf_alpha / 2) ** 2 * prop * (1 - prop))
+                        / (half_width**2)
+                    )
+                )
             else:
                 n_total = 3
         n_total = max(n_total, 3)
@@ -1008,7 +1124,10 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                 sd = params["sd"]
                 if sd > 0 and half_width > 0:
                     from scipy.stats import t as t_dist
-                    n_total = int(np.ceil((norm.ppf(1 - conf_alpha / 2) * sd / half_width) ** 2))
+
+                    n_total = int(
+                        np.ceil((norm.ppf(1 - conf_alpha / 2) * sd / half_width) ** 2)
+                    )
                     n_total = max(n_total, 3)
                     for _ in range(20):
                         t_val = t_dist.ppf(1 - conf_alpha / 2, df=n_total - 1)
@@ -1119,9 +1238,7 @@ def render_power_calculator(params, analysis_mode="A Priori"):
             f"to detect discordant proportions p_b = {p_b:.3f}, p_c = {p_c:.3f} "
             f"with α = {alpha}, power = {power}."
         )
-        formula_latex = (
-            rf"n = \frac{{({_z_sub} + z_{{1-\beta}})^2 (p_b + p_c)}}{{{{(p_b - p_c)^2}}}}"
-        )
+        formula_latex = rf"n = \frac{{({_z_sub} + z_{{1-\beta}})^2 (p_b + p_c)}}{{{{(p_b - p_c)^2}}}}"
 
     elif atype == "fisher":
         p1 = params["p1"]
@@ -1174,7 +1291,9 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                 if manova_test == "Pillai's Trace":
                     df2 = s_val * (v_den - dv + 1) + 4
                 elif manova_test == "Wilks' Lambda":
-                    t_val = max(np.sqrt((u**2 * v_num**2 - 4) / max(u**2 + v_num**2 - 5, 1)), 1)
+                    t_val = max(
+                        np.sqrt((u**2 * v_num**2 - 4) / max(u**2 + v_num**2 - 5, 1)), 1
+                    )
                     df2 = (v_den - (u - v_num + 1) / 2) * t_val - (u * v_num - 2) / 2
                 elif manova_test == "Hotelling-Lawley Trace":
                     df2 = s_val * (v_den - dv - 1) + 4
@@ -1237,7 +1356,9 @@ def render_power_calculator(params, analysis_mode="A Priori"):
         n_total = n_per * 2
         n_per_group = (n_per, n_per)
         alpha_sim = alpha
-        st.info(f"Running {n_sim} Monte Carlo simulations with N = {n_per} per group...")
+        st.info(
+            f"Running {n_sim} Monte Carlo simulations with N = {n_per} per group..."
+        )
         progress_bar = st.progress(0)
         rejects = 0
         np.random.seed(42)
@@ -1248,10 +1369,13 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                 x1 = np.random.binomial(1, p1_s, n_per)
                 x2 = np.random.binomial(1, p2_s, n_per)
                 from scipy.stats import chi2_contingency
-                _, p_val, _, _ = chi2_contingency(pd.crosstab(
-                    pd.Series(np.concatenate([x1, x2])),
-                    pd.Series(["G1"] * n_per + ["G2"] * n_per),
-                ))
+
+                _, p_val, _, _ = chi2_contingency(
+                    pd.crosstab(
+                        pd.Series(np.concatenate([x1, x2])),
+                        pd.Series(["G1"] * n_per + ["G2"] * n_per),
+                    )
+                )
                 if p_val < alpha_sim:
                     rejects += 1
                 if (i + 1) % max(1, n_sim // 20) == 0:
@@ -1272,6 +1396,7 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                     g1 = np.random.uniform(mu1 - sd * 1.732, mu1 + sd * 1.732, n_per)
                     g2 = np.random.uniform(mu2 - sd * 1.732, mu2 + sd * 1.732, n_per)
                 from scipy.stats import ttest_ind, mannwhitneyu
+
                 if sim_test == "Independent t-test (pooled)":
                     _, p_val = ttest_ind(g1, g2, equal_var=True)
                 elif sim_test == "Welch's t-test":
@@ -1296,11 +1421,18 @@ def render_power_calculator(params, analysis_mode="A Priori"):
         formula_latex = r"\text{Power} = \frac{1}{N_{\text{sim}}} \sum_{i=1}^{N_{\text{sim}}} I(p_i < \alpha)"
 
     # --- Compromise fallback for test types not explicitly handled ---
-    if analysis_mode == "Compromise" and computed_value is None and n_total is not None and n_total > 0:
+    if (
+        analysis_mode == "Compromise"
+        and computed_value is None
+        and n_total is not None
+        and n_total > 0
+    ):
         from scipy.optimize import brentq
+
         es_val = params.get("effect_size", None)
         if es_val is not None and es_val > 0:
             from statsmodels.stats.power import TTestPower, NormalIndPower
+
             if atype in ("one_mean", "paired", "correlation"):
                 solver = TTestPower()
             elif atype in ("one_prop", "mannwhitney", "wilcoxon_sr"):
@@ -1310,7 +1442,9 @@ def render_power_calculator(params, analysis_mode="A Priori"):
             if solver is not None:
                 cost_ratio = params.get("cost_ratio", 1.0)
                 try:
-                    comp = _solve_compromise(solver, es_val, n_total, cost_ratio, alternative=alternative)
+                    comp = _solve_compromise(
+                        solver, es_val, n_total, cost_ratio, alternative=alternative
+                    )
                     if comp is not None:
                         computed_value = comp
                         explanation = (
@@ -1348,6 +1482,9 @@ def render_power_calculator(params, analysis_mode="A Priori"):
         "Compromise": "Compromise Power Analysis Results",
     }
     st.subheader(mode_titles.get(analysis_mode, "Power Analysis Results"))
+
+    if formula_latex:
+        st.latex(formula_latex)
 
     if analysis_mode == "A Priori":
         col1, col2, col3 = st.columns(3)
@@ -1425,9 +1562,23 @@ def render_power_calculator(params, analysis_mode="A Priori"):
         with col1:
             st.metric("Total Sample Size (N)", n_total)
         with col2:
-            st.metric("Adjusted α", f"{computed_value['alpha']:.4f}" if isinstance(computed_value, dict) else "—")
+            st.metric(
+                "Adjusted α",
+                (
+                    f"{computed_value['alpha']:.4f}"
+                    if isinstance(computed_value, dict)
+                    else "—"
+                ),
+            )
         with col3:
-            st.metric("Achieved Power", f"{computed_value['power']:.1%}" if isinstance(computed_value, dict) else "—")
+            st.metric(
+                "Achieved Power",
+                (
+                    f"{computed_value['power']:.1%}"
+                    if isinstance(computed_value, dict)
+                    else "—"
+                ),
+            )
 
     st.info(explanation)
 
@@ -1451,7 +1602,9 @@ def render_power_calculator(params, analysis_mode="A Priori"):
         st.plotly_chart(fig_pie, use_container_width=True)
 
     if atype == "simulation":
-        st.info("Power curve and sensitivity plots use parametric formulas and are not available for Monte Carlo simulation. Change N above and re-run to test different sample sizes.")
+        st.info(
+            "Power curve and sensitivity plots use parametric formulas and are not available for Monte Carlo simulation. Change N above and re-run to test different sample sizes."
+        )
         return
 
     # --- Power Curve ---
@@ -1657,8 +1810,11 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                             es_e = d_e / se if se > 0 else 0
                             solver = NormalIndPower()
                             pv = solver.solve_power(
-                                effect_size=es_e, nobs1=n,
-                                alpha=alpha, ratio=ratio, alternative="larger",
+                                effect_size=es_e,
+                                nobs1=n,
+                                alpha=alpha,
+                                ratio=ratio,
+                                alternative="larger",
                             )
                         else:
                             pv = 0
@@ -1668,8 +1824,11 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                             es_e = d_e / sd
                             solver = NormalIndPower()
                             pv = solver.solve_power(
-                                effect_size=es_e, nobs1=n,
-                                alpha=alpha, ratio=ratio, alternative="larger",
+                                effect_size=es_e,
+                                nobs1=n,
+                                alpha=alpha,
+                                ratio=ratio,
+                                alternative="larger",
                             )
                         else:
                             pv = 0
@@ -1776,9 +1935,14 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                         sd = params["sd"]
                         if sd > 0 and half_width > 0:
                             from scipy.stats import t as t_dist
-                            n_req = max((norm.ppf(1 - conf_alpha / 2) * sd / half_width) ** 2, 3)
+
+                            n_req = max(
+                                (norm.ppf(1 - conf_alpha / 2) * sd / half_width) ** 2, 3
+                            )
                             for _ in range(20):
-                                t_val = t_dist.ppf(1 - conf_alpha / 2, df=int(n_req) - 1)
+                                t_val = t_dist.ppf(
+                                    1 - conf_alpha / 2, df=int(n_req) - 1
+                                )
                                 n_next = (t_val * sd / half_width) ** 2
                                 if abs(n_next - n_req) < 0.5:
                                     break
@@ -1810,9 +1974,16 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                             half_width = params["half_width"]
                             if sd > 0 and half_width > 0:
                                 from scipy.stats import t as t_dist
-                                n_req = max((norm.ppf(1 - conf_alpha / 2) * sd / half_width) ** 2, 3)
+
+                                n_req = max(
+                                    (norm.ppf(1 - conf_alpha / 2) * sd / half_width)
+                                    ** 2,
+                                    3,
+                                )
                                 for _ in range(20):
-                                    t_val = t_dist.ppf(1 - conf_alpha / 2, df=int(n_req) - 1)
+                                    t_val = t_dist.ppf(
+                                        1 - conf_alpha / 2, df=int(n_req) - 1
+                                    )
                                     n_next = (t_val * sd / half_width) ** 2
                                     if abs(n_next - n_req) < 0.5:
                                         break
@@ -1918,8 +2089,16 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                             if manova_test == "Pillai's Trace":
                                 df2 = s_val * (v_den - dv + 1) + 4
                             elif manova_test == "Wilks' Lambda":
-                                t_val = max(np.sqrt((u**2 * v_num**2 - 4) / max(u**2 + v_num**2 - 5, 1)), 1)
-                                df2 = (v_den - (u - v_num + 1) / 2) * t_val - (u * v_num - 2) / 2
+                                t_val = max(
+                                    np.sqrt(
+                                        (u**2 * v_num**2 - 4)
+                                        / max(u**2 + v_num**2 - 5, 1)
+                                    ),
+                                    1,
+                                )
+                                df2 = (v_den - (u - v_num + 1) / 2) * t_val - (
+                                    u * v_num - 2
+                                ) / 2
                             elif manova_test == "Hotelling-Lawley Trace":
                                 df2 = s_val * (v_den - dv - 1) + 4
                             else:
@@ -2404,8 +2583,11 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                         adj_es = es_e
                         solver = NormalIndPower()
                         n1_s = solver.solve_power(
-                            effect_size=es_e, alpha=alpha, power=power,
-                            ratio=ratio, alternative="larger",
+                            effect_size=es_e,
+                            alpha=alpha,
+                            power=power,
+                            ratio=ratio,
+                            alternative="larger",
                         )
                         n1_s = int(np.ceil(n1_s))
                         n_s = n1_s + int(np.ceil(n1_s * ratio))
@@ -2418,8 +2600,11 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                         es_e = d_e / sd
                         solver = NormalIndPower()
                         n1_s = solver.solve_power(
-                            effect_size=es_e, alpha=alpha, power=power,
-                            ratio=ratio, alternative="larger",
+                            effect_size=es_e,
+                            alpha=alpha,
+                            power=power,
+                            ratio=ratio,
+                            alternative="larger",
                         )
                         n1_s = int(np.ceil(n1_s))
                         n_s = n1_s + int(np.ceil(n1_s * ratio))
@@ -2537,7 +2722,10 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                     sd = params["sd"]
                     if sd > 0 and adj_hw > 0:
                         from scipy.stats import t as t_dist
-                        n_s = int(np.ceil((norm.ppf(1 - conf_alpha / 2) * sd / adj_hw) ** 2))
+
+                        n_s = int(
+                            np.ceil((norm.ppf(1 - conf_alpha / 2) * sd / adj_hw) ** 2)
+                        )
                         n_s = max(n_s, 3)
                         for _ in range(20):
                             t_val = t_dist.ppf(1 - conf_alpha / 2, df=n_s - 1)
@@ -2571,7 +2759,12 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                         sd = params["sd"]
                         if sd > 0 and adj_hw > 0:
                             from scipy.stats import t as t_dist
-                            n_s = int(np.ceil((norm.ppf(1 - conf_alpha / 2) * sd / adj_hw) ** 2))
+
+                            n_s = int(
+                                np.ceil(
+                                    (norm.ppf(1 - conf_alpha / 2) * sd / adj_hw) ** 2
+                                )
+                            )
                             n_s = max(n_s, 3)
                             for _ in range(20):
                                 t_val = t_dist.ppf(1 - conf_alpha / 2, df=n_s - 1)
@@ -2707,8 +2900,15 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                         if manova_test == "Pillai's Trace":
                             df2 = s_val * (v_den - dv + 1) + 4
                         elif manova_test == "Wilks' Lambda":
-                            t_val = max(np.sqrt((u**2 * v_num**2 - 4) / max(u**2 + v_num**2 - 5, 1)), 1)
-                            df2 = (v_den - (u - v_num + 1) / 2) * t_val - (u * v_num - 2) / 2
+                            t_val = max(
+                                np.sqrt(
+                                    (u**2 * v_num**2 - 4) / max(u**2 + v_num**2 - 5, 1)
+                                ),
+                                1,
+                            )
+                            df2 = (v_den - (u - v_num + 1) / 2) * t_val - (
+                                u * v_num - 2
+                            ) / 2
                         elif manova_test == "Hotelling-Lawley Trace":
                             df2 = s_val * (v_den - dv - 1) + 4
                         else:
@@ -2768,10 +2968,6 @@ def render_power_calculator(params, analysis_mode="A Priori"):
 
     if sens_data:
         st.dataframe(pd.DataFrame(sens_data), use_container_width=True, hide_index=True)
-
-    # --- Formula ---
-    with st.expander("📐 Formula Used"):
-        st.latex(formula_latex)
 
     # --- Interpretation Guide ---
     with st.expander("📖 How to Interpret These Results"):
@@ -3045,9 +3241,13 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                             se = np.sqrt(2 * p_bar * (1 - p_bar))
                             es_e = d_e / se if se > 0 else 0
                             from statsmodels.stats.power import NormalIndPower
+
                             n1 = NormalIndPower().solve_power(
-                                effect_size=es_e, alpha=alpha, power=w_power,
-                                ratio=ratio, alternative="larger",
+                                effect_size=es_e,
+                                alpha=alpha,
+                                power=w_power,
+                                ratio=ratio,
+                                alternative="larger",
                             )
                             n1 = int(np.ceil(n1))
                             w_n = n1 + int(np.ceil(n1 * ratio))
@@ -3058,9 +3258,13 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                         if d_e > 0:
                             es_e = d_e / sd
                             from statsmodels.stats.power import NormalIndPower
+
                             n1 = NormalIndPower().solve_power(
-                                effect_size=es_e, alpha=alpha, power=w_power,
-                                ratio=ratio, alternative="larger",
+                                effect_size=es_e,
+                                alpha=alpha,
+                                power=w_power,
+                                ratio=ratio,
+                                alternative="larger",
                             )
                             n1 = int(np.ceil(n1))
                             w_n = n1 + int(np.ceil(n1 * ratio))
@@ -3184,7 +3388,12 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                         sd = params["sd"]
                         if sd > 0 and adj_hw > 0:
                             from scipy.stats import t as t_dist
-                            w_n = int(np.ceil((norm.ppf(1 - conf_alpha / 2) * sd / adj_hw) ** 2))
+
+                            w_n = int(
+                                np.ceil(
+                                    (norm.ppf(1 - conf_alpha / 2) * sd / adj_hw) ** 2
+                                )
+                            )
                             w_n = max(w_n, 3)
                             for _ in range(20):
                                 t_val = t_dist.ppf(1 - conf_alpha / 2, df=w_n - 1)
@@ -3218,7 +3427,13 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                             sd = params["sd"]
                             if sd > 0 and adj_hw > 0:
                                 from scipy.stats import t as t_dist
-                                w_n = int(np.ceil((norm.ppf(1 - conf_alpha / 2) * sd / adj_hw) ** 2))
+
+                                w_n = int(
+                                    np.ceil(
+                                        (norm.ppf(1 - conf_alpha / 2) * sd / adj_hw)
+                                        ** 2
+                                    )
+                                )
                                 w_n = max(w_n, 3)
                                 for _ in range(20):
                                     t_val = t_dist.ppf(1 - conf_alpha / 2, df=w_n - 1)
@@ -3358,14 +3573,23 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                             if manova_test == "Pillai's Trace":
                                 df2 = s_val * (v_den - dv + 1) + 4
                             elif manova_test == "Wilks' Lambda":
-                                t_val = max(np.sqrt((u**2 * v_num**2 - 4) / max(u**2 + v_num**2 - 5, 1)), 1)
-                                df2 = (v_den - (u - v_num + 1) / 2) * t_val - (u * v_num - 2) / 2
+                                t_val = max(
+                                    np.sqrt(
+                                        (u**2 * v_num**2 - 4)
+                                        / max(u**2 + v_num**2 - 5, 1)
+                                    ),
+                                    1,
+                                )
+                                df2 = (v_den - (u - v_num + 1) / 2) * t_val - (
+                                    u * v_num - 2
+                                ) / 2
                             elif manova_test == "Hotelling-Lawley Trace":
                                 df2 = s_val * (v_den - dv - 1) + 4
                             else:
                                 df2 = s_val * (v_den - dv + 1) + 4
                             ncp = adj_f2 * n_try * (1 - rho)
                             from scipy.stats import ncf as noncentral_f, f as f_dist
+
                             f_crit = f_dist.ppf(1 - alpha, df1, df2)
                             p_cur = 1 - noncentral_f.cdf(f_crit, df1, df2, ncp)
                             if p_cur >= w_power:
@@ -3436,7 +3660,9 @@ def render_power_calculator(params, analysis_mode="A Priori"):
         "Given a fixed sample size, what is the smallest effect size your study can detect?"
     )
 
-    with st.expander("Enter a candidate sample size to compute the minimum detectable effect"):
+    with st.expander(
+        "Enter a candidate sample size to compute the minimum detectable effect"
+    ):
         c1, c2 = st.columns([1, 3])
         with c1:
             candidate_n = st.number_input(
@@ -3458,28 +3684,49 @@ def render_power_calculator(params, analysis_mode="A Priori"):
 
                 if atype == "one_mean":
                     from statsmodels.stats.power import TTestPower
+
                     mde = TTestPower().solve_power(
-                        effect_size=None, nobs=candidate_n, alpha=alpha, power=power, alternative=alternative
+                        effect_size=None,
+                        nobs=candidate_n,
+                        alpha=alpha,
+                        power=power,
+                        alternative=alternative,
                     )
                     mde_label = "Cohen's d"
                 elif atype == "two_means":
                     from statsmodels.stats.power import TTestIndPower
+
                     ratio_val = params.get("ratio", 1)
                     n1 = candidate_n / (1 + ratio_val)
                     mde = TTestIndPower().solve_power(
-                        effect_size=None, nobs1=n1, alpha=alpha, power=power, ratio=ratio_val, alternative=alternative
+                        effect_size=None,
+                        nobs1=n1,
+                        alpha=alpha,
+                        power=power,
+                        ratio=ratio_val,
+                        alternative=alternative,
                     )
                     mde_label = "Cohen's d"
                 elif atype == "paired":
                     from statsmodels.stats.power import TTestPower
+
                     mde = TTestPower().solve_power(
-                        effect_size=None, nobs=candidate_n, alpha=alpha, power=power, alternative=alternative
+                        effect_size=None,
+                        nobs=candidate_n,
+                        alpha=alpha,
+                        power=power,
+                        alternative=alternative,
                     )
                     mde_label = "Cohen's d_z"
                 elif atype == "one_prop":
                     from statsmodels.stats.power import NormalIndPower
+
                     d_eff = NormalIndPower().solve_power(
-                        effect_size=None, nobs1=candidate_n, alpha=alpha, power=power, alternative=alternative
+                        effect_size=None,
+                        nobs1=candidate_n,
+                        alpha=alpha,
+                        power=power,
+                        alternative=alternative,
                     )
                     p0 = params.get("prop_null", 0.5)
                     mde = p0 + d_eff * np.sqrt(p0 * (1 - p0))
@@ -3489,10 +3736,16 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                 elif atype == "two_prop":
                     from statsmodels.stats.proportion import proportion_effectsize
                     from statsmodels.stats.power import NormalIndPower
+
                     ratio_val = params.get("ratio", 1)
                     n1 = candidate_n / (1 + ratio_val)
                     d_eff = NormalIndPower().solve_power(
-                        effect_size=None, nobs1=n1, alpha=alpha, power=power, ratio=ratio_val, alternative=alternative
+                        effect_size=None,
+                        nobs1=n1,
+                        alpha=alpha,
+                        power=power,
+                        ratio=ratio_val,
+                        alternative=alternative,
                     )
                     p1_base = params.get("p1", 0.3)
                     mde = p1_base + d_eff * np.sqrt(2 * p1_base * (1 - p1_base))
@@ -3501,49 +3754,81 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                     mde_note = f"(group 1 p₁ = {p1_base})"
                 elif atype == "anova":
                     from statsmodels.stats.power import FTestAnovaPower
+
                     k_val = params.get("k", 3)
                     mde = FTestAnovaPower().solve_power(
-                        effect_size=None, nobs=candidate_n, alpha=alpha, power=power, k_groups=k_val
+                        effect_size=None,
+                        nobs=candidate_n,
+                        alpha=alpha,
+                        power=power,
+                        k_groups=k_val,
                     )
                     mde_label = "Cohen's f"
                 elif atype == "correlation":
                     import math
-                    fisher_z = (norm.ppf(1 - alpha / 2 if alternative == "two-sided" else 1 - alpha) + z_beta) / np.sqrt(candidate_n - 3)
+
+                    fisher_z = (
+                        norm.ppf(
+                            1 - alpha / 2 if alternative == "two-sided" else 1 - alpha
+                        )
+                        + z_beta
+                    ) / np.sqrt(candidate_n - 3)
                     mde = min(math.tanh(fisher_z), 0.99)
                     mde_label = "Pearson r"
                 elif atype == "chisq":
                     from statsmodels.stats.power import GofChisquarePower
+
                     df_val = params.get("df", 2)
                     mde = GofChisquarePower().solve_power(
-                        effect_size=None, nobs=candidate_n, alpha=alpha, power=power, n_bins=df_val + 1
+                        effect_size=None,
+                        nobs=candidate_n,
+                        alpha=alpha,
+                        power=power,
+                        n_bins=df_val + 1,
                     )
                     mde_label = "Cohen's w"
                 elif atype == "mannwhitney":
                     from statsmodels.stats.power import NormalIndPower
+
                     are_val = params.get("are", 0.955)
                     ratio_val = params.get("ratio", 1)
                     n1_eff = candidate_n / (1 + ratio_val) * are_val
                     d_mw = NormalIndPower().solve_power(
-                        effect_size=None, nobs1=n1_eff, alpha=alpha, power=power, ratio=ratio_val, alternative=alternative
+                        effect_size=None,
+                        nobs1=n1_eff,
+                        alpha=alpha,
+                        power=power,
+                        ratio=ratio_val,
+                        alternative=alternative,
                     )
                     mde = 0.5 + d_mw / np.sqrt(3)
                     mde = max(0.51, min(0.99, mde))
                     mde_label = "P(X>Y)"
                 elif atype == "wilcoxon_sr":
                     from statsmodels.stats.power import NormalIndPower
+
                     are_val = params.get("are", 0.955)
                     d_z = NormalIndPower().solve_power(
-                        effect_size=None, nobs1=candidate_n * are_val, alpha=alpha, power=power, alternative=alternative
+                        effect_size=None,
+                        nobs1=candidate_n * are_val,
+                        alpha=alpha,
+                        power=power,
+                        alternative=alternative,
                     )
                     mde = 0.5 + d_z / (2 * np.sqrt(3))
                     mde = max(0.51, min(0.99, mde))
                     mde_label = "Pr(positive diff)"
                 elif atype == "kruskal":
                     from statsmodels.stats.power import FTestAnovaPower
+
                     are_val = params.get("are", 0.955)
                     k_val = params.get("k", 3)
                     mde = FTestAnovaPower().solve_power(
-                        effect_size=None, nobs=candidate_n * are_val, alpha=alpha, power=power, k_groups=k_val
+                        effect_size=None,
+                        nobs=candidate_n * are_val,
+                        alpha=alpha,
+                        power=power,
+                        k_groups=k_val,
                     )
                     mde_label = "Cohen's f"
                 elif atype == "mcnemar":
@@ -3551,18 +3836,31 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                     p_c = params.get("p_c", 0.4)
                     p_disc = p_b + p_c
                     if p_disc > 0:
-                        delta = (norm.ppf(1 - alpha / 2 if alternative == "two-sided" else 1 - alpha) + z_beta) * np.sqrt(p_disc / candidate_n)
+                        delta = (
+                            norm.ppf(
+                                1 - alpha / 2
+                                if alternative == "two-sided"
+                                else 1 - alpha
+                            )
+                            + z_beta
+                        ) * np.sqrt(p_disc / candidate_n)
                         mde = max(delta, 0.01)
                         mde_label = "|p_b − p_c|"
                 elif atype == "fisher":
                     from statsmodels.stats.proportion import proportion_effectsize
                     from statsmodels.stats.power import NormalIndPower
+
                     are_val = params.get("are", 0.833)
                     ratio_val = params.get("ratio", 1)
                     p1_base = params.get("p1", 0.3)
                     n1 = candidate_n / (1 + ratio_val) * are_val
                     d_eff = NormalIndPower().solve_power(
-                        effect_size=None, nobs1=n1, alpha=alpha, power=power, ratio=ratio_val, alternative=alternative
+                        effect_size=None,
+                        nobs1=n1,
+                        alpha=alpha,
+                        power=power,
+                        ratio=ratio_val,
+                        alternative=alternative,
                     )
                     mde = p1_base + d_eff * np.sqrt(2 * p1_base * (1 - p1_base))
                     mde = max(0.01, min(0.99, mde))
@@ -3571,7 +3869,12 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                     ratio_val = params.get("ratio", 1)
                     hr_guess = params.get("hr", 2)
                     num_events_est = candidate_n * 0.5
-                    log_hr_min = (norm.ppf(1 - alpha / 2 if alternative == "two-sided" else 1 - alpha) + z_beta) * np.sqrt((ratio_val + 1) ** 2 / (ratio_val * num_events_est))
+                    log_hr_min = (
+                        norm.ppf(
+                            1 - alpha / 2 if alternative == "two-sided" else 1 - alpha
+                        )
+                        + z_beta
+                    ) * np.sqrt((ratio_val + 1) ** 2 / (ratio_val * num_events_est))
                     if log_hr_min > 0:
                         mde = np.exp(log_hr_min)
                         mde = max(1.001, min(10.0, mde))
@@ -3582,15 +3885,21 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                     r2_x = params.get("r2_x", 0)
                     ev_rate = params.get("event_rate", 0.5)
                     num_events_est = candidate_n * ev_rate
-                    var_denom_inv = (norm.ppf(1 - alpha / 2 if alternative == "two-sided" else 1 - alpha) + z_beta) ** 2 / num_events_est
+                    var_denom_inv = (
+                        norm.ppf(
+                            1 - alpha / 2 if alternative == "two-sided" else 1 - alpha
+                        )
+                        + z_beta
+                    ) ** 2 / num_events_est
                     if var_denom_inv > 0 and sd_x > 0:
-                        log_hr_min = np.sqrt(var_denom_inv / (sd_x ** 2 * (1 - r2_x)))
+                        log_hr_min = np.sqrt(var_denom_inv / (sd_x**2 * (1 - r2_x)))
                         mde = np.exp(log_hr_min)
                         mde = max(1.001, min(10.0, mde))
                         mde_label = "Hazard Ratio (HR)"
                         mde_note = "(approximate)"
                 elif atype == "logistic":
                     import math
+
                     ev_rate = params.get("event_rate", 0.3)
                     or_val = params.get("or", 2)
                     p1_log = (or_val * ev_rate) / (1 - ev_rate + or_val * ev_rate)
@@ -3600,8 +3909,13 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                     if se > 0:
                         d_eff = d_log / se
                         from statsmodels.stats.power import NormalIndPower
+
                         mde_d = NormalIndPower().solve_power(
-                            effect_size=None, nobs1=candidate_n, alpha=alpha, power=power, alternative=alternative
+                            effect_size=None,
+                            nobs1=candidate_n,
+                            alpha=alpha,
+                            power=power,
+                            alternative=alternative,
                         )
                         p1_mde = ev_rate + mde_d * se
                         p1_mde = max(0.01, min(0.99, p1_mde))
@@ -3612,6 +3926,7 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                 elif atype == "regression":
                     k_r = params.get("k", 3)
                     from scipy.stats import ncf as noncentral_f, f as f_dist
+
                     dfd = candidate_n - k_r - 1
                     if dfd > 0:
                         mde = None
@@ -3628,12 +3943,15 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                 elif atype == "binomial":
                     p0 = params.get("p0", 0.5)
                     from scipy.stats import binom
+
                     mde = None
                     for p1_try in np.linspace(p0 + 0.001, 0.99, 990):
                         if alternative == "two-sided":
                             alpha_lo = binom.ppf(alpha / 2, candidate_n, p0)
                             alpha_hi = binom.ppf(1 - alpha / 2, candidate_n, p0)
-                            p_pow = binom.cdf(alpha_hi, candidate_n, p1_try) - binom.cdf(alpha_lo - 1, candidate_n, p1_try)
+                            p_pow = binom.cdf(
+                                alpha_hi, candidate_n, p1_try
+                            ) - binom.cdf(alpha_lo - 1, candidate_n, p1_try)
                         elif p1_try > p0:
                             crit = binom.ppf(1 - alpha, candidate_n, p0)
                             p_pow = 1 - binom.cdf(crit - 1, candidate_n, p1_try)
@@ -3652,12 +3970,19 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                     n1_eff = candidate_n / (1 + ratio_v)
                     if n1_eff > 1:
                         from statsmodels.stats.power import NormalIndPower
+
                         es_mde = NormalIndPower().solve_power(
-                            effect_size=None, nobs1=n1_eff, alpha=alpha, power=power,
-                            ratio=ratio_v, alternative="larger",
+                            effect_size=None,
+                            nobs1=n1_eff,
+                            alpha=alpha,
+                            power=power,
+                            ratio=ratio_v,
+                            alternative="larger",
                         )
                         if equiv_type == "Proportion":
-                            p_bar = (params.get("p1_eq", 0.2) + params.get("p2_eq", 0.2)) / 2
+                            p_bar = (
+                                params.get("p1_eq", 0.2) + params.get("p2_eq", 0.2)
+                            ) / 2
                             se = np.sqrt(2 * p_bar * (1 - p_bar))
                             mde = es_mde * se
                             mde_label = "Detectable margin remaining (δ - |p₁−p₂|)"
@@ -3666,6 +3991,7 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                             mde_label = "Detectable margin remaining (δ - |d|)"
                 elif atype == "rm_anova":
                     from statsmodels.stats.power import FTestAnovaPower
+
                     f_eff = params.get("effect_size", 0.25)
                     k_v = params.get("k", 2)
                     m_v = params.get("m", 3)
@@ -3673,29 +3999,51 @@ def render_power_calculator(params, analysis_mode="A Priori"):
                     eps_v = params.get("epsilon", 0.75)
                     design_effect = (1 + (m_v - 1) * rho_v) / m_v
                     df_adj = (m_v - 1) * eps_v
-                    n_eff = candidate_n * design_effect * (k_v - 1) / (k_v * df_adj / (k_v - 1))
+                    n_eff = (
+                        candidate_n
+                        * design_effect
+                        * (k_v - 1)
+                        / (k_v * df_adj / (k_v - 1))
+                    )
                     if n_eff > k_v:
                         mde = FTestAnovaPower().solve_power(
-                            effect_size=None, nobs=n_eff, alpha=alpha, power=power, k_groups=k_v
+                            effect_size=None,
+                            nobs=n_eff,
+                            alpha=alpha,
+                            power=power,
+                            k_groups=k_v,
                         )
                         mde_label = "Cohen's f"
                 elif atype == "twoway_anova":
                     from statsmodels.stats.power import FTestAnovaPower
+
                     rows_v = params.get("rows", 2)
                     cols_v = params.get("cols", 2)
                     focus_v = params.get("focus", "Main Effect A")
-                    k_use = rows_v if focus_v == "Main Effect A" else (cols_v if focus_v == "Main Effect B" else rows_v * cols_v)
+                    k_use = (
+                        rows_v
+                        if focus_v == "Main Effect A"
+                        else (cols_v if focus_v == "Main Effect B" else rows_v * cols_v)
+                    )
                     n_per_cell_eff = candidate_n / (rows_v * cols_v)
                     if n_per_cell_eff > k_use:
                         mde = FTestAnovaPower().solve_power(
-                            effect_size=None, nobs=n_per_cell_eff, alpha=alpha, power=power, k_groups=k_use
+                            effect_size=None,
+                            nobs=n_per_cell_eff,
+                            alpha=alpha,
+                            power=power,
+                            k_groups=k_use,
                         )
                         mde_label = "Cohen's f"
 
                 if mde is not None and mde > 0:
-                    st.success(f"**Minimum detectable {mde_label}** with N = {candidate_n}: **{mde:.4f}** {mde_note}")
+                    st.success(
+                        f"**Minimum detectable {mde_label}** with N = {candidate_n}: **{mde:.4f}** {mde_note}"
+                    )
                 else:
-                    st.warning("Could not compute minimum detectable effect for this analysis type.")
+                    st.warning(
+                        "Could not compute minimum detectable effect for this analysis type."
+                    )
             except Exception as e:
                 st.error(f"Could not compute minimum detectable effect: {e}")
 
@@ -3741,8 +4089,15 @@ def render_power_calculator(params, analysis_mode="A Priori"):
         "simulation": "Simulation-based Power (Monte Carlo)",
     }
 
-    es_val = params.get('effect_size', params.get('or', params.get('w', params.get('f2', params.get('f', 'N/A')))))
-    es_str = f"{es_val:.4f}" if isinstance(es_val, (int, float, np.integer, np.floating)) else str(es_val)
+    es_val = params.get(
+        "effect_size",
+        params.get("or", params.get("w", params.get("f2", params.get("f", "N/A")))),
+    )
+    es_str = (
+        f"{es_val:.4f}"
+        if isinstance(es_val, (int, float, np.integer, np.floating))
+        else str(es_val)
+    )
     if n_per_group is not None:
         n_desc = (
             f"{n_per_group} per group"
@@ -3757,7 +4112,9 @@ Analysis: {atype_label.get(atype, atype)}
 Direction: {tails.lower()}
 Significance Level (α): {alpha * num_tests:.4f}"""
         if num_tests > 1:
-            protocol += f" ({mc_method}-adjusted from {alpha_raw:.4f}, {num_tests} comparisons)"
+            protocol += (
+                f" ({mc_method}-adjusted from {alpha_raw:.4f}, {num_tests} comparisons)"
+            )
         protocol += f"""
 Statistical Power (1−β): {power:.0%}
 Effect Size: {es_str}
@@ -3915,5 +4272,3 @@ Required Total N: {n_total}
         **Multiple Testing:**
         - Bonferroni, C. E. (1936). Teoria statistica delle classi e calcolo delle probabilità. *Pubblicazioni del R Istituto Superiore di Scienze Economiche e Commerciali di Firenze*, 8, 3–62.
         """)
-
-
