@@ -19,6 +19,7 @@ def render_power_calculator(params):
     else:
         z_alpha = norm.ppf(1 - alpha)
     z_beta = norm.ppf(power)
+    _z_sub = r"z_{1-\alpha/2}" if alternative == "two-sided" else r"z_{1-\alpha}"
 
     # Extract global adjustment parameters (with defaults for backward compat)
     dropout_rate = params.get("dropout_rate", 0.0)
@@ -65,7 +66,7 @@ def render_power_calculator(params):
             f"Required total sample size for a one-sample {tails.lower()} t-test "
             f"to detect Cohen's d = {d:.3f} with α = {alpha} and power = {power}."
         )
-        formula_latex = r"n = \left( \frac{z_{\alpha/2} + z_{\beta}}{d} \right)^2"
+        formula_latex = rf"n = \left( \frac{{{_z_sub} + z_{{1-\beta}}}}{{d}} \right)^2"
 
     elif atype == "two_means":
         d = params["effect_size"]
@@ -90,7 +91,7 @@ def render_power_calculator(params):
             f"to detect Cohen's d = {d:.3f} with α = {alpha} and power = {power}, "
             f"allocation ratio n₂/n₁ = {ratio:.2f}."
         )
-        formula_latex = r"n_1 = 2 \left( \frac{z_{\alpha/2} + z_{\beta}}{d} \right)^2 \quad n_2 = r \cdot n_1"
+        formula_latex = rf"n_1 = 2 \left( \frac{{{_z_sub} + z_{{1-\beta}}}}{{d}} \right)^2 \quad n_2 = r \cdot n_1"
 
     elif atype == "paired":
         d = params["effect_size"]
@@ -113,7 +114,7 @@ def render_power_calculator(params):
             f"Required number of pairs for a paired {tails.lower()} t-test "
             f"to detect Cohen's d_z = {d:.3f} with α = {alpha} and power = {power}."
         )
-        formula_latex = r"n = \left( \frac{z_{\alpha/2} + z_{\beta}}{d_z} \right)^2"
+        formula_latex = rf"n = \left( \frac{{{_z_sub} + z_{{1-\beta}}}}{{d_z}} \right)^2"
 
     elif atype == "one_prop":
         p0 = params["prop_null"]
@@ -140,7 +141,7 @@ def render_power_calculator(params):
             f"to detect a difference from {p0} to {p1} "
             f"with α = {alpha} and power = {power}."
         )
-        formula_latex = r"n = \left( \frac{z_{\alpha/2} \sqrt{p_0(1-p_0)} + z_{\beta} \sqrt{p_1(1-p_1)}}{p_1 - p_0} \right)^2"
+        formula_latex = rf"n = \left( \frac{{{_z_sub} \sqrt{{p_0(1-p_0)}} + z_{{1-\beta}} \sqrt{{p_1(1-p_1)}}}}{{{{p_1 - p_0}}}} \right)^2"
 
     elif atype == "two_prop":
         p1 = params["p1"]
@@ -168,7 +169,7 @@ def render_power_calculator(params):
             f"to detect a difference between {p1} and {p2} "
             f"with α = {alpha}, power = {power}, ratio = {ratio:.2f}."
         )
-        formula_latex = r"n_1 = \left( \frac{z_{\alpha/2} \sqrt{2\bar{p}(1-\bar{p})} + z_{\beta} \sqrt{p_1(1-p_1) + p_2(1-p_2)}}{p_1 - p_2} \right)^2"
+        formula_latex = rf"n_1 = \left( \frac{{{_z_sub} \sqrt{{2\bar{{p}}(1-\bar{{p}})}} + z_{{1-\beta}} \sqrt{{p_1(1-p_1) + p_2(1-p_2)}}}}{{{{p_1 - p_2}}}} \right)^2"
 
     elif atype == "anova":
         f_eff = params["effect_size"]
@@ -204,7 +205,7 @@ def render_power_calculator(params):
             f"with α = {alpha} and power = {power} ({tails.lower()}), "
             f"based on Fisher's z-transformation."
         )
-        formula_latex = r"n = 3 + \left( \frac{z_{\alpha/2} + z_{\beta}}{\text{arctanh}(r)} \right)^2"
+        formula_latex = rf"n = 3 + \left( \frac{{{_z_sub} + z_{{1-\beta}}}}{{\text{{arctanh}}(r)}} \right)^2"
 
     elif atype == "regression":
         f2 = params["effect_size"]
@@ -256,7 +257,7 @@ def render_power_calculator(params):
             f"with baseline event rate = {ev_rate:.2f}, α = {alpha}, power = {power}. "
             f"Lower bound of 10 × {k} = {10 * k} events per predictor applied."
         )
-        formula_latex = r"n = \frac{(z_{\alpha/2} + z_{\beta})^2 \bar{p}(1-\bar{p})}{(p_1 - p_0)^2} \quad \text{min } 10k"
+        formula_latex = rf"n = \frac{{({_z_sub} + z_{{1-\beta}})^2 \bar{{p}}(1-\bar{{p}})}}{{{{(p_1 - p_0)^2}}}} \quad \text{{min }} 10k"
 
     elif atype == "chisq":
         w = params["effect_size"]
@@ -334,7 +335,7 @@ def render_power_calculator(params):
             f"α = {alpha}, power = {power}, ratio = {ratio:.2f}. "
             f"Events needed: {int(np.ceil(num_events))}."
         )
-        formula_latex = r"E = \frac{(z_{\alpha/2}+z_{\beta})^2 (r+1)^2}{r (\log HR)^2} \quad N = \frac{E}{P(\text{event})}"
+        formula_latex = rf"E = \frac{{({_z_sub}+z_{{1-\beta}})^2 (r+1)^2}}{{r (\log HR)^2}} \quad N = \frac{{E}}{{P(\text{{event}})}}"
 
     elif atype == "cox":
         hr = params["hr"]
@@ -355,7 +356,7 @@ def render_power_calculator(params):
             f"with α = {alpha}, power = {power}, event rate = {ev_rate:.2f}. "
             f"Events needed: {int(np.ceil(num_events))}."
         )
-        formula_latex = r"E = \frac{(z_{\alpha/2}+z_{\beta})^2}{\sigma_x^2 \beta^2 (1-R^2)} \quad N = \frac{E}{P(\text{event})}"
+        formula_latex = rf"E = \frac{{({_z_sub}+z_{{1-\beta}})^2}}{{\sigma_x^2 \beta^2 (1-R^2)}} \quad N = \frac{{E}}{{P(\text{{event}})}}"
 
     elif atype == "equiv":
         margin = params["margin"]
@@ -390,8 +391,9 @@ def render_power_calculator(params):
                 f"expected difference = {d_prop:.3f}, α = {alpha}, power = {power}, ratio = {ratio:.2f}."
             )
             formula_latex = (
-                r"n_1 = \frac{(z_{\alpha}+z_{\beta})^2 \, 2\bar{p}(1-\bar{p})}{(\delta - |p_1-p_2|)^2}"
+                r"n_1 = \frac{(z_{1-\alpha}+z_{1-\beta})^2 \, 2\bar{p}(1-\bar{p})}{(\delta - |p_1-p_2|)^2}"
             )
+
         else:
             d_e = margin - abs(exp_diff)
             if d_e > 0:
@@ -414,7 +416,7 @@ def render_power_calculator(params):
                 f"SD = {sd:.1f}, α = {alpha}, power = {power}, ratio = {ratio:.2f}."
             )
             formula_latex = (
-                r"n_1 = \frac{(z_{\alpha}+z_{\beta})^2 \sigma^2 (1+1/r)}{(\delta - |d|)^2}"
+                r"n_1 = \frac{(z_{1-\alpha}+z_{1-\beta})^2 \sigma^2 (1+1/r)}{(\delta - |d|)^2}"
             )
 
     elif atype == "rm_anova":
@@ -502,7 +504,7 @@ def render_power_calculator(params):
             f"(null = {null_auc:.1f}) with case:control ratio {ratio:.2f}, "
             f"α = {alpha}, power = {power}."
         )
-        formula_latex = r"n_{\text{cases}} = \frac{(z_{\alpha/2}+z_{\beta})^2 V(AUC)}{(AUC - 0.5)^2}"
+        formula_latex = rf"n_{{\text{{cases}}}} = \frac{{({_z_sub}+z_{{1-\beta}})^2 V(AUC)}}{{{{(AUC - 0.5)^2}}}}"
 
     elif atype == "kappa":
         kappa = params["kappa"]
@@ -524,7 +526,7 @@ def render_power_calculator(params):
             f"expected κ = {kappa:.3f}, null κ = {null_kappa:.2f}, "
             f"α = {alpha}, power = {power}."
         )
-        formula_latex = r"n = \frac{(z_{\alpha/2}+z_{\beta})^2 \kappa_0(1-\kappa_0)}{(\kappa - \kappa_0)^2}"
+        formula_latex = rf"n = \frac{{({_z_sub}+z_{{1-\beta}})^2 \kappa_0(1-\kappa_0)}}{{(\kappa - \kappa_0)^2}}"
 
     elif atype == "cluster_rct":
         d = params["effect_size"]
@@ -597,9 +599,9 @@ def render_power_calculator(params):
             else f"p = {prop:.3f}."
         )
         formula_latex = (
-            r"n = \left(\frac{t_{\alpha/2, n-1} \sigma}{w}\right)^2"
+            r"n = \left(\frac{t_{1-\alpha/2, n-1} \sigma}{w}\right)^2"
             if param_type == "Mean"
-            else r"n = \frac{z_{\alpha/2}^2 p(1-p)}{w^2}"
+            else r"n = \frac{z_{1-\alpha/2}^2 p(1-p)}{w^2}"
         )
 
     elif atype == "pilot":
@@ -669,7 +671,7 @@ def render_power_calculator(params):
             f"Required sample size for a paired Wilcoxon signed-rank test ({tails.lower()}) "
             f"to detect Pr(positive diff) = {p_val:.3f} with α = {alpha}, power = {power}, ARE = {are:.3f}."
         )
-        formula_latex = r"n = \frac{1}{\text{ARE}} \left( \frac{z_{\alpha/2} + z_{\beta}}{\sqrt{3} \cdot (P - 0.5)} \right)^2"
+        formula_latex = rf"n = \frac{{1}}{{\text{{ARE}}}} \left( \frac{{{_z_sub} + z_{{1-\beta}}}}{{\sqrt{{3}} \cdot (P - 0.5)}} \right)^2"
 
     elif atype == "kruskal":
         f_eff = params["effect_size"]
@@ -728,7 +730,7 @@ def render_power_calculator(params):
             f"with α = {alpha}, power = {power}."
         )
         formula_latex = (
-            r"n = \frac{(z_{\alpha/2} + z_{\beta})^2 (p_b + p_c)}{(p_b - p_c)^2}"
+            rf"n = \frac{{({_z_sub} + z_{{1-\beta}})^2 (p_b + p_c)}}{{{{(p_b - p_c)^2}}}}"
         )
 
     elif atype == "fisher":
@@ -835,7 +837,8 @@ def render_power_calculator(params):
             f"to detect π₁ = {p1:.3f} vs π₀ = {p0:.3f} "
             f"with α = {alpha}, power = {power}. Uses exact binomial CDF."
         )
-        formula_latex = r"n = \min\{n: 1 - \Phi(\Phi^{-1}(1-\alpha/2) - \sqrt{n} d) \geq \text{power}\}"
+        _z_sub_phi = r"1-\alpha/2" if alternative == "two-sided" else r"1-\alpha"
+        formula_latex = rf"n = \min\{{n: 1 - \Phi(\Phi^{{-1}}({_z_sub_phi}) - \sqrt{{n}} d) \geq \text{{power}}\}}"
 
     elif atype == "simulation":
         sim_test = params["sim_test"]
