@@ -4,8 +4,71 @@ import pandas as pd
 import plotly.graph_objects as go
 from scipy.stats import norm
 
-def render_power_calculator(params):
-    """Render sample size estimation results for the given analysis."""
+def _solve_with_mode(solver, analysis_mode, effect_size=None, nobs=None, alpha=None, power=None,
+                     nobs_name="nobs", **extra_kw):
+    """Call solver.solve_power with the parameter to solve for set to None."""
+    effective = {}
+    for k, v in [("effect_size", effect_size), ("alpha", alpha), ("power", power)]:
+        if v is not None:
+            effective[k] = v
+    effective[nobs_name] = nobs
+    effective.update(extra_kw)
+
+    if analysis_mode == "Post Hoc":
+        effective["power"] = None
+    elif analysis_mode == "Sensitivity":
+        effective["effect_size"] = None
+    elif analysis_mode == "Criterion":
+        effective["alpha"] = None
+    else:  # A Priori (or Compromise, handled separately)
+        effective[nobs_name] = None
+
+    return solver.solve_power(**effective)
+
+
+def _solve_n_binary(func_n, target_n, lo=2, hi=1000000):
+    """Binary search an integer N to make func_n(N) >= target_n (max 100 iterations)."""
+    for _ in range(100):
+        mid = (lo + hi) // 2
+        if func_n(mid):
+            hi = mid
+        else:
+            lo = mid + 1
+        if lo >= hi:
+            break
+    return hi
+
+
+def _solve_compromise(solver, effect_size, nobs, cost_ratio, alternative="two-sided",
+                      nobs_name="nobs", **extra_kw):
+    """Brent's method to find α such that β/α = cost_ratio for given N and effect size.
+    Returns dict {'alpha': adjusted_alpha, 'power': achieved_power}.
+    """
+    from scipy.optimize import brentq
+
+    def f(alpha_candidate):
+        kw = {nobs_name: nobs, "effect_size": effect_size, "alpha": alpha_candidate, "power": None}
+        kw.update(extra_kw)
+        try:
+            achieved = solver.solve_power(**kw)
+        except Exception:
+            return 1e6
+        beta = max(1e-10, 1 - achieved)
+        return beta / alpha_candidate - cost_ratio
+
+    lo, hi = 1e-8, 0.5
+    f_lo, f_hi = f(lo), f(hi)
+    if f_lo * f_hi > 0:
+        return None
+    alpha_solved = brentq(f, lo, hi)
+    kw = {nobs_name: nobs, "effect_size": effect_size, "alpha": alpha_solved, "power": None}
+    kw.update(extra_kw)
+    power_solved = solver.solve_power(**kw)
+    return {"alpha": alpha_solved, "power": power_solved}
+
+
+def render_power_calculator(params, analysis_mode="A Priori"):
+    """Render power analysis results (a_priori / post_hoc / sensitivity / criterion / compromise)."""
 
     atype = params["type"]
     alpha = params["alpha"]
@@ -47,25 +110,124 @@ def render_power_calculator(params):
     n_per_group = None
     explanation = ""
     formula_latex = ""
+    computed_value = None
+    computed_label = ""
+    _skip_computation = False
 
-    if atype == "one_mean":
+    # Compromise mode: generic solver using z-approximation for all test types
+    if analysis_mode == "Compromise":
+        from scipy.optimize import brentq
+        n_total = params.get("n_total", 0)
+        if n_total > 0:
+            es_val = params.get("effect_size")
+            n_eff = n_total
+            if atype == "one_prop":
+                from statsmodels.stats.proportion import proportion_effectsize
+                es_val = abs(proportion_effectsize(params["prop_alt"], params["prop_null"]))
+            elif atype == "two_prop":
+                from statsmodels.stats.proportion import proportion_effectsize
+                es_val = abs(proportion_effectsize(params["p2"], params["p1"]))
+                ratio = params.get("ratio", 1.0)
+                n_eff = int(n_total / (1 + ratio)) if ratio > 0 else int(n_total / 2)
+            elif atype == "mannwhitney":
+                es_val = np.sqrt(3) * (params["effect_size"] - 0.5)
+                ratio = params.get("ratio", 1.0)
+                n_eff = int(n_total / (1 + ratio)) if ratio > 0 else int(n_total / 2)
+            elif atype == "regression":
+                es_val = params.get("effect_size", 0.15)
+            elif atype == "logistic":
+                ev_cr = params.get("event_rate", 0.3)
+                or_cr = params.get("or", 2.0)
+                p1_cr = (or_cr * ev_cr) / (1 - ev_cr + or_cr * ev_cr)
+                d_cr = abs(p1_cr - ev_cr)
+                p_bar_cr = (ev_cr + p1_cr) / 2
+                se_cr = np.sqrt(2 * p_bar_cr * (1 - p_bar_cr))
+                es_val = d_cr / se_cr if se_cr > 0 else 0
+
+            if es_val is not None and es_val > 0:
+                def f(alpha_candidate):
+                    z_a = norm.ppf(1 - alpha_candidate / 2) if alternative == "two-sided" else norm.ppf(1 - alpha_candidate)
+                    z_b = es_val * np.sqrt(n_eff) - z_a
+                    achieved = norm.cdf(z_b)
+                    beta = max(1e-10, 1 - achieved)
+                    return beta / alpha_candidate - params.get("cost_ratio", 1.0)
+
+                lo, hi = 1e-8, 0.5
+                try:
+                    if f(lo) * f(hi) < 0:
+                        alpha_solved = brentq(f, lo, hi)
+                        z_a_solved = norm.ppf(1 - alpha_solved / 2) if alternative == "two-sided" else norm.ppf(1 - alpha_solved)
+                        z_b_solved = es_val * np.sqrt(n_eff) - z_a_solved
+                        power_solved = norm.cdf(z_b_solved)
+                        computed_value = {"alpha": alpha_solved, "power": power_solved}
+                        n_per_group = n_total
+                        _skip_computation = True
+                except Exception:
+                    pass
+
+            if computed_value is None:
+                explanation = "Compromise analysis could not converge with current parameters. Try adjusting N or cost ratio."
+            else:
+                explanation = (
+                    f"Compromise power analysis with N = {n_total}, "
+                    f"effect size = {es_val:.4f}, cost ratio β/α = {params.get('cost_ratio', 1.0):.2f}. "
+                    f"Adjusted α = {computed_value['alpha']:.4f}, achieved power = {computed_value['power']:.1%}."
+                )
+            formula_latex = r"\text{Find } \alpha, \beta \text{ s.t. } \beta/\alpha = q \text{ via } \Phi^{-1}"
+
+    if _skip_computation:
+        pass
+    elif atype == "one_mean":
         d = params["effect_size"]
         from statsmodels.stats.power import TTestPower
 
         solver = TTestPower()
         if d > 0:
-            n_total = int(
-                np.ceil(
-                    solver.solve_power(
-                        effect_size=d, alpha=alpha, power=power, alternative=alternative
-                    )
+            if analysis_mode == "Compromise":
+                n_total = params.get("n_total", 0)
+                n_per_group = n_total
+                comp = _solve_compromise(solver, d, n_total, params.get("cost_ratio", 1.0), alternative=alternative)
+                computed_value = comp
+            else:
+                raw = _solve_with_mode(
+                    solver, analysis_mode, effect_size=d,
+                    nobs=params.get("n_total"), alpha=alpha, power=power,
+                    alternative=alternative,
                 )
+                if analysis_mode == "A Priori":
+                    n_total = int(np.ceil(raw))
+                    n_per_group = n_total
+                else:
+                    n_total = params.get("n_total", 0)
+                    n_per_group = n_total
+                computed_value = raw
+        if analysis_mode == "A Priori":
+            explanation = (
+                f"Required total sample size for a one-sample {tails.lower()} t-test "
+                f"to detect Cohen's d = {d:.3f} with α = {alpha} and power = {power}."
             )
-            n_per_group = n_total
-        explanation = (
-            f"Required total sample size for a one-sample {tails.lower()} t-test "
-            f"to detect Cohen's d = {d:.3f} with α = {alpha} and power = {power}."
-        )
+        elif analysis_mode == "Post Hoc":
+            explanation = (
+                f"Achieved power for a one-sample {tails.lower()} t-test "
+                f"with N = {n_total}, Cohen's d = {d:.3f}, α = {alpha}."
+            )
+        elif analysis_mode == "Sensitivity":
+            explanation = (
+                f"Minimum detectable effect size for a one-sample {tails.lower()} t-test "
+                f"with N = {n_total}, α = {alpha}, power = {power}."
+            )
+        elif analysis_mode == "Criterion":
+            explanation = (
+                f"Required significance level for a one-sample {tails.lower()} t-test "
+                f"with N = {n_total}, Cohen's d = {d:.3f}, power = {power}."
+            )
+        elif analysis_mode == "Compromise" and isinstance(computed_value, dict):
+            explanation = (
+                f"Compromise power analysis for a one-sample {tails.lower()} t-test "
+                f"with N = {n_total}, Cohen's d = {d:.3f}, "
+                f"cost ratio β/α = {params.get('cost_ratio', 1.0):.2f}. "
+                f"Adjusted α = {computed_value['alpha']:.4f}, achieved power = {computed_value['power']:.1%}."
+            )
         formula_latex = rf"n = \left( \frac{{{_z_sub} + z_{{1-\beta}}}}{{d}} \right)^2"
 
     elif atype == "two_means":
@@ -75,22 +237,43 @@ def render_power_calculator(params):
 
         solver = TTestIndPower()
         if d > 0:
-            n1 = solver.solve_power(
-                effect_size=d,
-                alpha=alpha,
-                power=power,
-                ratio=ratio,
-                alternative=alternative,
+            raw = _solve_with_mode(
+                solver, analysis_mode, effect_size=d,
+                nobs=params.get("n_total"), alpha=alpha, power=power,
+                nobs_name="nobs1", ratio=ratio, alternative=alternative,
             )
-            n1 = int(np.ceil(n1))
-            n2 = int(np.ceil(n1 * ratio))
-            n_total = n1 + n2
-            n_per_group = (n1, n2)
-        explanation = (
-            f"Required sample size per group for an independent {tails.lower()} t-test "
-            f"to detect Cohen's d = {d:.3f} with α = {alpha} and power = {power}, "
-            f"allocation ratio n₂/n₁ = {ratio:.2f}."
-        )
+            if analysis_mode == "A Priori":
+                n1 = int(np.ceil(raw))
+                n2 = int(np.ceil(n1 * ratio))
+                n_total = n1 + n2
+                n_per_group = (n1, n2)
+            else:
+                n_total = params.get("n_total", 0)
+                n1 = int(np.ceil(n_total / (1 + ratio))) if ratio > 0 else 0
+                n2 = n_total - n1
+                n_per_group = (n1, n2)
+            computed_value = raw
+        if analysis_mode == "A Priori":
+            explanation = (
+                f"Required sample size per group for an independent {tails.lower()} t-test "
+                f"to detect Cohen's d = {d:.3f} with α = {alpha} and power = {power}, "
+                f"allocation ratio n₂/n₁ = {ratio:.2f}."
+            )
+        elif analysis_mode == "Post Hoc":
+            explanation = (
+                f"Achieved power for an independent {tails.lower()} t-test "
+                f"with N = {n_total}, Cohen's d = {d:.3f}, α = {alpha}, ratio = {ratio:.2f}."
+            )
+        elif analysis_mode == "Sensitivity":
+            explanation = (
+                f"Minimum detectable effect size for an independent {tails.lower()} t-test "
+                f"with N = {n_total}, α = {alpha}, power = {power}, ratio = {ratio:.2f}."
+            )
+        elif analysis_mode == "Criterion":
+            explanation = (
+                f"Required significance level for an independent {tails.lower()} t-test "
+                f"with N = {n_total}, Cohen's d = {d:.3f}, power = {power}, ratio = {ratio:.2f}."
+            )
         formula_latex = rf"n_1 = 2 \left( \frac{{{_z_sub} + z_{{1-\beta}}}}{{d}} \right)^2 \quad n_2 = r \cdot n_1"
 
     elif atype == "paired":
@@ -99,21 +282,38 @@ def render_power_calculator(params):
 
         solver = TTestPower()
         if d > 0:
-            n_total = int(
-                np.ceil(
-                    solver.solve_power(
-                        effect_size=d,
-                        alpha=alpha,
-                        power=power,
-                        alternative=alternative,
-                    )
-                )
+            raw = _solve_with_mode(
+                solver, analysis_mode, effect_size=d,
+                nobs=params.get("n_total"), alpha=alpha, power=power,
+                alternative=alternative,
             )
-            n_per_group = n_total
-        explanation = (
-            f"Required number of pairs for a paired {tails.lower()} t-test "
-            f"to detect Cohen's d_z = {d:.3f} with α = {alpha} and power = {power}."
-        )
+            if analysis_mode == "A Priori":
+                n_total = int(np.ceil(raw))
+                n_per_group = n_total
+            else:
+                n_total = params.get("n_total", 0)
+                n_per_group = n_total
+            computed_value = raw
+        if analysis_mode == "A Priori":
+            explanation = (
+                f"Required number of pairs for a paired {tails.lower()} t-test "
+                f"to detect Cohen's d_z = {d:.3f} with α = {alpha} and power = {power}."
+            )
+        elif analysis_mode == "Post Hoc":
+            explanation = (
+                f"Achieved power for a paired {tails.lower()} t-test "
+                f"with {n_total} pairs, Cohen's d_z = {d:.3f}, α = {alpha}."
+            )
+        elif analysis_mode == "Sensitivity":
+            explanation = (
+                f"Minimum detectable effect size for a paired {tails.lower()} t-test "
+                f"with {n_total} pairs, α = {alpha}, power = {power}."
+            )
+        elif analysis_mode == "Criterion":
+            explanation = (
+                f"Required significance level for a paired {tails.lower()} t-test "
+                f"with {n_total} pairs, Cohen's d_z = {d:.3f}, power = {power}."
+            )
         formula_latex = rf"n = \left( \frac{{{_z_sub} + z_{{1-\beta}}}}{{d_z}} \right)^2"
 
     elif atype == "one_prop":
@@ -125,22 +325,39 @@ def render_power_calculator(params):
         d_eff = proportion_effectsize(p1, p0)
         solver = NormalIndPower()
         if abs(d_eff) > 0:
-            n_total = int(
-                np.ceil(
-                    solver.solve_power(
-                        effect_size=abs(d_eff),
-                        alpha=alpha,
-                        power=power,
-                        alternative=alternative,
-                    )
-                )
+            raw = _solve_with_mode(
+                solver, analysis_mode, effect_size=abs(d_eff),
+                nobs=params.get("n_total"), alpha=alpha, power=power,
+                nobs_name="nobs1", alternative=alternative,
             )
-            n_per_group = n_total
-        explanation = (
-            f"Required sample size for a one-sample proportion test "
-            f"to detect a difference from {p0} to {p1} "
-            f"with α = {alpha} and power = {power}."
-        )
+            if analysis_mode == "A Priori":
+                n_total = int(np.ceil(raw))
+                n_per_group = n_total
+            else:
+                n_total = params.get("n_total", 0)
+                n_per_group = n_total
+            computed_value = raw
+        if analysis_mode == "A Priori":
+            explanation = (
+                f"Required sample size for a one-sample proportion test "
+                f"to detect a difference from {p0} to {p1} "
+                f"with α = {alpha} and power = {power}."
+            )
+        elif analysis_mode == "Post Hoc":
+            explanation = (
+                f"Achieved power for a one-sample proportion test "
+                f"with N = {n_total}, difference {p0} → {p1}, α = {alpha}."
+            )
+        elif analysis_mode == "Sensitivity":
+            explanation = (
+                f"Minimum detectable proportion difference "
+                f"for a one-sample proportion test with N = {n_total}, α = {alpha}, power = {power}."
+            )
+        elif analysis_mode == "Criterion":
+            explanation = (
+                f"Required significance level for a one-sample proportion test "
+                f"with N = {n_total}, difference {p0} → {p1}, power = {power}."
+            )
         formula_latex = rf"n = \left( \frac{{{_z_sub} \sqrt{{p_0(1-p_0)}} + z_{{1-\beta}} \sqrt{{p_1(1-p_1)}}}}{{{{p_1 - p_0}}}} \right)^2"
 
     elif atype == "two_prop":
@@ -153,22 +370,43 @@ def render_power_calculator(params):
         d_eff = proportion_effectsize(p2, p1)
         solver = NormalIndPower()
         if abs(d_eff) > 0:
-            n1 = solver.solve_power(
-                effect_size=abs(d_eff),
-                alpha=alpha,
-                power=power,
-                ratio=ratio,
-                alternative=alternative,
+            raw = _solve_with_mode(
+                solver, analysis_mode, effect_size=abs(d_eff),
+                nobs=params.get("n_total"), alpha=alpha, power=power,
+                nobs_name="nobs1", ratio=ratio, alternative=alternative,
             )
-            n1 = int(np.ceil(n1))
-            n2 = int(np.ceil(n1 * ratio))
-            n_total = n1 + n2
-            n_per_group = (n1, n2)
-        explanation = (
-            f"Required sample size per group for a two-proportion z-test "
-            f"to detect a difference between {p1} and {p2} "
-            f"with α = {alpha}, power = {power}, ratio = {ratio:.2f}."
-        )
+            if analysis_mode == "A Priori":
+                n1 = int(np.ceil(raw))
+                n2 = int(np.ceil(n1 * ratio))
+                n_total = n1 + n2
+                n_per_group = (n1, n2)
+            else:
+                n_total = params.get("n_total", 0)
+                n1 = int(np.ceil(n_total / (1 + ratio))) if ratio > 0 else 0
+                n2 = n_total - n1
+                n_per_group = (n1, n2)
+            computed_value = raw
+        if analysis_mode == "A Priori":
+            explanation = (
+                f"Required sample size per group for a two-proportion z-test "
+                f"to detect a difference between {p1} and {p2} "
+                f"with α = {alpha}, power = {power}, ratio = {ratio:.2f}."
+            )
+        elif analysis_mode == "Post Hoc":
+            explanation = (
+                f"Achieved power for a two-proportion z-test "
+                f"with N = {n_total}, proportions {p1} vs {p2}, α = {alpha}, ratio = {ratio:.2f}."
+            )
+        elif analysis_mode == "Sensitivity":
+            explanation = (
+                f"Minimum detectable proportion difference "
+                f"for a two-proportion z-test with N = {n_total}, α = {alpha}, power = {power}, ratio = {ratio:.2f}."
+            )
+        elif analysis_mode == "Criterion":
+            explanation = (
+                f"Required significance level for a two-proportion z-test "
+                f"with N = {n_total}, proportions {p1} vs {p2}, power = {power}, ratio = {ratio:.2f}."
+            )
         formula_latex = rf"n_1 = \left( \frac{{{_z_sub} \sqrt{{2\bar{{p}}(1-\bar{{p}})}} + z_{{1-\beta}} \sqrt{{p_1(1-p_1) + p_2(1-p_2)}}}}{{{{p_1 - p_2}}}} \right)^2"
 
     elif atype == "anova":
@@ -178,33 +416,85 @@ def render_power_calculator(params):
 
         solver = FTestAnovaPower()
         if f_eff > 0:
-            n_per_g = solver.solve_power(
-                effect_size=f_eff,
-                alpha=alpha,
-                power=power,
+            raw = _solve_with_mode(
+                solver, analysis_mode, effect_size=f_eff,
+                nobs=params.get("n_total"), alpha=alpha, power=power,
                 k_groups=k,
             )
-            n_per_g = int(np.ceil(n_per_g))
-            n_total = n_per_g * k
-            n_per_group = n_per_g
-        explanation = (
-            f"Required sample size per group for a one-way ANOVA with {k} groups "
-            f"to detect Cohen's f = {f_eff:.3f} with α = {alpha} and power = {power}."
-        )
+            if analysis_mode == "A Priori":
+                n_per_g = int(np.ceil(raw))
+                n_total = n_per_g * k
+                n_per_group = n_per_g
+            else:
+                n_total = params.get("n_total", 0)
+                n_per_g = max(1, n_total // k)
+                n_per_group = n_per_g
+            computed_value = raw
+        if analysis_mode == "A Priori":
+            explanation = (
+                f"Required sample size per group for a one-way ANOVA with {k} groups "
+                f"to detect Cohen's f = {f_eff:.3f} with α = {alpha} and power = {power}."
+            )
+        elif analysis_mode == "Post Hoc":
+            explanation = (
+                f"Achieved power for a one-way ANOVA with {k} groups "
+                f"with N = {n_total}, Cohen's f = {f_eff:.3f}, α = {alpha}."
+            )
+        elif analysis_mode == "Sensitivity":
+            explanation = (
+                f"Minimum detectable effect size for a one-way ANOVA with {k} groups "
+                f"with N = {n_total}, α = {alpha}, power = {power}."
+            )
+        elif analysis_mode == "Criterion":
+            explanation = (
+                f"Required significance level for a one-way ANOVA with {k} groups "
+                f"with N = {n_total}, Cohen's f = {f_eff:.3f}, power = {power}."
+            )
         formula_latex = r"n = \frac{\text{from non-central }F\text{ distribution}}{k} \quad f = \frac{\sigma_{\text{between}}}{\sigma_{\text{within}}}"
 
     elif atype == "correlation":
         r_val = params["effect_size"]
-        import math
+        import math as cmath
 
-        fisher_z = math.atanh(r_val)
-        n_total = int(np.ceil(3 + ((z_alpha + z_beta) / fisher_z) ** 2))
+        fisher_z = cmath.atanh(r_val)
+        if analysis_mode == "A Priori":
+            n_total = int(np.ceil(3 + ((z_alpha + z_beta) / fisher_z) ** 2))
+        elif analysis_mode == "Post Hoc":
+            n_total = params.get("n_total", 0)
+            z_beta_c = (cmath.sqrt(max(0, n_total - 3)) * fisher_z) - z_alpha
+            computed_value = norm.cdf(z_beta_c)
+        elif analysis_mode == "Sensitivity":
+            n_total = params.get("n_total", 0)
+            z_beta_c = norm.ppf(power)
+            fisher_z_c = (z_alpha + z_beta_c) / cmath.sqrt(max(1, n_total - 3))
+            computed_value = cmath.tanh(fisher_z_c)
+        elif analysis_mode == "Criterion":
+            n_total = params.get("n_total", 0)
+            z_beta_c = norm.ppf(power)
+            z_alpha_c = cmath.sqrt(max(0, n_total - 3)) * fisher_z - z_beta_c
+            computed_value = 2 * (1 - norm.cdf(z_alpha_c))
         n_per_group = n_total
-        explanation = (
-            f"Required sample size to detect a Pearson correlation of r = {r_val:.3f} "
-            f"with α = {alpha} and power = {power} ({tails.lower()}), "
-            f"based on Fisher's z-transformation."
-        )
+        if analysis_mode == "A Priori":
+            explanation = (
+                f"Required sample size to detect a Pearson correlation of r = {r_val:.3f} "
+                f"with α = {alpha} and power = {power} ({tails.lower()}), "
+                f"based on Fisher's z-transformation."
+            )
+        elif analysis_mode == "Post Hoc":
+            explanation = (
+                f"Achieved power to detect Pearson correlation r = {r_val:.3f} "
+                f"with N = {n_total}, α = {alpha}."
+            )
+        elif analysis_mode == "Sensitivity":
+            explanation = (
+                f"Minimum detectable Pearson correlation "
+                f"with N = {n_total}, α = {alpha}, power = {power}."
+            )
+        elif analysis_mode == "Criterion":
+            explanation = (
+                f"Required significance level to detect Pearson correlation r = {r_val:.3f} "
+                f"with N = {n_total}, power = {power}."
+            )
         formula_latex = rf"n = 3 + \left( \frac{{{_z_sub} + z_{{1-\beta}}}}{{\text{{arctanh}}(r)}} \right)^2"
 
     elif atype == "regression":
@@ -213,20 +503,61 @@ def render_power_calculator(params):
         if f2 > 0:
             from scipy.stats import ncf as noncentral_f, f as f_dist
 
-            for n_candidate in range(k + 2, 10000):
-                dfd = n_candidate - k - 1
-                ncp = f2 * n_candidate
+            if analysis_mode == "A Priori":
+                for n_candidate in range(k + 2, 10000):
+                    dfd = n_candidate - k - 1
+                    ncp = f2 * n_candidate
+                    f_crit = f_dist.ppf(1 - alpha, k, dfd)
+                    pwr_cur = 1 - noncentral_f.cdf(f_crit, k, dfd, ncp)
+                    if pwr_cur >= power:
+                        n_total = n_candidate
+                        break
+            elif analysis_mode == "Post Hoc":
+                n_total = params.get("n_total", 0)
+                dfd = n_total - k - 1
+                ncp = f2 * n_total
                 f_crit = f_dist.ppf(1 - alpha, k, dfd)
-                pwr_cur = 1 - noncentral_f.cdf(f_crit, k, dfd, ncp)
-                if pwr_cur >= power:
-                    n_total = n_candidate
-                    break
+                computed_value = 1 - noncentral_f.cdf(f_crit, k, dfd, ncp)
+            elif analysis_mode == "Sensitivity":
+                n_total = params.get("n_total", 0)
+                from scipy.optimize import brentq
+                def power_for_f2(f2_try):
+                    dfd = n_total - k - 1
+                    ncp = f2_try * n_total
+                    f_crit = f_dist.ppf(1 - alpha, k, dfd)
+                    return 1 - noncentral_f.cdf(f_crit, k, dfd, ncp) - power
+                computed_value = brentq(power_for_f2, 1e-6, 5.0)
+            elif analysis_mode == "Criterion":
+                n_total = params.get("n_total", 0)
+                from scipy.optimize import brentq
+                def power_for_alpha(a_try):
+                    dfd = n_total - k - 1
+                    ncp = f2 * n_total
+                    f_crit = f_dist.ppf(1 - a_try, k, dfd)
+                    return 1 - noncentral_f.cdf(f_crit, k, dfd, ncp) - power
+                computed_value = brentq(power_for_alpha, 1e-8, 0.5)
             n_per_group = n_total
-        explanation = (
-            f"Required total sample size for multiple linear regression "
-            f"with {k} predictor(s) to detect Cohen's f² = {f2:.3f} "
-            f"(R² = {f2 / (1 + f2):.3f}) with α = {alpha} and power = {power}."
-        )
+        if analysis_mode == "A Priori":
+            explanation = (
+                f"Required total sample size for multiple linear regression "
+                f"with {k} predictor(s) to detect Cohen's f² = {f2:.3f} "
+                f"(R² = {f2 / (1 + f2):.3f}) with α = {alpha} and power = {power}."
+            )
+        elif analysis_mode == "Post Hoc":
+            explanation = (
+                f"Achieved power for multiple linear regression "
+                f"with {k} predictor(s), N = {n_total}, Cohen's f² = {f2:.3f}, α = {alpha}."
+            )
+        elif analysis_mode == "Sensitivity":
+            explanation = (
+                f"Minimum detectable Cohen's f² for multiple linear regression "
+                f"with {k} predictor(s), N = {n_total}, α = {alpha}, power = {power}."
+            )
+        elif analysis_mode == "Criterion":
+            explanation = (
+                f"Required significance level for multiple linear regression "
+                f"with {k} predictor(s), N = {n_total}, Cohen's f² = {f2:.3f}, power = {power}."
+            )
         formula_latex = r"n = \text{from non-central }F\text{ distribution} \quad f^2 = \frac{R^2}{1-R^2}"
 
     elif atype == "logistic":
@@ -242,21 +573,43 @@ def render_power_calculator(params):
         se = np.sqrt(2 * p_bar * (1 - p_bar))
         d_eff_log = d_log / se if se > 0 else 0
         if d_eff_log > 0:
-            n1 = solver.solve_power(
-                effect_size=d_eff_log,
-                alpha=alpha,
-                power=power,
-                alternative=alternative,
+            raw = _solve_with_mode(
+                solver, analysis_mode, effect_size=d_eff_log,
+                nobs=params.get("n_total"), alpha=alpha, power=power,
+                nobs_name="nobs1", alternative=alternative,
             )
-            n_base = int(np.ceil(n1))
-            n_total = max(n_base, 10 * k)
+            if analysis_mode == "A Priori":
+                n_base = int(np.ceil(raw))
+                n_total = max(n_base, 10 * k)
+            else:
+                n_total = params.get("n_total", 0)
             n_per_group = n_total
-        explanation = (
-            f"Required total sample size for logistic regression "
-            f"with {k} predictor(s) to detect OR = {or_val:.2f} "
-            f"with baseline event rate = {ev_rate:.2f}, α = {alpha}, power = {power}. "
-            f"Lower bound of 10 × {k} = {10 * k} events per predictor applied."
-        )
+            computed_value = raw
+        if analysis_mode == "A Priori":
+            explanation = (
+                f"Required total sample size for logistic regression "
+                f"with {k} predictor(s) to detect OR = {or_val:.2f} "
+                f"with baseline event rate = {ev_rate:.2f}, α = {alpha}, power = {power}. "
+                f"Lower bound of 10 × {k} = {10 * k} events per predictor applied."
+            )
+        elif analysis_mode == "Post Hoc":
+            explanation = (
+                f"Achieved power for logistic regression "
+                f"with {k} predictor(s), N = {n_total}, OR = {or_val:.2f}, "
+                f"event rate = {ev_rate:.2f}, α = {alpha}."
+            )
+        elif analysis_mode == "Sensitivity":
+            explanation = (
+                f"Minimum detectable odds ratio for logistic regression "
+                f"with {k} predictor(s), N = {n_total}, event rate = {ev_rate:.2f}, "
+                f"α = {alpha}, power = {power}."
+            )
+        elif analysis_mode == "Criterion":
+            explanation = (
+                f"Required significance level for logistic regression "
+                f"with {k} predictor(s), N = {n_total}, OR = {or_val:.2f}, "
+                f"event rate = {ev_rate:.2f}, power = {power}."
+            )
         formula_latex = rf"n = \frac{{({_z_sub} + z_{{1-\beta}})^2 \bar{{p}}(1-\bar{{p}})}}{{{{(p_1 - p_0)^2}}}} \quad \text{{min }} 10k"
 
     elif atype == "chisq":
@@ -266,22 +619,38 @@ def render_power_calculator(params):
 
         solver = GofChisquarePower()
         if w > 0:
-            n_total = int(
-                np.ceil(
-                    solver.solve_power(
-                        effect_size=w,
-                        alpha=alpha,
-                        power=power,
-                        n_bins=df + 1,
-                    )
-                )
+            raw = _solve_with_mode(
+                solver, analysis_mode, effect_size=w,
+                nobs=params.get("n_total"), alpha=alpha, power=power,
+                nobs_name="nobs", n_bins=df + 1,
             )
+            if analysis_mode == "A Priori":
+                n_total = int(np.ceil(raw))
+            else:
+                n_total = params.get("n_total", 0)
             n_per_group = n_total
-        explanation = (
-            f"Required total sample size for a chi-square test "
-            f"with {df} degree(s) of freedom to detect Cohen's w = {w:.3f} "
-            f"with α = {alpha} and power = {power}."
-        )
+            computed_value = raw
+        if analysis_mode == "A Priori":
+            explanation = (
+                f"Required total sample size for a chi-square test "
+                f"with {df} degree(s) of freedom to detect Cohen's w = {w:.3f} "
+                f"with α = {alpha} and power = {power}."
+            )
+        elif analysis_mode == "Post Hoc":
+            explanation = (
+                f"Achieved power for a chi-square test "
+                f"with N = {n_total}, {df} DF, Cohen's w = {w:.3f}, α = {alpha}."
+            )
+        elif analysis_mode == "Sensitivity":
+            explanation = (
+                f"Minimum detectable Cohen's w for a chi-square test "
+                f"with N = {n_total}, {df} DF, α = {alpha}, power = {power}."
+            )
+        elif analysis_mode == "Criterion":
+            explanation = (
+                f"Required significance level for a chi-square test "
+                f"with N = {n_total}, {df} DF, Cohen's w = {w:.3f}, power = {power}."
+            )
         formula_latex = r"n = \text{from non-central }\chi^2\text{ distribution} \quad w = \sqrt{\sum \frac{(p_{0i} - p_{1i})^2}{p_{0i}}}"
 
     elif atype == "mannwhitney":
@@ -293,22 +662,43 @@ def render_power_calculator(params):
         solver = NormalIndPower()
         d_mw = np.sqrt(3) * (p_val - 0.5)
         if d_mw > 0:
-            n1 = solver.solve_power(
-                effect_size=d_mw,
-                alpha=alpha,
-                power=power,
-                ratio=ratio,
-                alternative=alternative,
+            raw = _solve_with_mode(
+                solver, analysis_mode, effect_size=d_mw,
+                nobs=params.get("n_total"), alpha=alpha, power=power,
+                nobs_name="nobs1", ratio=ratio, alternative=alternative,
             )
-            n1 = int(np.ceil(n1 / are))
-            n2 = int(np.ceil(n1 * ratio))
-            n_total = n1 + n2
-            n_per_group = (n1, n2)
-        explanation = (
-            f"Required sample size for Mann-Whitney / Wilcoxon test "
-            f"to detect P(X>Y) = {p_val:.3f} (d ≈ {d_mw:.3f}) with ARE = {are:.3f}, "
-            f"α = {alpha}, power = {power}, ratio = {ratio:.2f}."
-        )
+            if analysis_mode == "A Priori":
+                n1 = int(np.ceil(raw / are))
+                n2 = int(np.ceil(n1 * ratio))
+                n_total = n1 + n2
+                n_per_group = (n1, n2)
+            else:
+                n_total = params.get("n_total", 0)
+                n1 = int(np.ceil(n_total / (1 + ratio))) if ratio > 0 else 0
+                n2 = n_total - n1
+                n_per_group = (n1, n2)
+            computed_value = raw
+        if analysis_mode == "A Priori":
+            explanation = (
+                f"Required sample size for Mann-Whitney / Wilcoxon test "
+                f"to detect P(X>Y) = {p_val:.3f} (d ≈ {d_mw:.3f}) with ARE = {are:.3f}, "
+                f"α = {alpha}, power = {power}, ratio = {ratio:.2f}."
+            )
+        elif analysis_mode == "Post Hoc":
+            explanation = (
+                f"Achieved power for Mann-Whitney / Wilcoxon test "
+                f"with N = {n_total}, P(X>Y) = {p_val:.3f}, α = {alpha}, ratio = {ratio:.2f}."
+            )
+        elif analysis_mode == "Sensitivity":
+            explanation = (
+                f"Minimum detectable P(X>Y) for Mann-Whitney / Wilcoxon test "
+                f"with N = {n_total}, α = {alpha}, power = {power}, ratio = {ratio:.2f}."
+            )
+        elif analysis_mode == "Criterion":
+            explanation = (
+                f"Required significance level for Mann-Whitney / Wilcoxon test "
+                f"with N = {n_total}, P(X>Y) = {p_val:.3f}, power = {power}, ratio = {ratio:.2f}."
+            )
         formula_latex = r"n_{\text{nonparam}} = \frac{n_{\text{param}}}{\text{ARE}} \quad \text{ARE} \approx 0.955"
 
     elif atype == "logrank":
@@ -905,9 +1295,35 @@ def render_power_calculator(params):
         )
         formula_latex = r"\text{Power} = \frac{1}{N_{\text{sim}}} \sum_{i=1}^{N_{\text{sim}}} I(p_i < \alpha)"
 
+    # --- Compromise fallback for test types not explicitly handled ---
+    if analysis_mode == "Compromise" and computed_value is None and n_total is not None and n_total > 0:
+        from scipy.optimize import brentq
+        es_val = params.get("effect_size", None)
+        if es_val is not None and es_val > 0:
+            from statsmodels.stats.power import TTestPower, NormalIndPower
+            if atype in ("one_mean", "paired", "correlation"):
+                solver = TTestPower()
+            elif atype in ("one_prop", "mannwhitney", "wilcoxon_sr"):
+                solver = NormalIndPower()
+            else:
+                solver = None
+            if solver is not None:
+                cost_ratio = params.get("cost_ratio", 1.0)
+                try:
+                    comp = _solve_compromise(solver, es_val, n_total, cost_ratio, alternative=alternative)
+                    if comp is not None:
+                        computed_value = comp
+                        explanation = (
+                            f"Compromise power analysis for {atype} with N = {n_total}, "
+                            f"effect size = {es_val:.4f}, cost ratio β/α = {cost_ratio:.2f}. "
+                            f"Adjusted α = {computed_value['alpha']:.4f}, achieved power = {computed_value['power']:.1%}."
+                        )
+                except Exception:
+                    pass
+
     # --- Apply Attrition Adjustment ---
     n_total_raw = n_total
-    if dropout_rate > 0 and n_total is not None:
+    if analysis_mode == "A Priori" and dropout_rate > 0 and n_total is not None:
         n_total = int(np.ceil(n_total / (1 - dropout_rate)))
         if isinstance(n_per_group, tuple):
             n1_adj = int(np.ceil(n_per_group[0] / (1 - dropout_rate)))
@@ -918,42 +1334,100 @@ def render_power_calculator(params):
 
     # --- Display Results ---
 
-    if n_total is None:
+    if n_total is None and computed_value is None:
         st.error(
             "Effect size is too small — consider a larger effect or different design."
         )
         return
 
-    st.subheader("Sample Size Results")
+    mode_titles = {
+        "A Priori": "Sample Size Results",
+        "Post Hoc": "Post-Hoc Power Analysis Results",
+        "Sensitivity": "Sensitivity Analysis Results",
+        "Criterion": "Criterion Analysis Results",
+        "Compromise": "Compromise Power Analysis Results",
+    }
+    st.subheader(mode_titles.get(analysis_mode, "Power Analysis Results"))
 
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Total Sample Size (N)", n_total)
-    with col2:
-        if isinstance(n_per_group, tuple):
-            st.metric("Group 1 (n₁)", n_per_group[0])
-            st.metric("Group 2 (n₂)", n_per_group[1])
-        else:
-            st.metric("Per Group (n)", n_per_group)
-    with col3:
-        if atype == "simulation":
-            emp_pwr = params.get("_empirical_power", 0)
-            st.metric("Empirical Power", f"{emp_pwr:.1%}")
-        else:
+    if analysis_mode == "A Priori":
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Total Sample Size (N)", n_total)
+        with col2:
+            if isinstance(n_per_group, tuple):
+                st.metric("Group 1 (n₁)", n_per_group[0])
+                st.metric("Group 2 (n₂)", n_per_group[1])
+            else:
+                st.metric("Per Group (n)", n_per_group)
+        with col3:
+            if atype == "simulation":
+                emp_pwr = params.get("_empirical_power", 0)
+                st.metric("Empirical Power", f"{emp_pwr:.1%}")
+            else:
+                st.metric("Power", f"{power:.0%}")
+            st.metric("Alpha (α)", f"{alpha:.3f}")
+
+        adjustments = []
+        if dropout_rate > 0 and n_total_raw is not None and n_total_raw != n_total:
+            adjustments.append(
+                f"Raw N = {n_total_raw} (before {dropout_rate:.0%} dropout adjustment)"
+            )
+        if num_tests > 1:
+            adjustments.append(
+                f"{mc_method} α = {alpha:.4f} (original: {alpha_raw:.4f}) for {num_tests} comparisons"
+            )
+        if adjustments:
+            st.caption(" | ".join(adjustments))
+
+    elif analysis_mode == "Post Hoc":
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Total Sample Size (N)", n_total)
+        with col2:
+            if isinstance(n_per_group, tuple):
+                st.metric("Group 1 (n₁)", n_per_group[0])
+                st.metric("Group 2 (n₂)", n_per_group[1])
+            else:
+                st.metric("Per Group (n)", n_per_group)
+        with col3:
+            pwr_display = f"{computed_value:.1%}" if computed_value is not None else "—"
+            st.metric("Achieved Power", pwr_display)
+            st.metric("Alpha (α)", f"{alpha:.3f}")
+
+    elif analysis_mode == "Sensitivity":
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Total Sample Size (N)", n_total)
+        with col2:
             st.metric("Power", f"{power:.0%}")
-        st.metric("Alpha (α)", f"{alpha:.3f}")
+            st.metric("Alpha (α)", f"{alpha:.3f}")
+        with col3:
+            es_display = f"{computed_value:.4f}" if computed_value is not None else "—"
+            st.metric("Min Detectable Effect", es_display)
 
-    adjustments = []
-    if dropout_rate > 0 and n_total_raw is not None and n_total_raw != n_total:
-        adjustments.append(
-            f"Raw N = {n_total_raw} (before {dropout_rate:.0%} dropout adjustment)"
-        )
-    if num_tests > 1:
-        adjustments.append(
-            f"{mc_method} α = {alpha:.4f} (original: {alpha_raw:.4f}) for {num_tests} comparisons"
-        )
-    if adjustments:
-        st.caption(" | ".join(adjustments))
+    elif analysis_mode == "Criterion":
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Total Sample Size (N)", n_total)
+        with col2:
+            if isinstance(n_per_group, tuple):
+                st.metric("Group 1 (n₁)", n_per_group[0])
+                st.metric("Group 2 (n₂)", n_per_group[1])
+            else:
+                st.metric("Per Group (n)", n_per_group)
+        with col3:
+            st.metric("Power", f"{power:.0%}")
+            a_display = f"{computed_value:.4f}" if computed_value is not None else "—"
+            st.metric("Required α", a_display)
+
+    elif analysis_mode == "Compromise":
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Total Sample Size (N)", n_total)
+        with col2:
+            st.metric("Adjusted α", f"{computed_value['alpha']:.4f}" if isinstance(computed_value, dict) else "—")
+        with col3:
+            st.metric("Achieved Power", f"{computed_value['power']:.1%}" if isinstance(computed_value, dict) else "—")
 
     st.info(explanation)
 
