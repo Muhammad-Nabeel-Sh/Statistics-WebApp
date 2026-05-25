@@ -10,6 +10,7 @@ from graph_explorer import render_graph_explorer
 from tabulation import render_tabulation
 from distributions import render_distributions
 from solved_examples import render_solved_examples
+from diagnostics import render_diagnostics
 
 
 # =========================
@@ -1329,6 +1330,7 @@ def main():
             "Probability Distributions",
             "Power Analysis",
             "Step-by-Step Solved Examples",
+            "Data Screening & Diagnostics",
         ],
         index=[
             "Test Finder",
@@ -1337,6 +1339,7 @@ def main():
             "Probability Distributions",
             "Power Analysis",
             "Step-by-Step Solved Examples",
+            "Data Screening & Diagnostics",
         ].index(st.session_state.get("app_mode", "Test Finder")),
         key="app_mode",
         label_visibility="collapsed",
@@ -1364,6 +1367,10 @@ def main():
 
     if mode == "Step-by-Step Solved Examples":
         render_solved_examples()
+        return
+
+    if mode == "Data Screening & Diagnostics":
+        render_diagnostics()
         return
 
     with st.sidebar:
