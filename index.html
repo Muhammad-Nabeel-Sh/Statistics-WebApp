@@ -646,94 +646,6 @@
 
         <div class="divider"></div>
 
-        <!-- Architecture Section -->
-        <div class="arch-section">
-            <div class="section-label">Architecture Comparison</div>
-            
-            <div class="arch-grid">
-                <!-- Before -->
-                <div class="arch-card bad">
-                    <h3 class="arch-title">
-                        <span class="icon-bad">❌</span> Before: Monolith
-                    </h3>
-                    <div class="arch-code">app.py (loads EVERYTHING)
- ├── import sklearn     
- │       Always (1.7s)
- ├── import power_calc  
- │       Always loaded
- ├── import widgets     
- │       Always loaded
- └── import graph_exp  
-         Always loaded
-         (8000+ lines)
-
-Result:
-  • 2-3s cold start
-  • Everything re-runs
-  • ~250MB memory</div>
-                </div>
-
-                <!-- After -->
-                <div class="arch-card good">
-                    <h3 class="arch-title">
-                        <span class="icon-good">✅</span> After: Multi-App
-                    </h3>
-                    <div class="arch-code">Home (lightweight)
- ├── [Click Test Finder]
- │    └── finder.py
- │        widgets.py
- │        (no sklearn)
- │
- ├── [Click Graph Explorer]
- │    └── graph_explorer.py
- │        sklearn loads HERE
- │        (only when needed)
- │
- └── [Click Power Analysis]
-      └── power_calc.py
-          (isolated)</div>
-                </div>
-
-                <!-- Table -->
-                <div class="arch-card table">
-                    <h3 class="arch-title">📊 Expected Improvements</h3>
-                    <table class="arch-table">
-                        <thead>
-                            <tr>
-                                <th>Metric</th>
-                                <th>Before</th>
-                                <th>After</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>Cold Start</td>
-                                <td class="val-before">2-3s</td>
-                                <td class="val-after">0.5-1s</td>
-                            </tr>
-                            <tr>
-                                <td>Memory</td>
-                                <td class="val-before">~250MB</td>
-                                <td class="val-after">~50-100MB/app</td>
-                            </tr>
-                            <tr>
-                                <td>Re-runs</td>
-                                <td class="val-before">Everything</td>
-                                <td class="val-after">Only that app</td>
-                            </tr>
-                            <tr>
-                                <td>Deployment</td>
-                                <td class="val-before">1 big app</td>
-                                <td class="val-after">7 independent</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <div class="divider"></div>
-
         <!-- Credits Section -->
         <div class="section-label">Development Team</div>
         
@@ -795,11 +707,6 @@ Result:
             </p>
             <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 16px;">© 2026 Statistics Assistant. Built with Streamlit.</p>
         </div>
-
-        <!-- Footer -->
-        <footer class="footer">
-            <p class="footer-text">Statistics Assistant — Multi-App Portal. Replace href="#" in each anchor tag with your deployed Streamlit app URLs.</p>
-        </footer>
     </div>
 </body>
 </html>
