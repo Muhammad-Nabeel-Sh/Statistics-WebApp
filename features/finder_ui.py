@@ -5,30 +5,147 @@ from features.widgets import render_latex, render_test_widget
 from features.glossary import render_glossary
 
 
-def _get_tests_by_objective():
+def _categorize_tests():
+    """Categorize tests by design type and parametric/non-parametric."""
     from collections import defaultdict
 
-    by_obj = defaultdict(list)
+    def _is_parametric(rule):
+        """Check if test is primarily parametric."""
+        dist = rule.get("Distribution", "any")
+        if isinstance(dist, str):
+            return dist == "Normal"
+        return "Normal" in dist and "Non-normal" not in dist
+
+    def _is_nonparametric(rule):
+        """Check if test is primarily non-parametric."""
+        dist = rule.get("Distribution", "any")
+        if isinstance(dist, str):
+            return dist == "Non-normal"
+        return "Non-normal" in dist and "Normal" not in dist
+
+    def _is_any_dist(rule):
+        """Check if test works with any distribution."""
+        dist = rule.get("Distribution", "any")
+        if isinstance(dist, str):
+            return dist == "any"
+        return "any" in dist or ("Normal" in dist and "Non-normal" in dist)
+
+    def _get_groups(groups):
+        if isinstance(groups, list):
+            if "1" in groups:
+                return "1"
+            elif "2" in groups:
+                return "2"
+            elif "More than 2" in groups:
+                return "More than 2"
+            return "any"
+        return groups
+
+    def _get_relation(relation):
+        if isinstance(relation, list):
+            if "Dependent" in relation:
+                return "Dependent"
+            elif "Independent" in relation:
+                return "Independent"
+            return "any"
+        return relation
+
+    categories = defaultdict(list)
+    category_order = []
+
     for rule in rules:
-        obj = rule.get("Objective", "Unknown")
-        if isinstance(obj, list):
-            for o in obj:
-                by_obj[o].append(rule["name"])
+        groups = _get_groups(rule.get("Groups", "any"))
+        relation = _get_relation(rule.get("Relation", "any"))
+        objective = rule.get("Objective", "Unknown")
+
+        if objective == "Association/Correlation":
+            cat_key = ("Correlation & Association",)
+        elif objective == "Prediction":
+            cat_key = ("Regression & Prediction",)
+        elif objective == "Survival Analysis":
+            cat_key = ("Survival Analysis",)
+        elif objective == "Diagnostic Accuracy":
+            cat_key = ("Diagnostic Accuracy",)
+        elif groups == "1":
+            if _is_parametric(rule):
+                cat_key = ("One-sample", "Parametric")
+            elif _is_nonparametric(rule):
+                cat_key = ("One-sample", "Non-parametric")
+            else:
+                cat_key = ("One-sample", "Any Distribution")
+        elif groups == "2" and relation == "Independent":
+            if _is_parametric(rule):
+                cat_key = ("Two-sample (Independent)", "Parametric")
+            elif _is_nonparametric(rule):
+                cat_key = ("Two-sample (Independent)", "Non-parametric")
+            else:
+                cat_key = ("Two-sample (Independent)", "Any Distribution")
+        elif groups == "2" and relation == "Dependent":
+            if _is_parametric(rule):
+                cat_key = ("Two-sample (Dependent/Paired)", "Parametric")
+            elif _is_nonparametric(rule):
+                cat_key = ("Two-sample (Dependent/Paired)", "Non-parametric")
+            else:
+                cat_key = ("Two-sample (Dependent/Paired)", "Any Distribution")
+        elif groups == "More than 2" and relation == "Independent":
+            if _is_parametric(rule):
+                cat_key = ("Multi-sample (Independent)", "Parametric")
+            elif _is_nonparametric(rule):
+                cat_key = ("Multi-sample (Independent)", "Non-parametric")
+            else:
+                cat_key = ("Multi-sample (Independent)", "Any Distribution")
+        elif groups == "More than 2" and relation == "Dependent":
+            if _is_parametric(rule):
+                cat_key = ("Multi-sample (Dependent/Paired)", "Parametric")
+            elif _is_nonparametric(rule):
+                cat_key = ("Multi-sample (Dependent/Paired)", "Non-parametric")
+            else:
+                cat_key = ("Multi-sample (Dependent/Paired)", "Any Distribution")
         else:
-            by_obj[obj].append(rule["name"])
+            if _is_any_dist(rule):
+                cat_key = ("Other Tests", "Flexible/Any Design")
+            elif _is_parametric(rule):
+                cat_key = ("Other Tests", "Parametric")
+            else:
+                cat_key = ("Other Tests", "Non-parametric")
 
-    for obj in by_obj:
-        by_obj[obj] = sorted(set(by_obj[obj]))
+        if cat_key not in categories:
+            category_order.append(cat_key)
+        categories[cat_key].append(rule["name"])
 
-    return dict(sorted(by_obj.items()))
+    for cat_key in categories:
+        categories[cat_key] = sorted(set(categories[cat_key]))
 
+    def _category_sort_key(key):
+        priority = {
+            ("One-sample", "Parametric"): 100,
+            ("One-sample", "Non-parametric"): 110,
+            ("One-sample", "Any Distribution"): 120,
+            ("Two-sample (Independent)", "Parametric"): 200,
+            ("Two-sample (Independent)", "Non-parametric"): 210,
+            ("Two-sample (Independent)", "Any Distribution"): 220,
+            ("Two-sample (Dependent/Paired)", "Parametric"): 300,
+            ("Two-sample (Dependent/Paired)", "Non-parametric"): 310,
+            ("Two-sample (Dependent/Paired)", "Any Distribution"): 320,
+            ("Multi-sample (Independent)", "Parametric"): 400,
+            ("Multi-sample (Independent)", "Non-parametric"): 410,
+            ("Multi-sample (Independent)", "Any Distribution"): 420,
+            ("Multi-sample (Dependent/Paired)", "Parametric"): 500,
+            ("Multi-sample (Dependent/Paired)", "Non-parametric"): 510,
+            ("Multi-sample (Dependent/Paired)", "Any Distribution"): 520,
+            ("Correlation & Association",): 600,
+            ("Regression & Prediction",): 700,
+            ("Survival Analysis",): 800,
+            ("Diagnostic Accuracy",): 900,
+            ("Other Tests", "Parametric"): 1000,
+            ("Other Tests", "Non-parametric"): 1010,
+            ("Other Tests", "Flexible/Any Design"): 1020,
+        }
+        return priority.get(key, 9999)
 
-def _open_test_directly(test_name):
-    rule = next((r for r in rules if r["name"] == test_name), None)
-    if rule:
-        st.session_state.results = [test_name]
-        st.session_state.open_tests = {test_name}
-        st.rerun()
+    category_order.sort(key=_category_sort_key)
+
+    return categories, category_order
 
 
 def render_all_tests_section():
@@ -36,29 +153,36 @@ def render_all_tests_section():
     st.header("All Statistical Tests")
     st.info("Click on any test name to view it directly in the finder.")
 
-    by_obj = _get_tests_by_objective()
-    objectives = list(by_obj.keys())
+    categories, category_order = _categorize_tests()
 
-    tabs = st.tabs(objectives)
+    prev_main_cat = None
 
-    for tab_idx, obj in enumerate(objectives):
-        with tabs[tab_idx]:
-            test_names = by_obj[obj]
-            total = len(test_names)
+    for cat_key in category_order:
+        main_cat = cat_key[0]
+        sub_cat = cat_key[1] if len(cat_key) > 1 else None
 
-            st.markdown(f"**{total} tests** for *{obj}*:")
+        if main_cat != prev_main_cat:
+            st.divider()
+            st.subheader(main_cat)
+            prev_main_cat = main_cat
 
-            test_cols = st.columns(3)
-            for i, test_name in enumerate(test_names):
-                col_idx = i % 3
-                with test_cols[col_idx]:
-                    btn_key = (
-                        f"alltest_{obj.replace(' ', '_')}_{test_name.replace(' ', '_')}"
-                    )
-                    if st.button(
-                        f"📌 {test_name}", key=btn_key, use_container_width=True
-                    ):
-                        _open_test_directly(test_name)
+        if sub_cat:
+            st.markdown(f"**{sub_cat}:**")
+        else:
+            st.markdown("")
+
+        test_names = categories[cat_key]
+        total = len(test_names)
+
+        test_cols = st.columns(3)
+        for i, test_name in enumerate(test_names):
+            col_idx = i % 3
+            with test_cols[col_idx]:
+                btn_key = f"alltest_cat_{main_cat.replace(' ', '_')}_{test_name.replace(' ', '_')}"
+                if st.button(
+                    f"📌 {test_name}", key=btn_key, use_container_width=True
+                ):
+                    _open_test_directly(test_name)
 
 
 def render_test_finder():

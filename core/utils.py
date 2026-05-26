@@ -263,3 +263,165 @@ def interpret_r(r):
         return "Medium"
     else:
         return "Large"
+
+
+def data_source_toggle(key_prefix, mode="one_sample"):
+    """
+    Elegant dual-mode data selector: Simulated (default) vs Uploaded.
+    
+    This keeps the educational app intact while adding optional real-data capability
+    without bloating the codebase.
+    
+    Parameters
+    ----------
+    key_prefix : str
+        Unique prefix for widget keys (e.g., "ttest_2samp")
+    mode : str
+        "one_sample", "two_sample", "multi_sample", "paired", or "correlation"
+    
+    Returns
+    -------
+    dict
+        - 'mode': 'simulated' or 'uploaded'
+        - 'data': None if simulated (use existing sliders), or dict with data if uploaded
+        - 'using_uploaded': bool
+    """
+    with st.expander("📁 Optional: Use Your Own Data", expanded=False):
+        st.markdown("""
+        **Educational mode is always the default.** Use this to run the test on your own data.
+        """)
+        
+        source = st.radio(
+            "Data Source",
+            ["Simulated (sliders, for learning)", "Upload CSV/Excel (your data)"],
+            key=f"{key_prefix}_datasource",
+            index=0,
+            label_visibility="collapsed",
+        )
+    
+    if "Simulated" in source:
+        return {"mode": "simulated", "data": None, "using_uploaded": False}
+    
+    uploaded_file = st.file_uploader(
+        "Upload your data (CSV or Excel)",
+        type=["csv", "xlsx", "xls"],
+        key=f"{key_prefix}_file",
+    )
+    
+    if uploaded_file is None:
+        st.info("Upload a file to use your own data. The test will use simulated data instead.")
+        return {"mode": "simulated", "data": None, "using_uploaded": False}
+    
+    import pandas as pd
+    
+    try:
+        if uploaded_file.name.endswith('.csv'):
+            df = pd.read_csv(uploaded_file)
+        else:
+            df = pd.read_excel(uploaded_file)
+        
+        st.success(f"Loaded {len(df)} rows, {len(df.columns)} columns")
+        
+        data = {"df": df}
+        
+        if mode == "one_sample":
+            value_col = st.selectbox(
+                "Select Value Column",
+                df.select_dtypes(include=["int64", "float64"]).columns,
+                key=f"{key_prefix}_value",
+            )
+            data["values"] = df[value_col].dropna().values
+            
+        elif mode == "two_sample":
+            layout = st.columns(2)
+            with layout[0]:
+                group_col = st.selectbox(
+                    "Group Column (2 categories)",
+                    df.select_dtypes(include=["object", "category", "int64", "bool"]).columns,
+                    key=f"{key_prefix}_group",
+                )
+            with layout[1]:
+                value_col = st.selectbox(
+                    "Value Column",
+                    df.select_dtypes(include=["int64", "float64"]).columns,
+                    key=f"{key_prefix}_value",
+                )
+            
+            groups = df.groupby(group_col)[value_col]
+            group_names = list(groups.groups.keys())
+            if len(group_names) >= 2:
+                data["group1"] = groups.get_group(group_names[0]).dropna().values
+                data["group2"] = groups.get_group(group_names[1]).dropna().values
+                data["group_names"] = group_names[:2]
+            else:
+                st.error(f"Need at least 2 groups in '{group_col}'. Found: {group_names}")
+                return {"mode": "simulated", "data": None, "using_uploaded": False}
+                
+        elif mode == "multi_sample":
+            layout = st.columns(2)
+            with layout[0]:
+                group_col = st.selectbox(
+                    "Group Column",
+                    df.select_dtypes(include=["object", "category", "int64", "bool"]).columns,
+                    key=f"{key_prefix}_group",
+                )
+            with layout[1]:
+                value_col = st.selectbox(
+                    "Value Column",
+                    df.select_dtypes(include=["int64", "float64"]).columns,
+                    key=f"{key_prefix}_value",
+                )
+            
+            groups = df.groupby(group_col)[value_col]
+            data["groups"] = [g.dropna().values for _, g in groups]
+            data["group_names"] = list(groups.groups.keys())
+            
+        elif mode == "paired":
+            col_options = list(df.select_dtypes(include=["int64", "float64"]).columns)
+            layout = st.columns(2)
+            with layout[0]:
+                col1 = st.selectbox(
+                    "Measurement 1 (e.g., Before)",
+                    col_options,
+                    key=f"{key_prefix}_col1",
+                )
+            with layout[1]:
+                col2 = st.selectbox(
+                    "Measurement 2 (e.g., After)",
+                    col_options,
+                    key=f"{key_prefix}_col2",
+                    index=min(1, len(col_options)-1),
+                )
+            
+            paired_df = df[[col1, col2]].dropna()
+            data["values1"] = paired_df[col1].values
+            data["values2"] = paired_df[col2].values
+            data["col_names"] = [col1, col2]
+            
+        elif mode == "correlation":
+            col_options = list(df.select_dtypes(include=["int64", "float64"]).columns)
+            layout = st.columns(2)
+            with layout[0]:
+                x_col = st.selectbox(
+                    "X Variable",
+                    col_options,
+                    key=f"{key_prefix}_x",
+                )
+            with layout[1]:
+                y_col = st.selectbox(
+                    "Y Variable",
+                    col_options,
+                    key=f"{key_prefix}_y",
+                    index=min(1, len(col_options)-1),
+                )
+            
+            corr_df = df[[x_col, y_col]].dropna()
+            data["x"] = corr_df[x_col].values
+            data["y"] = corr_df[y_col].values
+            data["col_names"] = [x_col, y_col]
+        
+        return {"mode": "uploaded", "data": data, "using_uploaded": True}
+        
+    except Exception as e:
+        st.error(f"Error loading file: {e}")
+        return {"mode": "simulated", "data": None, "using_uploaded": False}

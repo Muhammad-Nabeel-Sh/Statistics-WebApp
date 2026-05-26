@@ -38,9 +38,16 @@ TEST_TO_SS_TYPE = {
     "Logistic Regression (Multinomial Outcome)": "Logistic Regression",
     "Logistic Regression (Ordinal Outcome)": "Logistic Regression",
     "Cox Proportional Hazards Regression": "Cox Regression",
-    "Binomial Test": "One-sample Proportion",
-    "Multinomial Test": "Chi-Square Test",
-}
+     "Binomial Test": "One-sample Proportion",
+     "Multinomial Test": "Chi-Square Test",
+     "Sign Test (One-sample)": "Wilcoxon Signed-Rank (paired)",
+     "Sign Test (Paired)": "Wilcoxon Signed-Rank (paired)",
+     "Mood's Median Test": "Kruskal-Wallis Test",
+     "Runs Test for Randomness": "Precision-based (CI Width)",
+     "Equivalence Test (TOST) - Two Independent Samples": "Equivalence / Non-Inferiority",
+     "F-Test for Two Variances": "Two Independent Means (t-test)",
+     "Poisson Goodness-of-Fit Test": "Chi-Square Test",
+ }
 
 
 rules = [
@@ -1070,10 +1077,276 @@ rules = [
                     - :orange[$O_1$] and :orange[$O_2$] are the observed number of events in each group,
                     - :orange[$E_1$] and :orange[$E_2$] are the expected number of events under the null hypothesis of no difference,
                     - The test statistic is compared to a chi-square distribution with 1 degree of freedom (for two groups).
-                    - For more than two groups, an extension with :orange[$k-1$] degrees of freedom is used.
-                    """,
-    },
-]
+                     - For more than two groups, an extension with :orange[$k-1$] degrees of freedom is used.
+        """,
+     },
+     {
+         "name": "Sign Test (One-sample)",
+         "Objective": "Comparison",
+         "Dependent_Variable": ["Ordinal", "Continuous"],
+         "Independent_Variable": "None",
+         "Groups": "1",
+         "Relation": ["Independent", "Dependent", "any"],
+         "Distribution": ["Non-normal", "Normal", "any"],
+         "Explanation": "The Sign Test is the simplest nonparametric test for location. It only examines the signs (positive/negative) of differences from a hypothesized median, completely ignoring their magnitudes. While less powerful than the Wilcoxon Signed-Rank Test, it is extremely robust to outliers and conceptually simpler — making it ideal for teaching nonparametric statistics before introducing more complex rank-based methods.",
+         "Example": "A teacher tests whether a new study method improves exam scores. For 15 students, 11 score higher after the method, 3 score lower, and 1 shows no change. The Sign Test asks: If the method had no effect, is observing 11 positives out of 14 non-ties unusual?",
+         "Formula": r"""
+                     $$ S = \min(S^+, S^-) $$
+                     $$ S^+ = \text{number of positive differences from } \theta_0 $$
+                     $$ S^- = \text{number of negative differences from } \theta_0 $$
+                     
+                     Under H₀, S follows a **Binomial distribution** with parameters n' = S⁺ + S⁻ and p = 0.5:
+                     $$ P(X = k) = \binom{n'}{k} 0.5^{n'} $$
+                     
+                     Two-sided p-value = 2 × min(P(X ≤ S), P(X ≥ S))
+                     """,
+         "Decision Rules": r"""
+                     - Reject H₀ if the exact binomial p-value < α (typically 0.05)
+                     - No normal approximation is needed — the binomial calculation is exact
+                     - Differences equal to θ₀ are typically dropped from analysis (reducing effective sample size)
+                     - Effect size can be reported as (S⁺ - S⁻)/n' or the median difference with confidence interval
+         """,
+     },
+     {
+         "name": "Sign Test (Paired)",
+         "Objective": "Comparison",
+         "Dependent_Variable": ["Ordinal", "Continuous"],
+         "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+         "Groups": "2",
+         "Relation": "Dependent",
+         "Distribution": ["Non-normal", "Normal", "any"],
+         "Explanation": "The Paired Sign Test compares two related (matched/paired) measurements by examining only the signs of their differences. It asks a simple question: Is one measurement typically greater than the other? Like the one-sample Sign Test, it ignores the magnitude of differences — trading power for simplicity and robustness.",
+         "Example": "A sports scientist tests whether a new running shoe reduces 5K times. For 20 athletes, 14 run faster with the new shoe, 5 run slower, and 1 shows no change. The Paired Sign Test determines if this pattern (more positives) is unlikely under the null hypothesis of no difference.",
+         "Formula": r"""
+                     $$ D_i = X_{i,\text{after}} - X_{i,\text{before}} \quad \text{or} \quad D_i = X_{i,\text{Method A}} - X_{i,\text{Method B}} $$
+                     $$ S = \min(\text{number of positive } D_i, \text{number of negative } D_i) $$
+                     
+                     Under H₀, S ~ Binomial(n', 0.5) where n' = number of non-zero differences.
+                     
+                     **Exact p-value** computed directly from the binomial distribution.
+                     """,
+     },
+     {
+         "name": "Runs Test for Randomness",
+         "Objective": "Comparison",
+         "Dependent_Variable": ["Binary/Dichotomous", "Categorical", "Continuous"],
+         "Independent_Variable": "None",
+         "Groups": "1",
+         "Relation": ["Independent", "Dependent", "any"],
+         "Distribution": ["any", "Non-normal", "Normal"],
+         "Explanation": "The Runs Test for Randomness asks a fundamental question: Is this sequence random? A 'run' is a consecutive sequence of identical values or values above/below a threshold. Too few runs = clustered pattern; too many runs = alternating pattern. This test teaches the concept of randomness and is essential for time-series and quality control applications.",
+         "Example": "A quality control engineer examines 50 consecutive parts from an assembly line: G G G G B B G G G G G G B B B G G G G B... The engineer counts runs of Good and Bad parts. If runs are too few, the process may have clustering issues (e.g., a machine that drifts out of alignment). If runs are too many, there may be an alternating systematic issue.",
+         "Formula": r"""
+                     Let:
+                     - :orange[$n_1$] = number of observations of Type 1 (e.g., above median, or 'Successes')
+                     - :orange[$n_2$] = number of observations of Type 2 (e.g., below median, or 'Failures')
+                     - :orange[$R$] = number of runs observed
+                     
+                     Under H₀ (randomness):
+                     $$ \mu_R = \frac{2 n_1 n_2}{n_1 + n_2} + 1 $$
+                     $$ \sigma_R = \sqrt{\frac{2 n_1 n_2 (2 n_1 n_2 - n_1 - n_2)}{(n_1 + n_2)^2 (n_1 + n_2 - 1)}} $$
+                     
+                     For large samples:
+                     $$ z = \frac{R - \mu_R}{\sigma_R} \sim N(0, 1) $$
+                     
+                     **Left-tailed**: Too few runs (clustering)
+                     **Right-tailed**: Too many runs (alternating pattern)
+                     **Two-tailed**: Either extreme (non-randomness of any form)
+                     """,
+         "Decision Rules": r"""
+                     - If :orange[$R \ll \mu_R$]: Clustered pattern → reject randomness
+                     - If :orange[$R \gg \mu_R$]: Alternating pattern → reject randomness
+                     - Two-sided test: Reject if :orange[$|z| > z_{\alpha/2}$] or p-value < α
+                     - For continuous data: typically coded as values **above** vs **below** the median (or mean)
+                     - The test can also be applied to categorical sequences with more than two categories (extensions exist)
+         """,
+     },
+     {
+         "name": "Mood's Median Test",
+         "Objective": "Comparison",
+         "Dependent_Variable": ["Ordinal", "Continuous"],
+         "Independent_Variable": "Categorical",
+         "Groups": "More than 2",
+         "Relation": "Independent",
+         "Distribution": ["Non-normal", "Normal", "any"],
+         "Explanation": "Mood's Median Test is the simplest nonparametric alternative to one-way ANOVA. It tests whether multiple independent samples come from populations with the same median. Conceptually, it works by: (1) finding the grand median of ALL observations combined, (2) counting values above and below this grand median in each group, and (3) performing a Chi-square test of independence on this contingency table. Less powerful than Kruskal-Wallis, but simpler to understand and very robust.",
+         "Example": "A psychologist tests whether three different teaching methods produce different median exam scores. Scores from Method A: 72, 85, 78, 90, 65. Method B: 88, 92, 85, 95, 80. Method C: 60, 75, 70, 68, 72. The grand median of all 15 scores is computed, then counts of scores above/below are tabulated for each group. A Chi-square test determines if the pattern differs across groups.",
+         "Formula": r"""
+                     Step 1: Compute the **grand median** (GM) of all observations combined:
+                     $$ \tilde{X}_{grand} = \text{median}(X_{11}, X_{12}, \ldots, X_{kn_k}) $$
+                     
+                     Step 2: Construct contingency table of counts:
+                     
+                     | Group | Above GM | Below or Equal |
+                     |-------|-----------|----------------|
+                     | 1     | :orange[$A_1$] | :orange[$B_1$] |
+                     | 2     | :orange[$A_2$] | :orange[$B_2$] |
+                     | ...   | ...       | ...            |
+                     | k     | :orange[$A_k$] | :orange[$B_k$] |
+                     
+                     Step 3: Compute **Pearson's Chi-square** on this 2×k table:
+                     $$ \chi^2 = \sum_{i=1}^{k} \sum_{j=1}^{2} \frac{(O_{ij} - E_{ij})^2}{E_{ij}} $$
+                     
+                     Where :orange[$E_{ij}$] are expected frequencies under independence.
+                     
+                     $$ df = (2-1)(k-1) = k-1 $$
+                     """,
+         "Decision Rules": r"""
+                     - Reject H₀ if :orange[$\chi^2 > \chi^2_{\alpha, k-1}$] or p-value < α
+                     - The test is essentially a **Chi-square test of independence** with the median dichotomy
+                     - It assumes only independence of observations
+                     - No normality assumption required
+                     - If the Chi-square approximation is questionable (small expected frequencies), Fisher's exact test can be used for 2×2 tables (two groups)
+                     - Ties at the grand median can be handled by: (a) dropping them, (b) counting half in each category, or (c) using the 'below or equal' approach shown
+         """,
+     },
+     {
+         "name": "Equivalence Test (TOST) - Two Independent Samples",
+         "Objective": "Comparison",
+         "Dependent_Variable": "Continuous",
+         "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+         "Groups": "2",
+         "Relation": "Independent",
+         "Distribution": "Normal",
+         "Explanation": "TOST = Two One-Sided Tests. This procedure solves a critical statistical misconception: 'p > 0.05' does NOT mean 'treatments are equivalent'. TOST explicitly reverses the burden of proof: it requires data to demonstrate that the true difference lies within a pre-specified 'equivalence range' (-Δ, +Δ). Only if BOTH one-sided tests reject their respective null hypotheses can you conclude equivalence. This is essential for teaching the difference between 'no evidence of difference' and 'evidence of no difference'.",
+         "Example": "A pharmaceutical company wants to show that a new generic drug is 'equivalent' to the brand-name drug. They define equivalence as having a mean difference in blood pressure of less than 5 mmHg (Δ = 5). They test: (1) Is the true difference > -5? (2) Is the true difference < +5? If both tests reject, equivalence is established. A simple t-test showing 'no significant difference' (p > 0.05) would not be sufficient — equivalence must be demonstrated.",
+         "Formula": r"""
+                     **Equivalence Margin**: :orange[$\Delta$] (smallest difference considered 'meaningfully different')
+                     
+                     **Traditional superiority null**: :orange[$H_0: \mu_1 - \mu_2 = 0$]
+                     
+                     **TOST null hypotheses** (both must be rejected for equivalence):
+                     $$ H_{0L}: \mu_1 - \mu_2 \leq -\Delta \quad \text{(difference is too low)} $$
+                     $$ H_{0U}: \mu_1 - \mu_2 \geq +\Delta \quad \text{(difference is too high)} $$
+                     
+                     **Alternative hypotheses**:
+                     $$ H_{1L}: \mu_1 - \mu_2 > -\Delta $$
+                     $$ H_{1U}: \mu_1 - \mu_2 < +\Delta $$
+                     
+                     **Two one-sided t-tests**:
+                     $$ t_L = \frac{(\bar{x}_1 - \bar{x}_2) - (-\Delta)}{SE} = \frac{\bar{D} + \Delta}{SE} $$
+                     $$ t_U = \frac{(\bar{x}_1 - \bar{x}_2) - (+\Delta)}{SE} = \frac{\bar{D} - \Delta}{SE} $$
+                     
+                     Where :orange[$SE = \sqrt{\frac{s_1^2}{n_1} + \frac{s_2^2}{n_2}}$] (or pooled if assuming equal variances)
+                     
+                     **Decision**: Equivalence concluded if :orange[$p_L < \alpha$] **AND** :orange[$p_U < \alpha$]
+                     
+                     **Confidence Interval approach**: Equivalence concluded if the :orange[$100(1-2\alpha)\%$] (or 90% for α=0.05) CI for :orange[$\mu_1 - \mu_2$] lies entirely within :orange[$(-\Delta, +\Delta)$].
+                     """,
+         "Decision Rules": r"""
+                     **Key Principle**: The burden of proof is on demonstrating equivalence.
+                     
+                     1. **Define equivalence margin (Δ)** BEFORE data collection
+                        - Typically based on clinical or practical significance
+                        - Common choices: 0.2×SD of reference, or regulatory standards
+                     
+                     2. **Run both one-sided tests**:
+                        - Reject :orange[$H_{0L}$] if :orange[$t_L > t_{\alpha, df}$] (one-tailed)
+                        - Reject :orange[$H_{0U}$] if :orange[$t_U < -t_{\alpha, df}$] (one-tailed)
+                     
+                     3. **Conclusion**:
+                        - If **both** rejected → **Equivalence demonstrated**
+                        - If either not rejected → **Cannot claim equivalence**
+                     
+                     **Common Misconception**:
+                     - ❌ 'p > 0.05 in t-test' ≠ 'Equivalent'
+                     - ✅ Only TOST or CI-within-range can demonstrate equivalence
+                     
+                     **Visual Interpretation**: The 90% confidence interval must lie COMPLETELY inside (-Δ, +Δ) for equivalence.
+         """,
+     },
+     {
+         "name": "F-Test for Two Variances",
+         "Objective": "Comparison",
+         "Dependent_Variable": "Continuous",
+         "Independent_Variable": ["Binary/Dichotomous", "Categorical"],
+         "Groups": "2",
+         "Relation": "Independent",
+         "Distribution": "Normal",
+         "Explanation": "The F-test for equality of variances compares the spread (variability) of two independent samples. It tests the homogeneity of variance assumption that underlies Student's t-test and ANOVA. The test statistic is simply the ratio of the two sample variances. Important: This test is EXTREMELY sensitive to non-normality — much more so than the t-test itself. For this reason, robust alternatives like Levene's test are generally preferred, but the F-test remains valuable for teaching the concept of variance ratios and the F-distribution.",
+         "Example": "A researcher plans to use Student's t-test to compare two methods. First, they check the equal variance assumption: Method A (n=20) has variance = 12.5, Method B (n=20) has variance = 45.2. The F-ratio = 45.2/12.5 = 3.62. Is this large enough to reject equal variances?",
+         "Formula": r"""
+                     $$ F = \frac{s_1^2}{s_2^2} \quad \text{or typically} \quad F = \frac{\max(s_1^2, s_2^2)}{\min(s_1^2, s_2^2)} $$
+                     
+                     Where:
+                     - :orange[$s_1^2$] = variance of sample 1
+                     - :orange[$s_2^2$] = variance of sample 2
+                     
+                     Under :orange[$H_0: \sigma_1^2 = \sigma_2^2$], the F-statistic follows an **F-distribution** with:
+                     - Numerator df = :orange[$n_1 - 1$]
+                     - Denominator df = :orange[$n_2 - 1$]
+                     
+                     **Two-sided test**: Reject if :orange[$F > F_{\alpha/2, df_1, df_2}$] or :orange[$F < F_{1-\alpha/2, df_1, df_2}$]
+                     
+                     By convention, most software places the larger variance in the numerator, giving F ≥ 1, and then doubles the one-tailed p-value.
+                     """,
+         "Decision Rules": r"""
+                     - Reject :orange[$H_0$] if p-value < α (typically 0.05)
+                     - If significant → variances differ → use **Welch's t-test** instead of Student's t-test
+                     - If not significant → equal variance assumption may be reasonable
+                     
+                     **CRITICAL WARNING**:
+                     The F-test is **highly sensitive to non-normality**. If your data comes from a non-normal distribution, this test may:
+                     - Falsely detect 'unequal variances' when the real issue is non-normality
+                     - Or fail to detect real differences
+                     
+                     **Robust alternatives**:
+                     - **Levene's test**: Uses absolute deviations from the median (more robust)
+                     - **Fligner-Killeen test**: Even more robust to non-normality
+                     - **Brown-Forsythe**: Levene's variant using median instead of mean
+                     
+                     These are generally preferred over the F-test in practice, but the F-test teaches the fundamental concept of variance ratios.
+         """,
+     },
+     {
+         "name": "Poisson Goodness-of-Fit Test",
+         "Objective": "Comparison",
+         "Dependent_Variable": "Categorical",
+         "Independent_Variable": "None",
+         "Groups": "1",
+         "Relation": ["Independent", "Dependent", "any"],
+         "Distribution": ["Non-normal", "Normal", "any"],
+         "Explanation": "The Poisson Goodness-of-Fit test determines whether count data follows a Poisson distribution. The Poisson distribution is fundamental for modeling: (1) number of events in a fixed interval, (2) independent events, (3) constant average rate. A key property: for a true Poisson, the variance equals the mean. If variance > mean, you have **over-dispersion** (common in real data), suggesting Negative Binomial regression may be more appropriate. This test teaches the Poisson assumptions and how to check them.",
+         "Example": "A hospital administrator counts the number of emergency admissions per hour over 100 hours: 0 admissions in 25 hours, 1 admission in 35 hours, 2 admissions in 25 hours, 3+ admissions in 15 hours. The administrator fits a Poisson distribution to these counts and tests whether the observed frequencies match the expected Poisson frequencies.",
+         "Formula": r"""
+                     **Step 1: Estimate the Poisson parameter (λ)** from the sample:
+                     $$ \hat{\lambda} = \bar{x} = \text{sample mean} $$
+                     
+                     **Step 2: Compute expected frequencies** for each count k:
+                     $$ P(X = k) = \frac{e^{-\hat{\lambda}} \hat{\lambda}^k}{k!} $$
+                     $$ E_k = n \times P(X = k) $$
+                     
+                     **Step 3: Pool categories** so that all :orange[$E_k \geq 5$] (requirement for Chi-square approximation)
+                     
+                     **Step 4: Compute Chi-square statistic**:
+                     $$ \chi^2 = \sum_{k} \frac{(O_k - E_k)^2}{E_k} $$
+                     
+                     **Step 5: Degrees of freedom**:
+                     $$ df = \text{(\# categories after pooling)} - 1 - \text{(\# parameters estimated)} $$
+                     
+                     For Poisson GOF: **df = k - 2** (subtract 1 for total sum, subtract 1 more for estimating λ)
+                     """,
+         "Decision Rules": r"""
+                     - Reject :orange[$H_0$] if :orange[$\chi^2 > \chi^2_{\alpha, df}$] or p-value < α
+                     - If rejected → data does NOT follow Poisson distribution
+                     
+                     **Checking for Over-dispersion**:
+                     
+                     A key diagnostic for count data:
+                     $$ \text{Variance/Mean Ratio} = \frac{s^2}{\bar{x}} $$
+                     
+                     - Ratio ≈ 1 → Consistent with Poisson
+                     - Ratio > 1 → **Over-dispersion** (more variance than Poisson predicts)
+                     - Ratio < 1 → **Under-dispersion** (less variance than Poisson predicts)
+                     
+                     **Over-dispersion is common** and suggests:
+                     - Use **Negative Binomial regression** instead of Poisson regression
+                     - Or consider **zero-inflated Poisson (ZIP)** if there are excess zeros
+                     
+                     **Exact alternatives**: For very small samples, the Kolmogorov-Smirnov test (with estimated parameters requires special tables) or simulation-based approaches.
+         """,
+     },
+ ]
 
 
 CRITERIA_FIELDS = [

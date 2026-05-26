@@ -13,6 +13,7 @@ from core.utils import (
     st_plot_with_download,
     interpret_cohens_d,
     interpret_eta_squared,
+    data_source_toggle,
 )
 
 
@@ -51,44 +52,48 @@ def render_test_widget(test_name):
         st.subheader("Interactive One-sample t-test")
 
         # =========================
+        # DATA SOURCE TOGGLE
+        # =========================
+
+        src = data_source_toggle("ttest_1samp", mode="one_sample")
+
+        # =========================
         # CONTROLS
         # =========================
 
         population_mean = st.slider(
-            "Reference Mean",
+            "Reference Mean (H₀: μ = μ₀)",
             -10.0,
             10.0,
             0.0,
             0.1,
         )
 
-        sample_mean_shift = st.slider(
-            "Sample Mean Shift",
-            -5.0,
-            5.0,
-            1.0,
-            0.1,
-        )
+        if src["using_uploaded"]:
+            sample = src["data"]["values"]
+        else:
+            sample_mean_shift = st.slider(
+                "Sample Mean Shift",
+                -5.0,
+                5.0,
+                1.0,
+                0.1,
+            )
 
-        sd = st.slider(
-            "Standard Deviation",
-            0.1,
-            5.0,
-            1.0,
-            0.1,
-        )
+            sd = st.slider(
+                "Standard Deviation",
+                0.1,
+                5.0,
+                1.0,
+                0.1,
+            )
 
-        # =========================
-        # DATA
-        # =========================
-
-        np.random.seed(42)
-
-        sample = np.random.normal(
-            population_mean + sample_mean_shift,
-            sd,
-            80,
-        )
+            np.random.seed(42)
+            sample = np.random.normal(
+                population_mean + sample_mean_shift,
+                sd,
+                80,
+            )
 
         t, p = ttest_1samp(sample, population_mean)
 
@@ -1346,56 +1351,170 @@ def render_test_widget(test_name):
 
     elif test_name == "Student's t-test (Independent)":
 
-        from scipy.stats import ttest_ind
+        from scipy.stats import ttest_ind, t as t_dist
 
         st.subheader("Interactive Independent t-test")
+
+        st.info("""
+        **This widget shows BOTH Student's t-test (equal variance assumed) and Welch's t-test (unequal variance)**
+        side-by-side for easy comparison with statistical software like Minitab.
+        
+        - **Student's**: Used when you assume equal variances (pooled variance)
+        - **Welch's**: Used when variances may be unequal (adjusted degrees of freedom)
+        """)
+
+        # =========================
+        # DATA SOURCE TOGGLE
+        # =========================
+
+        src = data_source_toggle("ttest_indep_enhanced", mode="two_sample")
 
         # =========================
         # CONTROLS
         # =========================
 
-        mean_diff = st.slider(
-            "Mean Difference",
-            0.0,
-            10.0,
-            2.0,
-            0.1,
-        )
+        if src["using_uploaded"]:
+            group1 = src["data"]["group1"]
+            group2 = src["data"]["group2"]
+            g1_name, g2_name = src["data"]["group_names"]
+        else:
+            mean_diff = st.slider(
+                "Mean Difference",
+                0.0,
+                10.0,
+                2.0,
+                0.1,
+            )
 
-        sd = st.slider(
-            "Shared Standard Deviation",
-            0.5,
-            5.0,
-            1.5,
-            0.1,
-        )
+            sd1 = st.slider(
+                "Group 1 SD",
+                0.5,
+                5.0,
+                1.5,
+                0.1,
+            )
 
-        n = st.slider(
-            "Sample Size per Group",
-            10,
-            300,
-            50,
-        )
+            sd2 = st.slider(
+                "Group 2 SD",
+                0.5,
+                5.0,
+                1.5,
+                0.1,
+            )
+
+            n = st.slider(
+                "Sample Size per Group",
+                10,
+                300,
+                50,
+            )
+
+            np.random.seed(42)
+            group1 = np.random.normal(0, sd1, n)
+            group2 = np.random.normal(mean_diff, sd2, n)
+            g1_name = "Group 1"
+            g2_name = "Group 2"
 
         # =========================
-        # DATA
+        # DATA SUMMARY
         # =========================
 
-        np.random.seed(42)
+        n1, n2 = len(group1), len(group2)
+        m1, m2 = np.mean(group1), np.mean(group2)
+        sd1, sd2 = np.std(group1, ddof=1), np.std(group2, ddof=1)
+        se1, se2 = sd1 / np.sqrt(n1), sd2 / np.sqrt(n2)
 
-        group1 = np.random.normal(0, sd, n)
+        st.divider()
+        st.subheader("Data Summary")
 
-        group2 = np.random.normal(mean_diff, sd, n)
+        summary_data = {
+            "Group": [g1_name, g2_name],
+            "n": [n1, n2],
+            "Mean": [f"{m1:.3f}", f"{m2:.3f}"],
+            "SD": [f"{sd1:.3f}", f"{sd2:.3f}"],
+            "SE Mean": [f"{se1:.3f}", f"{se2:.3f}"],
+        }
+        st.table(pd.DataFrame(summary_data))
 
-        t, p = ttest_ind(group1, group2)
+        st.info(f"""
+        **About group ordering:**
+        - t-statistic = ({g1_name} Mean) - ({g2_name} Mean) = {m1:.3f} - {m2:.3f} = {m1 - m2:.3f}
+        - A negative t means {g2_name} > {g1_name}
+        - Software like Minitab may show the opposite sign depending on group order
+        """)
 
         # =========================
-        # STATS
+        # BOTH TESTS
         # =========================
 
-        st.latex(rf"t = {t:.3f}")
+        t_student, p_student = ttest_ind(group1, group2, equal_var=True)
+        t_welch, p_welch = ttest_ind(group1, group2, equal_var=False)
 
-        st.latex(rf"\text{{{format_p_value(p)}}}")
+        df_student = n1 + n2 - 2
+        diff_student = m1 - m2
+
+        se_student = np.sqrt(
+            ((n1 - 1) * sd1**2 + (n2 - 1) * sd2**2) / (n1 + n2 - 2)
+        ) * np.sqrt(1 / n1 + 1 / n2)
+
+        se_welch = np.sqrt(sd1**2 / n1 + sd2**2 / n2)
+
+        welch_df_num = (sd1**2 / n1 + sd2**2 / n2) ** 2
+        welch_df_den = (sd1**2 / n1) ** 2 / (n1 - 1) + (sd2**2 / n2) ** 2 / (n2 - 1)
+        df_welch = welch_df_num / welch_df_den
+
+        ci_low_student = diff_student - t_dist.ppf(0.975, df_student) * se_student
+        ci_high_student = diff_student + t_dist.ppf(0.975, df_student) * se_student
+
+        ci_low_welch = diff_student - t_dist.ppf(0.975, df_welch) * se_welch
+        ci_high_welch = diff_student + t_dist.ppf(0.975, df_welch) * se_welch
+
+        st.divider()
+        st.subheader("Test Results (Side-by-Side Comparison)")
+
+        results_data = {
+            "Metric": [
+                "Difference (G1 - G2)",
+                "SE of Difference",
+                "t-statistic",
+                "df",
+                "p-value",
+                "95% CI Lower",
+                "95% CI Upper",
+                "",
+            ],
+            "Student's (equal var)": [
+                f"{diff_student:.4f}",
+                f"{se_student:.4f}",
+                f"{t_student:.4f}",
+                f"{df_student:.0f}",
+                format_p_value(p_student),
+                f"{ci_low_student:.4f}",
+                f"{ci_high_student:.4f}",
+                "",
+            ],
+            "Welch's (unequal var)": [
+                f"{diff_student:.4f}",
+                f"{se_welch:.4f}",
+                f"{t_welch:.4f}",
+                f"{df_welch:.2f}",
+                format_p_value(p_welch),
+                f"{ci_low_welch:.4f}",
+                f"{ci_high_welch:.4f}",
+                "",
+            ],
+        }
+        st.table(pd.DataFrame(results_data))
+
+        if p_student < 0.05 and p_welch < 0.05:
+            st.success("✅ Both tests agree: Significant difference between groups")
+        elif p_student < 0.05 or p_welch < 0.05:
+            st.warning("⚠️ Tests disagree! Check variance assumptions:")
+            st.write(f"- Student's p: {p_student:.4f}")
+            st.write(f"- Welch's p: {p_welch:.4f}")
+            st.write(f"- SD ratio (G2/G1): {sd2/sd1:.2f}")
+        else:
+            st.info("ℹ️ No significant difference detected by either test")
 
         # =========================
         # PLOT
@@ -1403,138 +1522,88 @@ def render_test_widget(test_name):
 
         fig = go.Figure()
 
-        fig.add_trace(go.Box(y=group1, name="Group 1"))
-        fig.add_trace(go.Box(y=group2, name="Group 2"))
+        fig.add_trace(
+            go.Box(y=group1, name=g1_name, boxmean="sd", marker_color="#4C78A8")
+        )
+        fig.add_trace(
+            go.Box(y=group2, name=g2_name, boxmean="sd", marker_color="#E45756")
+        )
 
         fig.update_layout(
             template="plotly_dark",
-            height=550,
-        )
-
-        st_plot_with_download(fig, key="ttest_indep_box", height=550)
-
-        # =========================
-        # DETAILED STATISTICS TABLE
-        # =========================
-
-        st.divider()
-        st.subheader("Detailed Results")
-
-        from scipy.stats import t as t_dist_student
-
-        n1_s, n2_s = len(group1), len(group2)
-        m1_s, m2_s = np.mean(group1), np.mean(group2)
-        sd1_s, sd2_s = np.std(group1, ddof=1), np.std(group2, ddof=1)
-        pooled_sd = np.sqrt(
-            ((n1_s - 1) * sd1_s**2 + (n2_s - 1) * sd2_s**2) / (n1_s + n2_s - 2)
-        )
-        mean_diff_s = m2_s - m1_s
-        se_diff_s = pooled_sd * np.sqrt(1 / n1_s + 1 / n2_s)
-        ci_diff_s = se_diff_s * t_dist_student.ppf(0.975, n1_s + n2_s - 2)
-        cohens_d_s = mean_diff_s / pooled_sd
-        d_lower_s, d_upper_s = cohens_d_independent_ci(cohens_d_s, n1_s, n2_s)
-        hedges_g_s = hedges_g(cohens_d_s, n1_s, n2_s)
-        d_interp_s = interpret_cohens_d(cohens_d_s)
-
-        results_data = {
-            "Metric": [
-                "Mean G1 (SD)",
-                "Mean G2 (SD)",
-                "Mean Difference",
-                "95% CI of Diff",
-                "Pooled SD",
-                "t-statistic",
-                "df",
-                "p-value",
-                "Cohen's d [95% CI]",
-                "Hedges' g (unbiased)",
-                "Interpretation",
-            ],
-            "Value": [
-                f"{m1_s:.2f} ({sd1_s:.2f})",
-                f"{m2_s:.2f} ({sd2_s:.2f})",
-                f"{mean_diff_s:.3f}",
-                f"[{mean_diff_s - ci_diff_s:.3f}, {mean_diff_s + ci_diff_s:.3f}]",
-                f"{pooled_sd:.3f}",
-                f"{t:.3f}",
-                f"{n1_s + n2_s - 2}",
-                format_p_value(p),
-                format_effect_size_with_ci(cohens_d_s, d_lower_s, d_upper_s),
-                f"{hedges_g_s:.3f}",
-                d_interp_s,
-            ],
-        }
-        st.table(pd.DataFrame(results_data))
-
-        # =========================
-        # ENHANCED CHART
-        # =========================
-
-        fig2 = go.Figure()
-
-        for i, (g, name) in enumerate(zip([group1, group2], ["Group 1", "Group 2"])):
-            fig2.add_trace(
-                go.Violin(
-                    y=g,
-                    name=name,
-                    box_visible=True,
-                    meanline_visible=True,
-                    points=False,
-                )
-            )
-            jitter_x = np.random.normal(i + 1, 0.06, len(g))
-            fig2.add_trace(
-                go.Scatter(
-                    x=jitter_x,
-                    y=g,
-                    mode="markers",
-                    showlegend=False,
-                    marker=dict(color="rgba(0, 123, 255, 0.4)", size=4),
-                )
-            )
-
-        fig2.update_layout(
-            template="plotly_dark",
-            height=550,
-            xaxis_title="Group",
+            height=450,
             yaxis_title="Value",
+            title=f"Boxplots: {g1_name} vs {g2_name}",
         )
 
-        st_plot_with_download(fig2, key="ttest_indep_violin", height=550)
+        st.plotly_chart(fig, use_container_width=True)
 
     elif test_name == "Welch's t-test (Independent, Unequal Variances)":
 
-        from scipy.stats import ttest_ind
+        from scipy.stats import ttest_ind, t as t_dist_welch
 
         st.subheader("Interactive Welch's t-test")
 
-        # =========================
-        # CONTROLS
-        # =========================
-
-        mean_diff = st.slider("Mean Difference", 0.0, 10.0, 2.0, 0.1, key="mean_difference_1")
-
-        sd1 = st.slider("Group 1 SD", 0.5, 8.0, 1.0, 0.1)
-
-        sd2 = st.slider("Group 2 SD", 0.5, 8.0, 3.0, 0.1)
-
-        n = st.slider(
-            "Sample Size",
-            10,
-            300,
-            50,
-            key="welch_s_t_test_independent_unequal_variances_sample_size",
-        )
+        st.info("""
+        **Welch's t-test** is used when you cannot assume equal variances between the two groups.
+        It uses the Welch-Satterthwaite approximation to adjust the degrees of freedom.
+        
+        *Note: The enhanced "Student's t-test" widget now shows BOTH tests side-by-side for easy comparison.*
+        """)
 
         # =========================
-        # DATA
+        # DATA SOURCE TOGGLE
         # =========================
 
-        np.random.seed(42)
+        src = data_source_toggle("welch_ttest", mode="two_sample")
 
-        g1 = np.random.normal(0, sd1, n)
+        # =========================
+        # CONTROLS / DATA
+        # =========================
 
-        g2 = np.random.normal(mean_diff, sd2, n)
+        if src["using_uploaded"]:
+            g1 = src["data"]["group1"]
+            g2 = src["data"]["group2"]
+            g1_name, g2_name = src["data"]["group_names"]
+        else:
+            mean_diff = st.slider("Mean Difference", 0.0, 10.0, 2.0, 0.1, key="mean_difference_1")
+
+            sd1 = st.slider("Group 1 SD", 0.5, 8.0, 1.0, 0.1)
+
+            sd2 = st.slider("Group 2 SD", 0.5, 8.0, 3.0, 0.1)
+
+            n = st.slider(
+                "Sample Size",
+                10,
+                300,
+                50,
+                key="welch_s_t_test_independent_unequal_variances_sample_size",
+            )
+
+            np.random.seed(42)
+            g1 = np.random.normal(0, sd1, n)
+            g2 = np.random.normal(mean_diff, sd2, n)
+            g1_name = "Group 1"
+            g2_name = "Group 2"
+
+        # =========================
+        # DATA SUMMARY
+        # =========================
+
+        n1_w, n2_w = len(g1), len(g2)
+        m1_w, m2_w = np.mean(g1), np.mean(g2)
+        sd1_w, sd2_w = np.std(g1, ddof=1), np.std(g2, ddof=1)
+
+        st.divider()
+        st.subheader("Data Summary")
+
+        summary_data = {
+            "Group": [g1_name, g2_name],
+            "n": [n1_w, n2_w],
+            "Mean": [f"{m1_w:.3f}", f"{m2_w:.3f}"],
+            "SD": [f"{sd1_w:.3f}", f"{sd2_w:.3f}"],
+        }
+        st.table(pd.DataFrame(summary_data))
 
         t, p = ttest_ind(g1, g2, equal_var=False)
 
@@ -1552,13 +1621,13 @@ def render_test_widget(test_name):
 
         fig = go.Figure()
 
-        fig.add_trace(go.Violin(y=g1, name="Group 1"))
-
-        fig.add_trace(go.Violin(y=g2, name="Group 2"))
+        fig.add_trace(go.Violin(y=g1, name=g1_name))
+        fig.add_trace(go.Violin(y=g2, name=g2_name))
 
         fig.update_layout(
             template="plotly_dark",
             height=550,
+            title=f"Violin Plots: {g1_name} vs {g2_name}",
         )
 
         st_plot_with_download(fig, key="welch_ttest_violin", height=550)
@@ -1570,11 +1639,6 @@ def render_test_widget(test_name):
         st.divider()
         st.subheader("Detailed Results")
 
-        from scipy.stats import t as t_dist_welch
-
-        n1_w, n2_w = len(g1), len(g2)
-        m1_w, m2_w = np.mean(g1), np.mean(g2)
-        sd1_w, sd2_w = np.std(g1, ddof=1), np.std(g2, ddof=1)
         mean_diff_w = m2_w - m1_w
         se_w = np.sqrt(sd1_w**2 / n1_w + sd2_w**2 / n2_w)
 
@@ -1582,9 +1646,9 @@ def render_test_widget(test_name):
         welch_df_den = (sd1_w**2 / n1_w) ** 2 / (n1_w - 1) + (
             sd2_w**2 / n2_w
         ) ** 2 / (n2_w - 1)
-        welch_df = welch_df_num / welch_df_den
+        df_welch = welch_df_num / welch_df_den
 
-        ci_diff_w = se_w * t_dist_welch.ppf(0.975, welch_df)
+        ci_diff_w = se_w * t_dist_welch.ppf(0.975, df_welch)
 
         pooled_sd_w = np.sqrt((sd1_w**2 + sd2_w**2) / 2)
         cohens_d_w = mean_diff_w / pooled_sd_w
@@ -1594,8 +1658,8 @@ def render_test_widget(test_name):
 
         results_data = {
             "Metric": [
-                "Mean G1 (SD)",
-                "Mean G2 (SD)",
+                f"Mean {g1_name} (SD)",
+                f"Mean {g2_name} (SD)",
                 "Mean Difference",
                 "95% CI of Diff",
                 "t-statistic",
@@ -1611,7 +1675,7 @@ def render_test_widget(test_name):
                 f"{mean_diff_w:.3f}",
                 f"[{mean_diff_w - ci_diff_w:.3f}, {mean_diff_w + ci_diff_w:.3f}]",
                 f"{t:.3f}",
-                f"{welch_df:.1f}",
+                f"{df_welch:.1f}",
                 format_p_value(p),
                 format_effect_size_with_ci(cohens_d_w, d_lower_w, d_upper_w),
                 f"{hedges_g_w:.3f}",
@@ -1626,7 +1690,7 @@ def render_test_widget(test_name):
 
         fig2 = go.Figure()
 
-        for i, (g, name) in enumerate(zip([g1, g2], ["Group 1", "Group 2"])):
+        for i, (g, name) in enumerate(zip([g1, g2], [g1_name, g2_name])):
             fig2.add_trace(
                 go.Violin(
                     y=g,
@@ -1663,38 +1727,44 @@ def render_test_widget(test_name):
         st.subheader("Interactive Paired t-test")
 
         # =========================
-        # CONTROLS
+        # DATA SOURCE TOGGLE
         # =========================
 
-        effect = st.slider(
-            "Treatment Effect",
-            -5.0,
-            5.0,
-            1.0,
-            0.1,
-        )
-
-        noise = st.slider(
-            "Noise",
-            0.1,
-            5.0,
-            1.0,
-            0.1,
-        )
-
-        n = st.slider(
-            "Number of Subjects", 10, 200, 40, key="paired_t_test_number_of_subjects"
-        )
+        src = data_source_toggle("ttest_paired", mode="paired")
 
         # =========================
-        # DATA
+        # CONTROLS / DATA
         # =========================
 
-        np.random.seed(42)
+        if src["using_uploaded"]:
+            before = src["data"]["values1"]
+            after = src["data"]["values2"]
+            col_names = src["data"].get("col_names", ["Before", "After"])
+        else:
+            effect = st.slider(
+                "Treatment Effect",
+                -5.0,
+                5.0,
+                1.0,
+                0.1,
+            )
 
-        before = np.random.normal(10, noise, n)
+            noise = st.slider(
+                "Noise",
+                0.1,
+                5.0,
+                1.0,
+                0.1,
+            )
 
-        after = before + effect + np.random.normal(0, noise, n)
+            n = st.slider(
+                "Number of Subjects", 10, 200, 40, key="paired_t_test_number_of_subjects"
+            )
+
+            np.random.seed(42)
+            before = np.random.normal(10, noise, n)
+            after = before + effect + np.random.normal(0, noise, n)
+            col_names = ["Before", "After"]
 
         t, p = ttest_rel(before, after)
 
@@ -1712,11 +1782,11 @@ def render_test_widget(test_name):
 
         fig = go.Figure()
 
-        for i in range(n):
+        for i in range(len(before)):
 
             fig.add_trace(
                 go.Scatter(
-                    x=["Before", "After"],
+                    x=col_names,
                     y=[before[i], after[i]],
                     mode="lines+markers",
                     showlegend=False,
@@ -1756,8 +1826,8 @@ def render_test_widget(test_name):
 
         results_data = {
             "Metric": [
-                "Mean Pre (SD)",
-                "Mean Post (SD)",
+                f"Mean {col_names[0]} (SD)",
+                f"Mean {col_names[1]} (SD)",
                 "Mean Difference",
                 "95% CI of Diff",
                 "t-statistic",
@@ -1791,7 +1861,7 @@ def render_test_widget(test_name):
         for i in range(n_p):
             fig2.add_trace(
                 go.Scatter(
-                    x=["Before", "After"],
+                    x=col_names,
                     y=[before[i], after[i]],
                     mode="lines+markers",
                     showlegend=False,
@@ -1802,7 +1872,7 @@ def render_test_widget(test_name):
 
         fig2.add_trace(
             go.Scatter(
-                x=["Before", "After"],
+                x=col_names,
                 y=[mean_pre, mean_post],
                 mode="lines+markers",
                 name="Mean change",
@@ -1816,7 +1886,7 @@ def render_test_widget(test_name):
             line_dash="dot",
             line_color="gray",
             opacity=0.5,
-            annotation_text=f"Pre Mean = {mean_pre:.2f}",
+            annotation_text=f"{col_names[0]} Mean = {mean_pre:.2f}",
         )
 
         fig2.add_hrect(
@@ -1842,48 +1912,73 @@ def render_test_widget(test_name):
 
     elif test_name == "One-way ANOVA":
 
-        from scipy.stats import f_oneway
+        from scipy.stats import f_oneway, f as f_dist_1w
 
         st.subheader("Interactive One-way ANOVA")
 
         # =========================
-        # CONTROLS
+        # DATA SOURCE TOGGLE
         # =========================
 
-        mean_shift = st.slider(
-            "Group Separation",
-            0.0,
-            10.0,
-            2.0,
-            0.1,
-        )
-
-        noise = st.slider(
-            "Within-group Variability",
-            0.1,
-            5.0,
-            1.0,
-            0.1,
-        )
+        src = data_source_toggle("oneway_anova", mode="multi_sample")
 
         # =========================
-        # DATA
+        # CONTROLS / DATA
         # =========================
 
-        np.random.seed(42)
+        if src["using_uploaded"]:
+            groups_1w = src["data"]["groups"]
+            group_names_1w = src["data"]["group_names"]
+        else:
+            mean_shift = st.slider(
+                "Group Separation",
+                0.0,
+                10.0,
+                2.0,
+                0.1,
+            )
 
-        g1 = np.random.normal(0, noise, 60)
-        g2 = np.random.normal(mean_shift, noise, 60)
-        g3 = np.random.normal(mean_shift * 2, noise, 60)
+            noise = st.slider(
+                "Within-group Variability",
+                0.1,
+                5.0,
+                1.0,
+                0.1,
+            )
 
-        F, p = f_oneway(g1, g2, g3)
+            np.random.seed(42)
+            g1 = np.random.normal(0, noise, 60)
+            g2 = np.random.normal(mean_shift, noise, 60)
+            g3 = np.random.normal(mean_shift * 2, noise, 60)
+            groups_1w = [g1, g2, g3]
+            group_names_1w = ["Group 1", "Group 2", "Group 3"]
+
+        F, p = f_oneway(*groups_1w)
+
+        # =========================
+        # DATA SUMMARY
+        # =========================
+
+        st.divider()
+        st.subheader("Data Summary")
+
+        means_1w = [np.mean(g) for g in groups_1w]
+        sds_1w = [np.std(g, ddof=1) for g in groups_1w]
+        n_1w = [len(g) for g in groups_1w]
+
+        summary_data = {
+            "Group": group_names_1w,
+            "n": n_1w,
+            "Mean": [f"{m:.3f}" for m in means_1w],
+            "SD": [f"{s:.3f}" for s in sds_1w],
+        }
+        st.table(pd.DataFrame(summary_data))
 
         # =========================
         # STATS
         # =========================
 
         st.latex(rf"F = {F:.3f}")
-
         st.latex(rf"\text{{{format_p_value(p)}}}")
 
         # =========================
@@ -1892,13 +1987,13 @@ def render_test_widget(test_name):
 
         fig = go.Figure()
 
-        fig.add_trace(go.Box(y=g1, name="Group 1"))
-        fig.add_trace(go.Box(y=g2, name="Group 2"))
-        fig.add_trace(go.Box(y=g3, name="Group 3"))
+        for i, (g, name) in enumerate(zip(groups_1w, group_names_1w)):
+            fig.add_trace(go.Box(y=g, name=name))
 
         fig.update_layout(
             template="plotly_dark",
             height=550,
+            title="Boxplots by Group",
         )
 
         st_plot_with_download(fig, key="oneway_anova_box", height=550)
@@ -1910,12 +2005,6 @@ def render_test_widget(test_name):
         st.divider()
         st.subheader("Detailed Results")
 
-        from scipy.stats import f as f_dist_1w
-
-        groups_1w = [g1, g2, g3]
-        means_1w = [np.mean(g) for g in groups_1w]
-        sds_1w = [np.std(g, ddof=1) for g in groups_1w]
-        n_1w = [len(g) for g in groups_1w]
         n_total_1w = sum(n_1w)
         k_1w = len(groups_1w)
         grand_mean_1w = np.mean(np.concatenate(groups_1w))
@@ -1936,29 +2025,30 @@ def render_test_widget(test_name):
         )
         eta_interp = interpret_eta_squared(eta_sq)
 
+        metric_list = [f"Mean {name} (SD)" for name in group_names_1w] + [
+            "F",
+            f"df ({df_between}, {df_within})",
+            "p-value",
+            "η²",
+            "ω² (unbiased)",
+            "Interpretation",
+            "",
+        ]
+        value_list = [
+            f"{m:.2f} ({s:.2f})" for m, s in zip(means_1w, sds_1w)
+        ] + [
+            f"{F_1w:.3f}",
+            f"{df_between}, {df_within}",
+            format_p_value(p_1w),
+            f"{eta_sq:.4f}",
+            f"{max(0, omega_sq):.4f}",
+            eta_interp,
+            "",
+        ]
+
         results_data = {
-            "Metric": [
-                "Mean G1 (SD)",
-                "Mean G2 (SD)",
-                "Mean G3 (SD)",
-                "F",
-                f"df ({df_between}, {df_within})",
-                "p-value",
-                "η²",
-                "ω² (unbiased)",
-                "Interpretation",
-            ],
-            "Value": [
-                f"{means_1w[0]:.2f} ({sds_1w[0]:.2f})",
-                f"{means_1w[1]:.2f} ({sds_1w[1]:.2f})",
-                f"{means_1w[2]:.2f} ({sds_1w[2]:.2f})",
-                f"{F_1w:.3f}",
-                f"{df_between}, {df_within}",
-                format_p_value(p_1w),
-                f"{eta_sq:.4f}",
-                f"{max(0, omega_sq):.4f}",
-                eta_interp,
-            ],
+            "Metric": metric_list,
+            "Value": value_list,
         }
         st.table(pd.DataFrame(results_data))
 
@@ -1983,9 +2073,7 @@ def render_test_widget(test_name):
 
         fig2 = go.Figure()
 
-        for i, (g, name) in enumerate(
-            zip(groups_1w, ["Group 1", "Group 2", "Group 3"])
-        ):
+        for i, (g, name) in enumerate(zip(groups_1w, group_names_1w)):
             fig2.add_trace(
                 go.Violin(
                     y=g,
@@ -2018,13 +2106,14 @@ def render_test_widget(test_name):
             height=550,
             xaxis_title="Group",
             yaxis_title="Value",
+            title="Violin Plots with Data Points",
         )
 
         st_plot_with_download(fig2, key="oneway_anova_violin", height=550)
 
         st.divider()
         st.subheader("Post-Hoc Tests")
-        render_post_hoc([g1, g2, g3], param_type="parametric", key="anova_ph")
+        render_post_hoc(groups_1w, param_type="parametric", key="anova_ph")
 
     elif test_name == "Two-way ANOVA":
 
