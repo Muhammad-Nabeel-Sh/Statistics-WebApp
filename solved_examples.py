@@ -190,7 +190,7 @@ def _solved_ttest():
     else:
         interpretation = "large"
     _step_formula(
-        rf"Cohen's d = {cohens_d:.4f} — this is a **{interpretation}** effect size."
+        rf"\text{{Cohen's }} d = {cohens_d:.4f} \text{{— this is a }} {interpretation} \text{{ effect size. }}"
     )
 
     st.divider()

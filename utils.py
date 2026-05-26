@@ -160,48 +160,51 @@ def st_plot_with_download(fig, key, use_container_width=True, height=None):
     """
     chart = st.plotly_chart(fig, use_container_width=use_container_width)
 
+    col1, col2, col3 = st.columns([1, 1, 1])
+
+    png_height = height or fig.layout.height or 500
+    png_width = 800 if use_container_width else (fig.layout.width or 700)
+
     try:
-        import io
-        import base64
-
-        png_height = height or fig.layout.height or 500
-        png_width = 800 if use_container_width else (fig.layout.width or 700)
-
-        col1, col2 = st.columns(2)
-
-        try:
-            fig_bytes = fig.to_image(
-                format="png", width=png_width, height=png_height, scale=2
+        fig_bytes = fig.to_image(
+            format="png", width=png_width, height=png_height, scale=2
+        )
+        with col1:
+            st.download_button(
+                label="📥 PNG (300 DPI)",
+                data=fig_bytes,
+                file_name=f"figure_{key}.png",
+                mime="image/png",
+                key=f"dl_png_{key}",
+                use_container_width=True,
             )
-            with col1:
-                st.download_button(
-                    label="📥 Download PNG (300 DPI)",
-                    data=fig_bytes,
-                    file_name=f"figure_{key}.png",
-                    mime="image/png",
-                    key=f"dl_png_{key}",
-                    use_container_width=True,
-                )
-        except Exception:
-            with col1:
-                st.info("PNG export requires kaleido package")
+    except Exception as e_png:
+        with col1:
+            st.info("ℹ️ Install kaleido for PNG export: `pip install kaleido`")
 
-        try:
-            svg_bytes = fig.to_image(format="svg", width=png_width, height=png_height)
-            with col2:
-                st.download_button(
-                    label="📥 Download SVG",
-                    data=svg_bytes,
-                    file_name=f"figure_{key}.svg",
-                    mime="image/svg+xml",
-                    key=f"dl_svg_{key}",
-                    use_container_width=True,
-                )
-        except Exception:
-            pass
+    try:
+        import plotly.io as pio
+        svg_content = pio.to_image(fig, format="svg")
+        with col2:
+            st.download_button(
+                label="📥 SVG (Vector)",
+                data=svg_content,
+                file_name=f"figure_{key}.svg",
+                mime="image/svg+xml",
+                key=f"dl_svg_{key}",
+                use_container_width=True,
+            )
+    except Exception as e_svg:
+        with col2:
+            st.info("ℹ️ SVG export: try `pip install -U plotly kaleido`")
 
-    except Exception:
-        pass
+    with col3:
+        with st.expander("💡 Export Tips"):
+            st.markdown("""
+            - **PNG**: Best for presentations, emails, Word
+            - **SVG**: Best for publications (Illustrator/Inkscape)
+            - **Built-in camera**: Quick PNG via Plotly's JS renderer
+            """)
 
     return chart
 
