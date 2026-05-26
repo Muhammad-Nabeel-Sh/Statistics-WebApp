@@ -3172,6 +3172,37 @@ def render_diagnostics():
             label_visibility="collapsed",
         )
 
+    cat_descriptions = {
+        "Normality Tests": "Normality tests assess whether a sample plausibly came from a normal distribution. "
+            "Many parametric procedures (t-tests, ANOVA, linear regression) assume normality of residuals. "
+            "These tests vary in sensitivity — the Shapiro-Wilk and Anderson-Darling tests are generally preferred "
+            "for their power across a wide range of non-normal alternatives.",
+        "Homogeneity of Variance Tests": "These tests check whether multiple groups share a common variance, "
+            "a core assumption of ANOVA and pooled-variance t-tests. Levene's and Fligner-Killeen are robust "
+            "to non-normality; Bartlett's is more powerful under normality but sensitive to departures from it. "
+            "Cochran's C is designed for balanced designs with equal group sizes.",
+        "Autocorrelation Tests": "Autocorrelation tests detect correlation between consecutive residuals in "
+            "time-ordered data. The Durbin-Watson test targets first-order autocorrelation in regression residuals. "
+            "Violations inflate or deflate standard errors and distort hypothesis tests.",
+        "Heteroscedasticity Tests": "Heteroscedasticity occurs when residual variance changes across levels of "
+            "the predictors, violating the OLS constant-variance assumption. The Breusch-Pagan test detects "
+            "linear forms of heteroscedasticity; White's test is more general, capturing non-linear patterns "
+            "and potential model misspecification.",
+        "Outlier Detection Tests": "Outlier tests identify observations that deviate markedly from the rest "
+            "of the data. Grubbs' test detects a single outlier; Rosner's (Generalized ESD) handles multiple "
+            "outliers. Mahalanobis distance flags multivariate outliers by accounting for correlations among "
+            "variables. The IQR method provides a simple distribution-free heuristic.",
+        "Multicollinearity Diagnostics": "Multicollinearity arises when predictors in a regression are highly "
+            "correlated, inflating coefficient variances and making estimates unstable. VIF quantifies how much "
+            "each coefficient's variance is inflated. The condition index — derived from singular value decomposition "
+            "of the design matrix — detects the severity and dimensionality of collinearity.",
+        "Influence Diagnostics": "Influence diagnostics identify observations that disproportionately affect "
+            "regression estimates. Cook's distance combines leverage and residual magnitude into a single influence "
+            "measure. DFFITS captures the standardized change in fitted values when an observation is removed. "
+            "Leverage (hat values) flags points with extreme predictor values regardless of their residual.",
+    }
+    st.markdown(f"_{cat_descriptions[cat]}_")
+
     tests_in_cat = DIAG_CATEGORIES[cat]
     diag_choice = st.selectbox(
         f"**{cat}** — Select a test",

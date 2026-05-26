@@ -3,6 +3,17 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from post_hoc import render_post_hoc
+from utils import (
+    format_p_value,
+    cohens_d_one_sample_ci,
+    cohens_d_independent_ci,
+    hedges_g,
+    omega_squared_partial,
+    format_effect_size_with_ci,
+    st_plot_with_download,
+    interpret_cohens_d,
+    interpret_eta_squared,
+)
 
 
 def render_latex(formula_text):
@@ -86,8 +97,7 @@ def render_test_widget(test_name):
         # =========================
 
         st.latex(rf"t = {t:.3f}")
-
-        st.latex(rf"\text{{p-value}} = {p:.5f}")
+        st.latex(rf"\text{{{format_p_value(p)}}}")
 
         # =========================
         # PLOT
@@ -112,7 +122,7 @@ def render_test_widget(test_name):
             height=550,
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        st_plot_with_download(fig, key="ttest_1samp_hist", height=550)
 
         # =========================
         # DETAILED STATISTICS TABLE
@@ -130,6 +140,9 @@ def render_test_widget(test_name):
         se = sem(sample)
         ci = se * t_dist.ppf(0.975, n - 1)
         cohens_d = (sample_mean - population_mean) / sample_sd
+        d_lower, d_upper = cohens_d_one_sample_ci(cohens_d, n)
+        hedges = hedges_g(cohens_d, n)
+        d_interp = interpret_cohens_d(cohens_d)
 
         results_data = {
             "Metric": [
@@ -140,17 +153,21 @@ def render_test_widget(test_name):
                 "t-statistic",
                 "df",
                 "p-value",
-                "Cohen's d",
+                "Cohen's d [95% CI]",
+                "Hedges' g (unbiased)",
+                "Interpretation",
             ],
             "Value": [
                 f"{sample_mean:.3f}",
                 f"{population_mean:.3f}",
                 f"{sample_mean - population_mean:.3f}",
-                f"±{ci:.3f}",
+                f"[{sample_mean - population_mean - ci:.3f}, {sample_mean - population_mean + ci:.3f}]",
                 f"{t:.3f}",
                 f"{n - 1}",
-                f"{p:.5f}",
-                f"{cohens_d:.3f}",
+                format_p_value(p),
+                format_effect_size_with_ci(cohens_d, d_lower, d_upper),
+                f"{hedges:.3f}",
+                d_interp,
             ],
         }
         st.table(pd.DataFrame(results_data))
@@ -217,7 +234,7 @@ def render_test_widget(test_name):
             yaxis_title="Density",
         )
 
-        st.plotly_chart(fig2, use_container_width=True)
+        st_plot_with_download(fig2, key="ttest_1samp_density", height=400)
 
     elif test_name == "One-sample z-test":
 
@@ -266,7 +283,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"z = {z:.3f}")
 
-        st.latex(rf"\text{{p-value}} = {p:.5f}")
+        st.latex(rf"\text{{{format_p_value(p)}}}")
 
         # =========================
         # PLOT
@@ -428,7 +445,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"\hat{{p}} = {observed_p:.2f}")
 
-        st.latex(rf"\text{{p-value}} = {result.pvalue:.5f}")
+        st.latex(rf"\text{{{format_p_value(result.pvalue)}}}")
 
         # =========================
         # PLOT
@@ -595,7 +612,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"W = {stat:.3f}")
 
-        st.latex(rf"\text{{p-value}} = {p:.5f}")
+        st.latex(rf"\text{{{format_p_value(p)}}}")
 
         # =========================
         # PLOT
@@ -731,7 +748,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"\chi^2 = {chi2:.3f}")
 
-        st.latex(rf"\text{{p-value}} = {p:.5f}")
+        st.latex(rf"\text{{{format_p_value(p)}}}")
 
         # =========================
         # PLOT
@@ -864,7 +881,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"\text{{Degrees of Freedom}} = {dof}")
 
-        st.latex(rf"\text{{p-value}} = {p:.5f}")
+        st.latex(rf"\text{{{format_p_value(p)}}}")
 
         # =========================
         # HEATMAP
@@ -987,7 +1004,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"\chi^2 = {result.statistic:.3f}")
 
-        st.latex(rf"\text{{p-value}} = {result.pvalue:.5f}")
+        st.latex(rf"\text{{{format_p_value(result.pvalue)}}}")
 
         # =========================
         # HEATMAP
@@ -1119,7 +1136,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"Q = {result.statistic:.3f}")
 
-        st.latex(rf"\text{{p-value}} = {result.pvalue:.5f}")
+        st.latex(rf"\text{{{format_p_value(result.pvalue)}}}")
 
         # =========================
         # PLOT
@@ -1248,7 +1265,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"OR = {odds_ratio:.3f}")
 
-        st.latex(rf"\text{{p-value}} = {p:.5f}")
+        st.latex(rf"\text{{{format_p_value(p)}}}")
 
         # =========================
         # HEATMAP
@@ -1378,7 +1395,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"t = {t:.3f}")
 
-        st.latex(rf"\text{{p-value}} = {p:.5f}")
+        st.latex(rf"\text{{{format_p_value(p)}}}")
 
         # =========================
         # PLOT
@@ -1394,7 +1411,7 @@ def render_test_widget(test_name):
             height=550,
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        st_plot_with_download(fig, key="ttest_indep_box", height=550)
 
         # =========================
         # DETAILED STATISTICS TABLE
@@ -1415,6 +1432,9 @@ def render_test_widget(test_name):
         se_diff_s = pooled_sd * np.sqrt(1 / n1_s + 1 / n2_s)
         ci_diff_s = se_diff_s * t_dist_student.ppf(0.975, n1_s + n2_s - 2)
         cohens_d_s = mean_diff_s / pooled_sd
+        d_lower_s, d_upper_s = cohens_d_independent_ci(cohens_d_s, n1_s, n2_s)
+        hedges_g_s = hedges_g(cohens_d_s, n1_s, n2_s)
+        d_interp_s = interpret_cohens_d(cohens_d_s)
 
         results_data = {
             "Metric": [
@@ -1426,10 +1446,9 @@ def render_test_widget(test_name):
                 "t-statistic",
                 "df",
                 "p-value",
-                "Cohen's d",
-                "",
-                "",
-                "",
+                "Cohen's d [95% CI]",
+                "Hedges' g (unbiased)",
+                "Interpretation",
             ],
             "Value": [
                 f"{m1_s:.2f} ({sd1_s:.2f})",
@@ -1439,11 +1458,10 @@ def render_test_widget(test_name):
                 f"{pooled_sd:.3f}",
                 f"{t:.3f}",
                 f"{n1_s + n2_s - 2}",
-                f"{p:.5f}",
-                f"{cohens_d_s:.4f}",
-                "",
-                "",
-                "",
+                format_p_value(p),
+                format_effect_size_with_ci(cohens_d_s, d_lower_s, d_upper_s),
+                f"{hedges_g_s:.3f}",
+                d_interp_s,
             ],
         }
         st.table(pd.DataFrame(results_data))
@@ -1482,7 +1500,7 @@ def render_test_widget(test_name):
             yaxis_title="Value",
         )
 
-        st.plotly_chart(fig2, use_container_width=True)
+        st_plot_with_download(fig2, key="ttest_indep_violin", height=550)
 
     elif test_name == "Welch's t-test (Independent, Unequal Variances)":
 
@@ -1526,7 +1544,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"t = {t:.3f}")
 
-        st.latex(rf"\text{{p-value}} = {p:.5f}")
+        st.latex(rf"\text{{{format_p_value(p)}}}")
 
         # =========================
         # PLOT
@@ -1543,7 +1561,7 @@ def render_test_widget(test_name):
             height=550,
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        st_plot_with_download(fig, key="welch_ttest_violin", height=550)
 
         # =========================
         # DETAILED STATISTICS TABLE
@@ -1570,6 +1588,9 @@ def render_test_widget(test_name):
 
         pooled_sd_w = np.sqrt((sd1_w**2 + sd2_w**2) / 2)
         cohens_d_w = mean_diff_w / pooled_sd_w
+        d_lower_w, d_upper_w = cohens_d_independent_ci(cohens_d_w, n1_w, n2_w)
+        hedges_g_w = hedges_g(cohens_d_w, n1_w, n2_w)
+        d_interp_w = interpret_cohens_d(cohens_d_w)
 
         results_data = {
             "Metric": [
@@ -1580,7 +1601,9 @@ def render_test_widget(test_name):
                 "t-statistic",
                 "Welch df",
                 "p-value",
-                "Cohen's d",
+                "Cohen's d [95% CI]",
+                "Hedges' g (unbiased)",
+                "Interpretation",
             ],
             "Value": [
                 f"{m1_w:.2f} ({sd1_w:.2f})",
@@ -1589,8 +1612,10 @@ def render_test_widget(test_name):
                 f"[{mean_diff_w - ci_diff_w:.3f}, {mean_diff_w + ci_diff_w:.3f}]",
                 f"{t:.3f}",
                 f"{welch_df:.1f}",
-                f"{p:.5f}",
-                f"{cohens_d_w:.4f}",
+                format_p_value(p),
+                format_effect_size_with_ci(cohens_d_w, d_lower_w, d_upper_w),
+                f"{hedges_g_w:.3f}",
+                d_interp_w,
             ],
         }
         st.table(pd.DataFrame(results_data))
@@ -1629,7 +1654,7 @@ def render_test_widget(test_name):
             yaxis_title="Value",
         )
 
-        st.plotly_chart(fig2, use_container_width=True)
+        st_plot_with_download(fig2, key="welch_ttest_strip", height=550)
 
     elif test_name == "Paired t-test":
 
@@ -1679,7 +1704,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"t = {t:.3f}")
 
-        st.latex(rf"\text{{p-value}} = {p:.5f}")
+        st.latex(rf"\text{{{format_p_value(p)}}}")
 
         # =========================
         # PLOT
@@ -1703,7 +1728,7 @@ def render_test_widget(test_name):
             height=600,
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        st_plot_with_download(fig, key="paired_ttest_spaghetti", height=600)
 
         # =========================
         # DETAILED STATISTICS TABLE
@@ -1725,6 +1750,9 @@ def render_test_widget(test_name):
         se_diff = sd_diff / np.sqrt(n_p)
         ci_diff_paired = se_diff * t_dist_paired.ppf(0.975, n_p - 1)
         cohens_dz = mean_diff_p / sd_diff
+        dz_lower, dz_upper = cohens_d_one_sample_ci(cohens_dz, n_p)
+        hedges_g_paired = hedges_g(cohens_dz, n_p)
+        dz_interp = interpret_cohens_d(cohens_dz)
 
         results_data = {
             "Metric": [
@@ -1735,7 +1763,9 @@ def render_test_widget(test_name):
                 "t-statistic",
                 "df",
                 "p-value",
-                "Cohen's d_z",
+                "Cohen's d_z [95% CI]",
+                "Hedges' g (unbiased)",
+                "Interpretation",
             ],
             "Value": [
                 f"{mean_pre:.2f} ({sd_pre:.2f})",
@@ -1744,8 +1774,10 @@ def render_test_widget(test_name):
                 f"[{mean_diff_p - ci_diff_paired:.3f}, {mean_diff_p + ci_diff_paired:.3f}]",
                 f"{t:.3f}",
                 f"{n_p - 1}",
-                f"{p:.5f}",
-                f"{cohens_dz:.4f}",
+                format_p_value(p),
+                format_effect_size_with_ci(cohens_dz, dz_lower, dz_upper),
+                f"{hedges_g_paired:.3f}",
+                dz_interp,
             ],
         }
         st.table(pd.DataFrame(results_data))
@@ -1804,7 +1836,7 @@ def render_test_widget(test_name):
             yaxis_title="Value",
         )
 
-        st.plotly_chart(fig2, use_container_width=True)
+        st_plot_with_download(fig2, key="paired_ttest_profile", height=600)
 
     # Parametric Multiple Group Tests
 
@@ -1852,7 +1884,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"F = {F:.3f}")
 
-        st.latex(rf"\text{{p-value}} = {p:.5f}")
+        st.latex(rf"\text{{{format_p_value(p)}}}")
 
         # =========================
         # PLOT
@@ -1869,7 +1901,7 @@ def render_test_widget(test_name):
             height=550,
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        st_plot_with_download(fig, key="oneway_anova_box", height=550)
 
         # =========================
         # DETAILED STATISTICS TABLE
@@ -1902,6 +1934,7 @@ def render_test_widget(test_name):
         omega_sq = (ss_between - df_between * ms_within) / (
             ss_between + ss_within + ms_within
         )
+        eta_interp = interpret_eta_squared(eta_sq)
 
         results_data = {
             "Metric": [
@@ -1912,7 +1945,8 @@ def render_test_widget(test_name):
                 f"df ({df_between}, {df_within})",
                 "p-value",
                 "η²",
-                "Partial ω²",
+                "ω² (unbiased)",
+                "Interpretation",
             ],
             "Value": [
                 f"{means_1w[0]:.2f} ({sds_1w[0]:.2f})",
@@ -1920,12 +1954,28 @@ def render_test_widget(test_name):
                 f"{means_1w[2]:.2f} ({sds_1w[2]:.2f})",
                 f"{F_1w:.3f}",
                 f"{df_between}, {df_within}",
-                f"{p_1w:.5f}",
+                format_p_value(p_1w),
                 f"{eta_sq:.4f}",
-                f"{omega_sq:.4f}",
+                f"{max(0, omega_sq):.4f}",
+                eta_interp,
             ],
         }
         st.table(pd.DataFrame(results_data))
+
+        with st.expander("Note: ω² (Omega-squared) is preferred over η²"):
+            st.markdown("""
+            **η² (Eta-squared)** measures the proportion of variance explained, but it is **positively biased** — it tends to overestimate the true population effect size, especially in small samples.
+
+            **ω² (Omega-squared)** applies a correction that makes it **unbiased**. It is:
+            - Always smaller than η² (except when the true effect is exactly 0)
+            - Recommended by the APA 7th edition for reporting ANOVA results
+            - Less likely to capitalize on chance in small samples
+
+            **Interpretation (Cohen, 1988):**
+            - Small: ω² ≈ 0.01 (1% of variance explained)
+            - Medium: ω² ≈ 0.06 (6% of variance explained)
+            - Large: ω² ≈ 0.14 (14%+ of variance explained)
+            """)
 
         # =========================
         # ENHANCED CHART
@@ -1970,7 +2020,7 @@ def render_test_widget(test_name):
             yaxis_title="Value",
         )
 
-        st.plotly_chart(fig2, use_container_width=True)
+        st_plot_with_download(fig2, key="oneway_anova_violin", height=550)
 
         st.divider()
         st.subheader("Post-Hoc Tests")
@@ -2020,7 +2070,7 @@ def render_test_widget(test_name):
 
         fig.update_layout(template="plotly_dark", height=550)
 
-        st.plotly_chart(fig, use_container_width=True)
+        st_plot_with_download(fig, key="twoway_anova_box", height=550)
 
         # =========================
         # DETAILED STATISTICS TABLE
@@ -2053,10 +2103,19 @@ def render_test_widget(test_name):
         ss_B = anova_tw.loc["C(B)", "sum_sq"]
         ss_AB = anova_tw.loc["C(A):C(B)", "sum_sq"]
         ss_resid_tw = anova_tw.loc["Residual", "sum_sq"]
+        df_A = anova_tw.loc["C(A)", "df"]
+        df_B = anova_tw.loc["C(B)", "df"]
+        df_AB = anova_tw.loc["C(A):C(B)", "df"]
+        ms_resid_tw = anova_tw.loc["Residual", "sum_sq"] / anova_tw.loc["Residual", "df"]
+        n_total_tw = len(df_tw)
 
         partial_eta_A = ss_A / (ss_A + ss_resid_tw)
         partial_eta_B = ss_B / (ss_B + ss_resid_tw)
         partial_eta_AB = ss_AB / (ss_AB + ss_resid_tw)
+
+        partial_omega_A = omega_squared_partial(ss_A, int(df_A), ss_resid_tw, ms_resid_tw, n_total_tw)
+        partial_omega_B = omega_squared_partial(ss_B, int(df_B), ss_resid_tw, ms_resid_tw, n_total_tw)
+        partial_omega_AB = omega_squared_partial(ss_AB, int(df_AB), ss_resid_tw, ms_resid_tw, n_total_tw)
 
         results_data = {
             "Metric": [
@@ -2067,15 +2126,15 @@ def render_test_widget(test_name):
                 "F_A",
                 "p_A",
                 "Partial η²_A",
-                "",
+                "Partial ω²_A",
                 "F_B",
                 "p_B",
                 "Partial η²_B",
-                "",
+                "Partial ω²_B",
                 "F_AB",
                 "p_AB",
                 "Partial η²_AB",
-                "",
+                "Partial ω²_AB",
             ],
             "Value": [
                 f"{np.mean(A1B1):.3f}",
@@ -2083,20 +2142,35 @@ def render_test_widget(test_name):
                 f"{np.mean(A2B1):.3f}",
                 f"{np.mean(A2B2):.3f}",
                 f"{F_A:.3f}",
-                f"{p_A:.5f}",
+                format_p_value(p_A),
                 f"{partial_eta_A:.4f}",
-                "",
+                f"{partial_omega_A:.4f}",
                 f"{F_B:.3f}",
-                f"{p_B:.5f}",
+                format_p_value(p_B),
                 f"{partial_eta_B:.4f}",
-                "",
+                f"{partial_omega_B:.4f}",
                 f"{F_AB:.3f}",
-                f"{p_AB:.5f}",
+                format_p_value(p_AB),
                 f"{partial_eta_AB:.4f}",
-                "",
+                f"{partial_omega_AB:.4f}",
             ],
         }
         st.table(pd.DataFrame(results_data))
+
+        with st.expander("Note: Partial ω² (Omega-squared) vs η² (Eta-squared)"):
+            st.markdown("""
+            **Partial η²** is the most commonly reported effect size for ANOVA, but it is **biased upward** in small samples.
+
+            **Partial ω²** is an **unbiased estimator** that:
+            - Corrects for positive bias in η²
+            - Is always smaller than η²
+            - Is preferred by APA 7th edition when sample sizes are small
+
+            **Interpretation (Cohen, 1988):**
+            - Small: ω² ≈ 0.01
+            - Medium: ω² ≈ 0.06
+            - Large: ω² ≈ 0.14
+            """)
 
         # =========================
         # ENHANCED CHART
@@ -2128,7 +2202,7 @@ def render_test_widget(test_name):
             yaxis_title="Cell Mean",
         )
 
-        st.plotly_chart(fig2, use_container_width=True)
+        st_plot_with_download(fig2, key="twoway_anova_interaction", height=500)
 
         st.divider()
         st.subheader("Post-Hoc Tests")
@@ -2753,7 +2827,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"W = {stat:.3f}")
 
-        st.latex(rf"\text{{p-value}} = {p:.5f}")
+        st.latex(rf"\text{{{format_p_value(p)}}}")
 
         # =========================
         # PLOT
@@ -2908,7 +2982,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"U = {u:.3f}")
 
-        st.latex(rf"\text{{p-value}} = {p:.5f}")
+        st.latex(rf"\text{{{format_p_value(p)}}}")
 
         # =========================
         # PLOT
@@ -3046,7 +3120,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"H = {H:.3f}")
 
-        st.latex(rf"\text{{p-value}} = {p:.5f}")
+        st.latex(rf"\text{{{format_p_value(p)}}}")
 
         # =========================
         # PLOT
@@ -3194,7 +3268,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"\chi^2 = {stat:.3f}")
 
-        st.latex(rf"\text{{p-value}} = {p:.5f}")
+        st.latex(rf"\text{{{format_p_value(p)}}}")
 
         # =========================
         # PLOT
@@ -3631,7 +3705,7 @@ def render_test_widget(test_name):
         # =========================
 
         st.latex(rf"\tau_b = {tau:.3f}")
-        st.latex(rf"\text{{p-value}} = {p:.5f}")
+        st.latex(rf"\text{{{format_p_value(p)}}}")
 
         # =========================
         # PLOT
@@ -3753,7 +3827,7 @@ def render_test_widget(test_name):
 
         st.latex(rf"r_{{pb}} = {r:.3f}")
 
-        st.latex(rf"\text{{p-value}} = {p:.5f}")
+        st.latex(rf"\text{{{format_p_value(p)}}}")
 
         # =========================
         # PLOT

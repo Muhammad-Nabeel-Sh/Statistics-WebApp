@@ -1774,8 +1774,7 @@ def ordinal_logit_widget():
                     mode="lines",
                     name=f"P(Y <= {i+1})",
                     line=dict(dash="dash", color=colors[i]),
-                    hovertemplate="X = %{x:.2f}<br>P(Y <= %s) = %{y:.3f}<extra></extra>"
-                    % (i + 1),
+                    hovertemplate=f"X = %{{x:.2f}}<br>P(Y <= {i+1}) = %{{y:.3f}}<extra></extra>",
                 )
             )
     for i in range(k):
