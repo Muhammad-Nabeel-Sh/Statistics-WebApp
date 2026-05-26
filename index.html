@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Statistics Assistant</title>
+    
+    <title>Statistics Assistant - Statistical Test Finder & Analysis Tools</title>
+    
     <style>
         * {
             margin: 0;
@@ -26,11 +28,46 @@
             --accent-amber: #f59e0b;
             --accent-cyan: #06b6d4;
             --accent-orange: #f97316;
+            --accent-red: #ef4444;
+            --accent-violet: #8b5cf6;
             --border-subtle: #475569;
             --shadow-lg: 0 10px 40px -12px rgba(0, 0, 0, 0.4);
             --shadow-xl: 0 20px 50px -20px rgba(99, 102, 241, 0.3);
             --radius-lg: 16px;
             --radius-xl: 24px;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes glow {
+            0%, 100% { 
+                box-shadow: 0 0 20px rgba(99, 102, 241, 0.3),
+                           0 0 40px rgba(168, 85, 247, 0.1);
+            }
+            50% { 
+                box-shadow: 0 0 30px rgba(99, 102, 241, 0.5),
+                           0 0 60px rgba(168, 85, 247, 0.2);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         body {
@@ -47,53 +84,119 @@
             padding: 40px 24px;
         }
 
-        /* Header */
+        /* ============================================ */
+        /* ENHANCED HEADER SECTION */
+        /* ============================================ */
+        
         .header {
             text-align: center;
-            margin-bottom: 48px;
+            margin-bottom: 56px;
+            position: relative;
+        }
+
+        .header-hero {
+            position: relative;
+            padding: 48px 24px;
+            margin-bottom: 32px;
+            border-radius: var(--radius-xl);
+            background: linear-gradient(
+                135deg,
+                rgba(99, 102, 241, 0.1) 0%,
+                rgba(168, 85, 247, 0.08) 50%,
+                rgba(236, 72, 153, 0.05) 100%
+            );
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            overflow: hidden;
+            animation: glow 4s ease-in-out infinite;
+        }
+
+        .header-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                var(--accent-indigo),
+                var(--accent-purple),
+                var(--accent-pink),
+                transparent
+            );
+        }
+
+        .header-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+            display: inline-block;
         }
 
         .logo-badge {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            background: rgba(99, 102, 241, 0.1);
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            padding: 8px 16px;
+            gap: 10px;
+            background: linear-gradient(
+                135deg,
+                rgba(99, 102, 241, 0.15),
+                rgba(168, 85, 247, 0.1)
+            );
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            padding: 10px 20px;
             border-radius: 50px;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(10px);
         }
 
         .logo-badge span {
             font-size: 14px;
-            font-weight: 600;
+            font-weight: 700;
             color: var(--accent-indigo-light);
-            letter-spacing: 0.03em;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
 
         .logo-badge .dot {
-            width: 6px;
-            height: 6px;
+            width: 8px;
+            height: 8px;
             background: var(--accent-emerald);
             border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-emerald);
         }
 
         h1 {
-            font-size: 3.5rem;
+            font-size: 4rem;
             font-weight: 800;
-            background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+            background: linear-gradient(
+                135deg,
+                var(--text-primary) 0%,
+                var(--accent-indigo-light) 25%,
+                var(--accent-purple) 50%,
+                var(--accent-pink) 75%,
+                var(--text-secondary) 100%
+            );
+            background-size: 300% 300%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 12px;
-            letter-spacing: -0.02em;
+            margin-bottom: 16px;
+            letter-spacing: -0.03em;
+            animation: gradientShift 8s ease infinite;
         }
 
         .subtitle {
-            font-size: 1rem;
+            font-size: 1.2rem;
             color: var(--text-secondary);
-            max-width: 600px;
+            max-width: 650px;
             margin: 0 auto;
+            line-height: 1.7;
+        }
+
+        .subtitle strong {
+            color: var(--accent-indigo-light);
+            font-weight: 600;
         }
 
         /* Quick Stats */
@@ -106,15 +209,29 @@
 
         .stat-item {
             text-align: center;
+            position: relative;
+            padding: 20px 32px;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-subtle);
+            transition: all 0.3s ease;
+        }
+
+        .stat-item:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-indigo);
+            box-shadow: var(--shadow-xl);
         }
 
         .stat-value {
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             font-weight: 800;
             background: linear-gradient(135deg, var(--accent-indigo), var(--accent-purple));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            line-height: 1;
+            margin-bottom: 4px;
         }
 
         .stat-label {
@@ -122,7 +239,6 @@
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.08em;
-            margin-top: 2px;
             font-weight: 600;
         }
 
@@ -314,101 +430,185 @@
             flex-grow: 1;
         }
 
-        /* Architecture Section */
-        .arch-section {
-            margin-top: 64px;
-        }
-
-        .arch-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
-            margin-top: 24px;
-        }
-
-        .arch-card {
-            background: rgba(30, 41, 59, 0.5);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
-            padding: 28px;
-        }
-
-        .arch-card.bad {
-            border-left: 3px solid #ef4444;
-        }
-
-        .arch-card.good {
-            border-left: 3px solid var(--accent-emerald);
-        }
-
-        .arch-card.table {
-            border-left: 3px solid var(--accent-indigo);
-        }
-
-        .arch-title {
-            font-size: 1rem;
-            font-weight: 700;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .icon-bad { color: #ef4444; }
-        .icon-good { color: var(--accent-emerald); }
-
-        .arch-code {
-            font-family: 'SF Mono', 'Fira Code', monospace;
-            font-size: 0.75rem;
-            line-height: 1.8;
-            color: var(--text-secondary);
-            background: rgba(15, 23, 42, 0.6);
-            padding: 16px;
-            border-radius: 8px;
-            white-space: pre;
-            overflow-x: auto;
-        }
-
-        .arch-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-        }
-
-        .arch-table th {
-            text-align: left;
-            padding: 8px 12px;
-            border-bottom: 1px solid var(--border-subtle);
-            color: var(--text-muted);
-            font-weight: 600;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .arch-table td {
-            padding: 10px 12px;
-            border-bottom: 1px solid rgba(71, 85, 105, 0.3);
-            color: var(--text-secondary);
-        }
-
-        .arch-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .arch-table td:first-child {
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .val-before { color: #f9a8d4; }
-        .val-after { color: #6ee7b7; }
-
         /* Divider */
         .divider {
             height: 1px;
             background: linear-gradient(90deg, transparent, var(--border-subtle), transparent);
             margin: 40px 0;
+        }
+
+        /* ============================================ */
+        /* CREDITS SECTION WITH HOVER EFFECTS */
+        /* ============================================ */
+
+        .credits-section {
+            background: linear-gradient(
+                135deg,
+                rgba(30, 41, 59, 0.6) 0%,
+                rgba(30, 41, 59, 0.3) 100%
+            );
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .credits-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                var(--accent-emerald),
+                var(--accent-indigo),
+                var(--accent-purple),
+                transparent
+            );
+        }
+
+        .credits-section h3 {
+            margin-top: 0;
+            color: var(--accent-emerald);
+            font-size: 1.6rem;
+            margin-bottom: 20px;
+        }
+
+        .developer-name {
+            font-size: 1.4em;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        .developer-title {
+            margin: 2px 0;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .credits-group {
+            margin-top: 36px;
+        }
+
+        .credits-group-label {
+            font-size: 0.9em;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            font-weight: 500;
+        }
+
+        .credits-flex {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        /* ============================================ */
+        /* CREDIT BOXES WITH HOVER HIGHLIGHTING */
+        /* ============================================ */
+
+        .credit-box {
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            cursor: default;
+            user-select: none;
+        }
+
+        .credit-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            border-radius: 8px 8px 0 0;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .credit-box:hover {
+            transform: translateY(-3px);
+        }
+
+        .credit-box:hover::before {
+            opacity: 1;
+        }
+
+        /* AI Tools - Pink/Rose theme */
+        .credit-box.ai {
+            background: rgba(236, 72, 153, 0.1);
+            border: 2px solid rgba(244, 114, 182, 0.4);
+            color: #f472b6;
+        }
+
+        .credit-box.ai::before {
+            background: linear-gradient(90deg, #ec4899, #f472b6, #fb7185);
+        }
+
+        .credit-box.ai:hover {
+            background: rgba(236, 72, 153, 0.2);
+            border-color: #f472b6;
+            box-shadow: 0 8px 25px -8px rgba(236, 72, 153, 0.4);
+        }
+
+        /* Professors - Blue theme */
+        .credit-box.prof {
+            background: rgba(59, 130, 246, 0.1);
+            border: 2px solid rgba(96, 165, 250, 0.4);
+            color: #93c5fd;
+        }
+
+        .credit-box.prof::before {
+            background: linear-gradient(90deg, #2563eb, #3b82f6, #60a5fa);
+        }
+
+        .credit-box.prof:hover {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: #60a5fa;
+            box-shadow: 0 8px 25px -8px rgba(59, 130, 246, 0.4);
+        }
+
+        /* Disclaimer */
+        .disclaimer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 28px;
+            border-top: 1px solid rgba(71, 85, 105, 0.3);
+        }
+
+        .disclaimer-title {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .disclaimer-text {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            line-height: 1.7;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .disclaimer-text strong {
+            color: var(--text-secondary);
+        }
+
+        .copyright {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            margin-top: 20px;
         }
 
         /* Footer */
@@ -429,11 +629,11 @@
             .apps-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
-            .arch-grid {
-                grid-template-columns: 1fr;
-            }
             h1 {
-                font-size: 2.5rem;
+                font-size: 3rem;
+            }
+            .stats-bar {
+                gap: 32px;
             }
         }
 
@@ -449,24 +649,39 @@
                 padding: 24px 16px;
             }
             h1 {
-                font-size: 2rem;
+                font-size: 2.2rem;
             }
             .subtitle {
                 font-size: 1rem;
+            }
+            .single-card-wrapper .app-card.horizontal {
+                flex-direction: column;
+            }
+            .header-hero {
+                padding: 32px 16px;
+            }
+            .header-icon {
+                font-size: 3rem;
+            }
+            .credits-section {
+                padding: 28px 20px;
+            }
+            .credit-box {
+                padding: 6px 14px;
+                font-size: 0.85rem;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
+        <!-- ============================================ -->
+        <!-- ENHANCED HEADER -->
+        <!-- ============================================ -->
         <header class="header">
-            <div class="logo-badge">
-                <div class="dot"></div>
-                <span>MULTI-APP PORTAL</span>
+            <div class="header-hero">
+                <h1>Statistics Assistant</h1>
             </div>
-            <h1>Statistics Assistant</h1>
-            <p class="subtitle">Choose your analysis path. Each app loads independently for maximum speed.</p>
         </header>
 
         <!-- Quick Stats -->
@@ -487,6 +702,10 @@
 
         <div class="divider"></div>
 
+        <!-- ============================================================ -->
+        <!-- DEPLOYMENT: Replace href="#" with your actual deployed URLs -->
+        <!-- ============================================================ -->
+
         <!-- Row 1: Core Analysis -->
         <div class="section-label">Core Analysis</div>
         <div class="apps-grid">
@@ -495,11 +714,10 @@
                 <div class="app-card">
                     <div class="app-icon">🔍</div>
                     <h3 class="app-title">Test Finder & Decision Engine</h3>
-                    <p class="app-desc">Answer questions about your data and get personalized recommendations. Flowchart guides you from research question to appropriate statistical test.</p>
+                    <p class="app-desc">Answer questions about your data and get personalized recommendations. Browse all 40+ statistical tests by category.</p>
                     <div class="app-tags">
                         <span class="tag tag-blue">Parametric Tests</span>
                         <span class="tag tag-emerald">Non-parametric</span>
-                        <span class="tag tag-purple">Flowchart</span>
                         <span class="tag tag-amber">Glossary</span>
                     </div>
                     <div class="launch-row">
@@ -519,7 +737,6 @@
                     <div class="app-tags">
                         <span class="tag tag-purple">Distributions</span>
                         <span class="tag tag-orange">Regression</span>
-                        <span class="tag tag-pink">Meta-Analysis</span>
                         <span class="tag tag-blue">Survival</span>
                     </div>
                     <div class="launch-row">
@@ -535,12 +752,11 @@
                 <div class="app-card">
                     <div class="app-icon">📋</div>
                     <h3 class="app-title">Tabulation & Cross-Tab</h3>
-                    <p class="app-desc">Create descriptive tables, contingency tables, pivot tables, and APA-formatted output ready for publication providing detailed summaries with various aggregation options.</p>
+                    <p class="app-desc">Create descriptive tables, contingency tables, pivot tables, and APA-formatted output ready for publication providing a comprehensive solution for data summarization.</p>
                     <div class="app-tags">
                         <span class="tag tag-cyan">Descriptive Stats</span>
                         <span class="tag tag-cyan">Cross-tabs</span>
                         <span class="tag tag-amber">APA Format</span>
-                        <span class="tag tag-cyan">Pivot Tables</span>
                     </div>
                     <div class="launch-row">
                         <button class="btn-launch">
@@ -564,7 +780,6 @@
                     <p class="app-desc">Calculate required sample size for 29+ analysis types: t-tests, ANOVA, regression, non-parametric, equivalence, cluster-RCT, and more.</p>
                     <div class="app-tags">
                         <span class="tag tag-pink">Sample Size</span>
-                        <span class="tag tag-pink">Equivalence</span>
                         <span class="tag tag-blue">Cluster-RCT</span>
                         <span class="tag tag-pink">Monte Carlo</span>
                     </div>
@@ -578,18 +793,17 @@
 
             <!-- Distributions -->
             <a href="#" style="text-decoration: none; color: inherit;">
-                <div class="app-card secondary">
+                <div class="app-card">
                     <div class="app-icon">🎲</div>
                     <h3 class="app-title">Probability Distributions</h3>
                     <p class="app-desc">Visualize and interact with Normal, t, F, Chi-square, Binomial, Poisson. Understand critical values and p-values intuitively.</p>
                     <div class="app-tags">
                         <span class="tag tag-purple">Normal</span>
                         <span class="tag tag-blue">t & F</span>
-                        <span class="tag tag-emerald">Binomial</span>
                         <span class="tag tag-amber">Critical Values</span>
                     </div>
                     <div class="launch-row">
-                        <button class="btn-launch secondary">
+                        <button class="btn-launch">
                             Launch App <span class="btn-arrow">→</span>
                         </button>
                     </div>
@@ -598,17 +812,16 @@
 
             <!-- Solved Examples -->
             <a href="#" style="text-decoration: none; color: inherit;">
-                <div class="app-card secondary">
+                <div class="app-card">
                     <div class="app-icon">📚</div>
                     <h3 class="app-title">Solved Examples</h3>
                     <p class="app-desc">Learn statistics through fully worked examples. Walk through real research scenarios with step-by-step explanations at each stage.</p>
                     <div class="app-tags">
                         <span class="tag tag-amber">Tutorial</span>
-                        <span class="tag tag-cyan">Import Data</span>
                         <span class="tag tag-amber">Step-by-Step</span>
                     </div>
                     <div class="launch-row">
-                        <button class="btn-launch secondary">
+                        <button class="btn-launch">
                             Launch App <span class="btn-arrow">→</span>
                         </button>
                     </div>
@@ -622,7 +835,7 @@
         <div class="section-label">Data Quality</div>
         <div class="single-card-wrapper">
             <a href="#" style="text-decoration: none; color: inherit; width: 100%; display: flex; justify-content: center;">
-                <div class="app-card secondary horizontal">
+                <div class="app-card horizontal">
                     <div class="app-icon">🔬</div>
                     <div class="card-content">
                         <h3 class="app-title">Data Screening & Diagnostics</h3>
@@ -631,11 +844,10 @@
                             <span class="tag tag-blue">Normality Tests</span>
                             <span class="tag tag-emerald">Outliers</span>
                             <span class="tag tag-orange">Residuals</span>
-                            <span class="tag tag-orange">Influence</span>
                             <span class="tag tag-blue">Homoscedasticity</span>
                         </div>
                         <div class="launch-row">
-                            <button class="btn-launch secondary">
+                            <button class="btn-launch">
                                 Launch App <span class="btn-arrow">→</span>
                             </button>
                         </div>
@@ -646,67 +858,54 @@
 
         <div class="divider"></div>
 
-        <!-- Credits Section -->
+        <!-- ============================================ -->
+        <!-- CREDITS SECTION WITH HOVER HIGHLIGHTING -->
+        <!-- ============================================ -->
         <div class="section-label">Development Team</div>
         
-        <div class="credits-section" style="background: rgba(30, 41, 59, 0.5); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 32px; text-align: center;">
-            <h3 style="margin-top: 0; color: var(--accent-emerald); font-size: 1.5rem; margin-bottom: 16px;">Developed By</h3>
-            <p style="font-size: 1.3em; margin-bottom: 8px; color: var(--text-primary);"><strong>Dr. Muhammad Nabeel Shaesha</strong></p>
-            <p style="margin: 0; color: var(--text-secondary);">Teaching Assistant at the Prosthodontics Department, PUA</p>
-            <p style="margin: 4px 0 24px 0; color: var(--text-secondary);">Currently enrolled in Masters of Prosthodontics and Implantology Program, PUA</p>
+        <div class="credits-section">
+            <h3>Developed By</h3>
+            <p class="developer-name"><strong>Dr. Muhammad Nabeel Shaesha</strong></p>
+            <p class="developer-title">Teaching Assistant at the Prosthodontics Department, PUA</p>
+            <p class="developer-title">Currently enrolled in Masters of Prosthodontics and Implantology Program, PUA</p>
             
-            <div style="margin-top: 28px;">
-                <p style="font-size: 0.9em; color: var(--text-muted); margin-bottom: 14px;">Built with the help of:</p>
-                <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 12px;">
-                    <div style="border: 2px solid #CA6180; padding: 6px 18px; border-radius: 8px; font-weight: bold; color: #f472b6;">
-                        Gemma 4
-                    </div>
-                    <div style="border: 2px solid #4B9DA9; padding: 6px 18px; border-radius: 8px; font-weight: bold; color: #22d3ee;">
-                        OpenCode
-                    </div>
-                    <div style="border: 2px solid #8E24AA; padding: 6px 18px; border-radius: 8px; font-weight: bold; color: #c084fc;">
-                        GeminiCLI
-                    </div>
-                    <div style="border: 2px solid #10a37f; padding: 6px 18px; border-radius: 8px; font-weight: bold; color: #4ade80;">
-                        ChatGPT
-                    </div>
+            <!-- AI Tools - Pink theme -->
+            <div class="credits-group">
+                <p class="credits-group-label">Built with the help of:</p>
+                <div class="credits-flex">
+                    <div class="credit-box ai">Gemma 4</div>
+                    <div class="credit-box ai">OpenCode</div>
+                    <div class="credit-box ai">GeminiCLI</div>
+                    <div class="credit-box ai">ChatGPT</div>
                 </div>
             </div>
             
-            <div style="margin-top: 28px;">
-                <p style="font-size: 0.9em; color: var(--text-muted); margin-bottom: 14px;">Acknowledgments to professors who taught biosatistics and research methodology:</p>
-                <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;">
-                    <div style="border: 2px solid #3b82f6; padding: 4px 16px; border-radius: 6px; color: #93c5fd; font-size: 0.9rem;">
-                        Dr Inas Karawia
-                    </div>
-                    <div style="border: 2px solid #3b82f6; padding: 4px 16px; border-radius: 6px; color: #93c5fd; font-size: 0.9rem;">
-                        Dr Maha Adel
-                    </div>
-                    <div style="border: 2px solid #3b82f6; padding: 4px 16px; border-radius: 6px; color: #93c5fd; font-size: 0.9rem;">
-                        Dr Hamida Abu Bakr
-                    </div>
-                    <div style="border: 2px solid #3b82f6; padding: 4px 16px; border-radius: 6px; color: #93c5fd; font-size: 0.9rem;">
-                        Dr Hadeya Abdel Hamid
-                    </div>
-                    <div style="border: 2px solid #3b82f6; padding: 4px 16px; border-radius: 6px; color: #93c5fd; font-size: 0.9rem;">
-                        Dr Nancy Bedwany
-                    </div>
+            <!-- Professors - Blue theme -->
+            <div class="credits-group">
+                <p class="credits-group-label">Acknowledgments to professors who taught biosatistics and research methodology:</p>
+                <div class="credits-flex">
+                    <div class="credit-box prof">Dr Inas Karawia</div>
+                    <div class="credit-box prof">Dr Maha Adel</div>
+                    <div class="credit-box prof">Dr Hamida Abu Bakr</div>
+                    <div class="credit-box prof">Dr Hadeya Abdel Hamid</div>
+                    <div class="credit-box prof">Dr Nancy Bedwany</div>
                 </div>
             </div>
         </div>
 
         <!-- Disclaimer -->
-        <div style="text-align: center; margin-top: 40px; padding-top: 24px; border-top: 1px solid rgba(71, 85, 105, 0.3);">
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 8px;"><strong>⚠️ Disclaimer</strong></p>
-            <p style="color: var(--text-muted); font-size: 0.8rem; line-height: 1.7; max-width: 700px; margin: 0 auto;">
+        <div class="disclaimer">
+            <p class="disclaimer-title">⚠️ Disclaimer</p>
+            <p class="disclaimer-text">
                 This tool is intended for <strong>educational and informational purposes only</strong>. 
                 While it follows standard statistical guidelines, it does not account for all possible 
                 complexities in study design (e.g., nesting, interaction effects, or specific data anomalies). 
                 Recommendations should be verified by a qualified biostatistician or through standard 
                 statistical literature before being used for clinical or formal research purposes.
             </p>
-            <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 16px;">© 2026 Statistics Assistant. Built with Streamlit.</p>
+            <p class="copyright">© 2026 Statistics Assistant. Built with Streamlit.</p>
         </div>
+
     </div>
 </body>
 </html>
