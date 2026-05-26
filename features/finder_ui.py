@@ -2,8 +2,63 @@ import streamlit as st
 from core.matching import find_matching_tests
 from core.data import rules, FIELDS
 from features.widgets import render_latex, render_test_widget
-from features.flowchart import build_tree, build_sunburst_chart
 from features.glossary import render_glossary
+
+
+def _get_tests_by_objective():
+    from collections import defaultdict
+
+    by_obj = defaultdict(list)
+    for rule in rules:
+        obj = rule.get("Objective", "Unknown")
+        if isinstance(obj, list):
+            for o in obj:
+                by_obj[o].append(rule["name"])
+        else:
+            by_obj[obj].append(rule["name"])
+
+    for obj in by_obj:
+        by_obj[obj] = sorted(set(by_obj[obj]))
+
+    return dict(sorted(by_obj.items()))
+
+
+def _open_test_directly(test_name):
+    rule = next((r for r in rules if r["name"] == test_name), None)
+    if rule:
+        st.session_state.results = [test_name]
+        st.session_state.open_tests = {test_name}
+        st.rerun()
+
+
+def render_all_tests_section():
+    st.divider()
+    st.header("All Statistical Tests")
+    st.info("Click on any test name to view it directly in the finder.")
+
+    by_obj = _get_tests_by_objective()
+    objectives = list(by_obj.keys())
+
+    tabs = st.tabs(objectives)
+
+    for tab_idx, obj in enumerate(objectives):
+        with tabs[tab_idx]:
+            test_names = by_obj[obj]
+            total = len(test_names)
+
+            st.markdown(f"**{total} tests** for *{obj}*:")
+
+            test_cols = st.columns(3)
+            for i, test_name in enumerate(test_names):
+                col_idx = i % 3
+                with test_cols[col_idx]:
+                    btn_key = (
+                        f"alltest_{obj.replace(' ', '_')}_{test_name.replace(' ', '_')}"
+                    )
+                    if st.button(
+                        f"📌 {test_name}", key=btn_key, use_container_width=True
+                    ):
+                        _open_test_directly(test_name)
 
 
 def render_test_finder():
@@ -160,88 +215,4 @@ def render_test_finder():
         else:
             st.info("Results will appear here once you click 'Find My Test'.")
 
-    st.divider()
-    st.header("Interactive Statistical Flowchart")
-    
-    if "show_flowchart" not in st.session_state:
-        st.session_state.show_flowchart = False
-    
-    if not st.session_state.show_flowchart:
-        st.info("Click below to load the interactive flowchart (Accordion View + Sunburst Chart)")
-        if st.button("📊 Load Flowchart", use_container_width=True):
-            st.session_state.show_flowchart = True
-            st.rerun()
-    else:
-        st.write(
-            "Expand the branches below to navigate statistical test selection visually."
-        )
-
-        tab_acc, tab_sun = st.tabs(["Accordion View", "Sunburst Chart"])
-
-        with tab_acc:
-            st.write(
-                "Expand the branches below to navigate statistical test selection visually."
-            )
-            build_tree(rules, FIELDS, user_input)
-
-        with tab_sun:
-            st.write(
-                "A holistic view of the statistical universe. Click on a slice to zoom in."
-            )
-            build_sunburst_chart(rules, FIELDS)
-
-    st.markdown("---")
-
-    footer_html = """
-<div style="padding: 20px; border-radius: 10px; border: 1px solid rgba(128, 128, 128, 0.3); margin-bottom: 20px; text-align: center;">
-    <h3 style="margin-top: 0; color: #4CAF50;">Developed By</h3>
-    <p style="font-size: 1.2em; margin-bottom: 5px;"><strong>Dr. Muhammad Nabeel Shaesha</strong></p>
-    <p style="margin: 0; opacity: 0.8;">Teaching Assistant at the Prosthodontics Department, PUA</p>
-    <p style="margin: 0; opacity: 0.8;">Currently enrolled in Masters of Prosthodontics and Implantology Program, PUA</p>
-    <div style="margin-top: 20px;">
-        <p style="font-size: 0.9em; opacity: 0.7; margin-bottom: 10px;">Built with the help of:</p>
-        <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;">
-            <div style="border: 2px solid #CA6180; padding: 5px 15px; border-radius: 5px; font-weight: bold; color: #CA6180;">
-                Gemma 4
-            </div>
-            <div style="border: 2px solid #4B9DA9; padding: 5px 15px; border-radius: 5px; font-weight: bold; color: #4B9DA9;">
-                OpenCode
-            </div>
-            <div style="border: 2px solid #8E24AA; padding: 5px 15px; border-radius: 5px; font-weight: bold; color: #8E24AA;">
-                GeminiCLI
-            </div>
-            <div style="border: 2px solid #10a37f; padding: 5px 15px; border-radius: 5px; font-weight: bold; color: #10a37f;">
-                ChatGPT
-            </div>
-        </div>
-        <p style="font-size: 0.9em; opacity: 0.7; margin-bottom: 10px;"><br /> Acknowledgment to my professors who taught me biosatistics and research methodology</p>
-        <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;">
-            <div style="border: 2px solid #4285F4; padding: 2px 15px; border-radius: 5px; color: #4285F4;">
-                Dr Inas Karawia
-            </div>
-            <div style="border: 2px solid #4285F4; padding: 2px 15px; border-radius: 5px; color: #4285F4;">
-                Dr Maha Adel
-            </div>
-            <div style="border: 2px solid #4285F4; padding: 2px 15px; border-radius: 5px; color: #4285F4;">
-                Dr Hamida Abu Bakr
-            </div>
-            <div style="border: 2px solid #4285F4; padding: 2px 15px; border-radius: 5px; color: #4285F4;">
-                Dr Hadeya Abdel Hamid
-            </div>
-            <div style="border: 2px solid #4285F4; padding: 2px 15px; border-radius: 5px; color: #4285F4;">
-                Dr Nancy Bedwany
-            </div>
-        </div>
-    </div>
-</div>
-<div style="text-align: center; opacity: 0.6; font-size: 0.8em;">
-    <p><strong>⚠️ Disclaimer</strong></p>
-    <p>This tool is intended for <strong>educational and informational purposes only</strong>. 
-    While it follows standard statistical guidelines, it does not account for all possible 
-    complexities in study design (e.g., nesting, interaction effects, or specific data anomalies). 
-    Recommendations should be verified by a qualified biostatistician or through standard 
-    statistical literature before being used for clinical or formal research purposes.</p>
-    <p>© 2026 Statistical Test Finder. Built with Streamlit.</p>
-</div>
-"""
-    st.markdown(footer_html, unsafe_allow_html=True)
+    render_all_tests_section()
