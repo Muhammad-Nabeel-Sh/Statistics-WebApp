@@ -1,5 +1,86 @@
 # Updates.md — Statistics WebApp Changelog
 
+## [2026-05-26] Phase 2: Multi-App Refactoring
+
+### Overview
+Refactored the monolithic `app.py` (2655 lines) into 7 independently deployable mini-apps with clean separation of concerns.
+
+### Architecture Changes
+
+#### Directory Structure Created
+```
+apps/                    # Independent app entry points
+├── app_finder.py        # 🔍 Test Finder (original mode "Find my test")
+├── app_explorer.py      # 📈 Graph Explorer (mode "Graph explorer")
+├── app_tabulation.py    # 📋 Tabulation (mode "Tabulation")
+├── app_power.py         # ⚡ Power Analysis (mode "Power calculator")
+├── app_distributions.py # 🎲 Probability Distributions (mode "Distributions")
+├── app_examples.py      # 📚 Solved Examples (mode "Solved examples")
+└── app_diagnostics.py   # 🔬 Data Screening (mode "Diagnostics")
+
+core/                    # Shared utilities imported by multiple apps
+├── __init__.py
+├── utils.py             # format_p_value(), cohens_d_ci(), omega_squared(), etc.
+├── data.py              # rules list, TEST_TO_SS_TYPE mapping, FIELDS
+├── matching.py          # find_matching_tests()
+└── post_hoc.py          # render_post_hoc() (8 post-hoc methods)
+
+features/                # Feature modules (1 per app or logical group)
+├── __init__.py
+├── finder_ui.py         # Extracted from app.py: Test Finder UI + Flowchart
+├── power_ui.py          # Extracted from app.py: Power Analysis UI (1300+ lines)
+├── widgets.py           # 40+ render_test_widget() functions
+├── graph_explorer.py    # Graph Explorer UI
+├── tabulation.py        # Tabulation UI
+├── distributions.py     # Distributions UI
+├── solved_examples.py   # Solved Examples UI
+├── diagnostics.py       # Diagnostics UI
+├── glossary.py          # Glossary UI
+└── flowchart.py         # build_tree(), build_sunburst_chart()
+```
+
+#### File Extraction from `app.py`
+- Lines 19-1314 → `features/power_ui.py` (Power Analysis UI)
+- Lines 1376-1408 + 2433-2648 → `features/finder_ui.py` (Test Finder UI)
+- Lines 1413-2432 → Removed (dead code: `if False:` block containing duplicate old Sample Size Estimation UI)
+
+### Key Improvements
+
+| Aspect | Before (Monolith) | After (Multi-App) |
+|---|---|---|
+| **Deployment** | Single app only | 7 apps independently deployable |
+| **Import footprint** | `sklearn` always loads | Only loads for Graph Explorer |
+| **Startup time** | Loads all 8000-line modules | Only loads what's needed |
+| **Maintainability** | Single 2655-line `app.py` | Cleanly separated modules |
+| **Archive** | No reference | `app_legacy.py` preserved as reference |
+
+### How to Run Each App
+
+```sh
+# From project root, run any app independently:
+streamlit run apps/app_finder.py       # Test Finder
+streamlit run apps/app_explorer.py     # Graph Explorer
+streamlit run apps/app_tabulation.py   # Tabulation
+streamlit run apps/app_power.py        # Power Analysis
+streamlit run apps/app_distributions.py# Distributions
+streamlit run apps/app_examples.py     # Solved Examples
+streamlit run apps/app_diagnostics.py  # Data Screening
+```
+
+### Import Fixes Applied
+- `matching.py`: `from data` → `from core.data`
+- `flowchart.py`: `from data` → `from core.data`
+- `widgets.py`: `from post_hoc` → `from core.post_hoc`, `from utils` → `from core.utils`
+- All `apps/app_*.py`: Use `sys.path.insert()` to enable running from `apps/` subdirectory
+
+### Removed
+- Dead `if False:` block in `app.py` (lines 1413-2432) — duplicate old Sample Size Estimation UI that was never executed
+
+### Archived
+- Original `app.py` → `app_legacy.py` (preserved for reference)
+
+---
+
 ## [2026-05-26] Phase 1: Professional Statistical Output
 
 ### Overview
