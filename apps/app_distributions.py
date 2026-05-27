@@ -13,10 +13,12 @@ st.set_page_config(
 )
 
 from features.distributions import render_distributions
+from core.utils import render_footer
 
 
 def main():
     render_distributions()
+    render_footer()
 
 
 if __name__ == "__main__":

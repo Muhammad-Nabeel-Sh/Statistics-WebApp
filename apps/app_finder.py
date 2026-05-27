@@ -14,6 +14,7 @@ st.set_page_config(
 
 from features.finder_ui import render_test_finder
 from features.data_workspace import render_data_workspace
+from core.utils import render_footer
 
 
 def main():
@@ -24,6 +25,7 @@ def main():
         render_data_workspace()
     else:
         render_test_finder()
+    render_footer()
 
 
 if __name__ == "__main__":

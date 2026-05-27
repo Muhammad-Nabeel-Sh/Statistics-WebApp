@@ -13,10 +13,12 @@ st.set_page_config(
 )
 
 from features.graph_explorer import render_graph_explorer
+from core.utils import render_footer
 
 
 def main():
     render_graph_explorer()
+    render_footer()
 
 
 if __name__ == "__main__":

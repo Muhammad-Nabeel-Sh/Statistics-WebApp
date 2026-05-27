@@ -13,10 +13,12 @@ st.set_page_config(
 )
 
 from features.tabulation import render_tabulation
+from core.utils import render_footer
 
 
 def main():
     render_tabulation()
+    render_footer()
 
 
 if __name__ == "__main__":

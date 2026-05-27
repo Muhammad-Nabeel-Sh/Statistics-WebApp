@@ -40,9 +40,7 @@ def cohens_d_one_sample_ci(d, n, conf_level=0.95):
             return nct.cdf(t_stat, df, ncp) - target
 
         try:
-            result = root_scalar(
-                objective, bracket=[-20, 20], method="bisect"
-            )
+            result = root_scalar(objective, bracket=[-20, 20], method="bisect")
             return result.root
         except Exception:
             se = np.sqrt((n / (n - 2)) * (1 + d**2 * n / (n - 2)) - d**2)
@@ -184,6 +182,7 @@ def st_plot_with_download(fig, key, use_container_width=True, height=None):
 
     try:
         import plotly.io as pio
+
         svg_content = pio.to_image(fig, format="svg")
         with col2:
             st.download_button(
@@ -268,10 +267,10 @@ def interpret_r(r):
 def data_source_toggle(key_prefix, mode="one_sample"):
     """
     Elegant dual-mode data selector: Simulated (default) vs Uploaded.
-    
+
     This keeps the educational app intact while adding optional real-data capability
     without bloating the codebase.
-    
+
     Parameters
     ----------
     key_prefix : str
@@ -279,7 +278,7 @@ def data_source_toggle(key_prefix, mode="one_sample"):
     mode : str
         "one_sample", "two_sample", "multi_sample", "paired", "repeated", or "correlation"
         - "repeated": for 3+ measurements on same subjects (Friedman test, etc.)
-    
+
     Returns
     -------
     dict
@@ -291,7 +290,7 @@ def data_source_toggle(key_prefix, mode="one_sample"):
         st.markdown("""
         **Educational mode is always the default.** Use this to run the test on your own data.
         """)
-        
+
         source = st.radio(
             "Data Source",
             ["Simulated (sliders, for learning)", "Upload CSV/Excel (your data)"],
@@ -299,32 +298,34 @@ def data_source_toggle(key_prefix, mode="one_sample"):
             index=0,
             label_visibility="collapsed",
         )
-    
+
     if "Simulated" in source:
         return {"mode": "simulated", "data": None, "using_uploaded": False}
-    
+
     uploaded_file = st.file_uploader(
         "Upload your data (CSV or Excel)",
         type=["csv", "xlsx", "xls"],
         key=f"{key_prefix}_file",
     )
-    
+
     if uploaded_file is None:
-        st.info("Upload a file to use your own data. The test will use simulated data instead.")
+        st.info(
+            "Upload a file to use your own data. The test will use simulated data instead."
+        )
         return {"mode": "simulated", "data": None, "using_uploaded": False}
-    
+
     import pandas as pd
-    
+
     try:
-        if uploaded_file.name.endswith('.csv'):
+        if uploaded_file.name.endswith(".csv"):
             df = pd.read_csv(uploaded_file)
         else:
             df = pd.read_excel(uploaded_file)
-        
+
         st.success(f"Loaded {len(df)} rows, {len(df.columns)} columns")
-        
+
         data = {"df": df}
-        
+
         if mode == "one_sample":
             value_col = st.selectbox(
                 "Select Value Column",
@@ -332,13 +333,15 @@ def data_source_toggle(key_prefix, mode="one_sample"):
                 key=f"{key_prefix}_value",
             )
             data["values"] = df[value_col].dropna().values
-            
+
         elif mode == "two_sample":
             layout = st.columns(2)
             with layout[0]:
                 group_col = st.selectbox(
                     "Group Column (2 categories)",
-                    df.select_dtypes(include=["object", "category", "int64", "bool"]).columns,
+                    df.select_dtypes(
+                        include=["object", "category", "int64", "bool"]
+                    ).columns,
                     key=f"{key_prefix}_group",
                 )
             with layout[1]:
@@ -347,7 +350,7 @@ def data_source_toggle(key_prefix, mode="one_sample"):
                     df.select_dtypes(include=["int64", "float64"]).columns,
                     key=f"{key_prefix}_value",
                 )
-            
+
             groups = df.groupby(group_col)[value_col]
             group_names = list(groups.groups.keys())
             if len(group_names) >= 2:
@@ -355,15 +358,19 @@ def data_source_toggle(key_prefix, mode="one_sample"):
                 data["group2"] = groups.get_group(group_names[1]).dropna().values
                 data["group_names"] = group_names[:2]
             else:
-                st.error(f"Need at least 2 groups in '{group_col}'. Found: {group_names}")
+                st.error(
+                    f"Need at least 2 groups in '{group_col}'. Found: {group_names}"
+                )
                 return {"mode": "simulated", "data": None, "using_uploaded": False}
-                
+
         elif mode == "multi_sample":
             layout = st.columns(2)
             with layout[0]:
                 group_col = st.selectbox(
                     "Group Column",
-                    df.select_dtypes(include=["object", "category", "int64", "bool"]).columns,
+                    df.select_dtypes(
+                        include=["object", "category", "int64", "bool"]
+                    ).columns,
                     key=f"{key_prefix}_group",
                 )
             with layout[1]:
@@ -372,11 +379,11 @@ def data_source_toggle(key_prefix, mode="one_sample"):
                     df.select_dtypes(include=["int64", "float64"]).columns,
                     key=f"{key_prefix}_value",
                 )
-            
+
             groups = df.groupby(group_col)[value_col]
             data["groups"] = [g.dropna().values for _, g in groups]
             data["group_names"] = list(groups.groups.keys())
-            
+
         elif mode == "paired":
             col_options = list(df.select_dtypes(include=["int64", "float64"]).columns)
             layout = st.columns(2)
@@ -391,14 +398,14 @@ def data_source_toggle(key_prefix, mode="one_sample"):
                     "Measurement 2 (e.g., After)",
                     col_options,
                     key=f"{key_prefix}_col2",
-                    index=min(1, len(col_options)-1),
+                    index=min(1, len(col_options) - 1),
                 )
-            
+
             paired_df = df[[col1, col2]].dropna()
             data["values1"] = paired_df[col1].values
             data["values2"] = paired_df[col2].values
             data["col_names"] = [col1, col2]
-            
+
         elif mode == "correlation":
             col_options = list(df.select_dtypes(include=["int64", "float64"]).columns)
             layout = st.columns(2)
@@ -413,33 +420,50 @@ def data_source_toggle(key_prefix, mode="one_sample"):
                     "Y Variable",
                     col_options,
                     key=f"{key_prefix}_y",
-                    index=min(1, len(col_options)-1),
+                    index=min(1, len(col_options) - 1),
                 )
-            
+
             corr_df = df[[x_col, y_col]].dropna()
             data["x"] = corr_df[x_col].values
             data["y"] = corr_df[y_col].values
             data["col_names"] = [x_col, y_col]
-            
+
         elif mode == "repeated":
             col_options = list(df.select_dtypes(include=["int64", "float64"]).columns)
             selected_cols = st.multiselect(
                 "Select measurement columns (3+ time points/conditions for same subjects)",
                 col_options,
-                default=col_options[:min(3, len(col_options))],
+                default=col_options[: min(3, len(col_options))],
                 key=f"{key_prefix}_repeated_cols",
             )
-            
+
             if len(selected_cols) < 3:
-                st.error(f"Friedman Test requires at least 3 repeated measurements. You selected {len(selected_cols)}.")
+                st.error(
+                    f"Friedman Test requires at least 3 repeated measurements. You selected {len(selected_cols)}."
+                )
                 return {"mode": "simulated", "data": None, "using_uploaded": False}
-            
+
             repeated_df = df[selected_cols].dropna()
             data["measurements"] = [repeated_df[col].values for col in selected_cols]
             data["col_names"] = selected_cols
-        
+
         return {"mode": "uploaded", "data": data, "using_uploaded": True}
-        
+
     except Exception as e:
         st.error(f"Error loading file: {e}")
         return {"mode": "simulated", "data": None, "using_uploaded": False}
+
+
+def render_footer():
+    """Render a consistent footer with credentials across all mini-apps."""
+    st.divider()
+    st.markdown(
+        """
+        <div style="text-align: center; color: #888; font-size: 0.85rem; padding: 0.5rem 0;">
+            <strong>Dr. Muhammad Nabeel Shaesha</strong><br>
+            Teaching Assistant at the Prosthodontics Department, Faculty of Dentistry, PUA<br>
+            Currently enrolled in Masters of Prosthodontics and Implantology Program, PUA
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
