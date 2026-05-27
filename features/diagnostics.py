@@ -37,36 +37,6 @@ def _interpret_card(title, body):
     with st.expander(f"{title}", expanded=False):
         st.markdown(body)
     st.markdown(f"**{title}**")
-    if isinstance(df, pd.DataFrame):
-        styled = df.style.set_table_attributes(
-            'style="border-collapse: collapse; width: 100%;"'
-        )
-        styled = styled.set_properties(
-            **{
-                "border": "1px solid #555",
-                "padding": "6px",
-                "text-align": "center",
-                "font-size": "14px",
-            }
-        )
-        styled = styled.set_table_styles(
-            [
-                {
-                    "selector": "th",
-                    "props": [
-                        ("background-color", "#1e1e1e"),
-                        ("color", "white"),
-                        ("font-weight", "bold"),
-                        ("border", "1px solid #555"),
-                        ("padding", "8px"),
-                        ("text-align", "center"),
-                    ],
-                }
-            ]
-        )
-        st.dataframe(styled, use_container_width=True, hide_index=True)
-    else:
-        st.table(df)
 
 
 def _qq_plot(data, title="Q-Q Plot"):
@@ -3443,14 +3413,21 @@ def render_diagnostics():
     detecting outliers, assessing multicollinearity, and checking data quality.
     """)
 
+    cat_key = "diag_category"
+    if cat_key not in st.session_state:
+        st.session_state[cat_key] = _CATEGORY_LIST[0]
     with st.sidebar:
         st.markdown("##### :orange[Diagnostic Category]")
-        cat = st.radio(
-            "Category",
-            _CATEGORY_LIST,
-            key="diag_category",
-            label_visibility="collapsed",
-        )
+        for opt in _CATEGORY_LIST:
+            if st.button(
+                opt,
+                key=f"diag_btn_{opt}",
+                use_container_width=True,
+                type="primary" if st.session_state[cat_key] == opt else "secondary",
+            ):
+                st.session_state[cat_key] = opt
+                st.rerun()
+    cat = st.session_state[cat_key]
 
     cat_descriptions = {
         "Data Transformation": "Data transformations change the scale of a variable to reduce skewness, "

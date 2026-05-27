@@ -7,15 +7,22 @@ def _render_power_analysis():
 
     st.title("Power Analysis & Sample Size Estimation")
 
+    mode_opts = ["A Priori", "Post Hoc", "Sensitivity", "Compromise", "Criterion"]
+    mode_key = "pwr_analysis_mode"
+    if mode_key not in st.session_state:
+        st.session_state[mode_key] = mode_opts[0]
     with st.sidebar:
         st.markdown("##### :orange[Power Analysis Type]")
-        analysis_mode = st.radio(
-            "Analysis Mode",
-            ["A Priori", "Post Hoc", "Sensitivity", "Compromise", "Criterion"],
-            index=0,
-            help="Choose the power analysis goal",
-        )
-        with st.expander("What do these mean?"):
+        for opt in mode_opts:
+            if st.button(
+                opt,
+                key=f"pwr_mode_{opt}",
+                use_container_width=True,
+                type="primary" if st.session_state[mode_key] == opt else "secondary",
+            ):
+                st.session_state[mode_key] = opt
+                st.rerun()
+        with st.expander("What do these mean?", expanded=True):
             st.markdown("""
             - :orange[**A Priori**] — Compute required sample size *N* from α, power, and effect size
             - :orange[**Post Hoc**] — Compute achieved power from *N*, α, and effect size
@@ -23,6 +30,7 @@ def _render_power_analysis():
             - :orange[**Compromise**] — Compute adjusted α and achieved power from *N*, effect size, and cost ratio *q* = β/α
             - :orange[**Criterion**] — Compute required α from *N*, effect size, and power
             """)
+    analysis_mode = st.session_state[mode_key]
 
     col_left, col_right = st.columns([1, 1.2], gap="large")
 

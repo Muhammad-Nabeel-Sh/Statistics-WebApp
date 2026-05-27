@@ -200,7 +200,7 @@ def render_data_workspace():
     # ──────────────────────────────────────
     top_col1, top_col2 = st.columns([1, 10])
     with top_col1:
-        if st.button("Back to Finder", use_container_width=True):
+        if st.button("← Back", use_container_width=True, type="secondary"):
             for k in ["ws_df", "ws_dataset_name", "ws_external_data", "ws_selected_test"]:
                 st.session_state[k] = None
             st.session_state.page = "finder"

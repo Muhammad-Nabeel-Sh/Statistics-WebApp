@@ -12,23 +12,14 @@ _rng = np.random.default_rng(42)
 
 
 def _tab_buttons(options, key, default=None):
-    """Render navigation buttons in 2 columns, return selected option."""
+    """Render a dropdown selector, return selected option."""
     state_key = f"_tab_sel_{key}"
     if state_key not in st.session_state:
         st.session_state[state_key] = default or options[0]
-    n = len(options)
-    cols = st.columns(2)
-    for i, opt in enumerate(options):
-        with cols[i % 2]:
-            if st.button(
-                opt,
-                key=f"_tab_btn_{key}_{i}",
-                use_container_width=True,
-                type="primary" if st.session_state[state_key] == opt else "secondary",
-            ):
-                st.session_state[state_key] = opt
-                st.rerun()
-    return st.session_state[state_key]
+    idx = options.index(st.session_state[state_key]) if st.session_state[state_key] in options else 0
+    selected = st.selectbox("", options, index=idx, key=f"_tab_dd_{key}")
+    st.session_state[state_key] = selected
+    return selected
 
 
 def _heatmap_fig(
@@ -99,6 +90,16 @@ def descriptive_tabulation():
         _outlier_detection_widget()
 
 
+def _tally_marks(n):
+    """Return a tally string for a count (groups of 5 as 卌)."""
+    if n <= 0:
+        return ""
+    full = n // 5
+    rem = n % 5
+    glyphs = ["", "|", "||", "|||", "||||", "卌"]
+    return " ".join(["卌"] * full) + (" " + glyphs[rem] if rem else "")
+
+
 def _generate_sample_data(n, dist="Normal", seed=42):
     np.random.seed(seed)
     if dist == "Normal":
@@ -128,6 +129,7 @@ def _freq_table_widget():
     df = pd.DataFrame(
         {
             "Class Interval": labels,
+            "Tally": [_tally_marks(c) for c in counts],
             "Frequency": counts,
             "Cumulative Freq": np.cumsum(counts),
         }
@@ -3661,25 +3663,34 @@ def _post_hoc_tables():
 def render_tabulation():
     st.title(" Tabulation & Cross Tabulation")
 
-    section = st.sidebar.radio(
-        "Section",
-        [
-            "Descriptive Tabulation",
-            "One-way & Two-way Tables",
-            "Cross-Tabulation",
-            "Diagnostic Accuracy Tables",
-            "Agreement Tables",
-            "Regression Summary Tables",
-            "Effect Size Tables",
-            "Survival / Life Tables",
-            "Multiple Testing Correction",
-            "Power Curve Summary",
-            "Post-Hoc Tables",
-            "Educational Modules",
-            "APA/Journal Export",
-        ],
-        key="tab_section",
-    )
+    sec_opts = [
+        "Descriptive Tabulation",
+        "One-way & Two-way Tables",
+        "Cross-Tabulation",
+        "Diagnostic Accuracy Tables",
+        "Agreement Tables",
+        "Regression Summary Tables",
+        "Effect Size Tables",
+        "Survival / Life Tables",
+        "Multiple Testing Correction",
+        "Power Curve Summary",
+        "Post-Hoc Tables",
+        "Educational Modules",
+        "APA/Journal Export",
+    ]
+    section_key = "tab_section"
+    if section_key not in st.session_state:
+        st.session_state[section_key] = sec_opts[0]
+    for opt in sec_opts:
+        if st.sidebar.button(
+            opt,
+            key=f"tab_sec_{opt}",
+            use_container_width=True,
+            type="primary" if st.session_state[section_key] == opt else "secondary",
+        ):
+            st.session_state[section_key] = opt
+            st.rerun()
+    section = st.session_state[section_key]
 
     if section == "Descriptive Tabulation":
         descriptive_tabulation()
