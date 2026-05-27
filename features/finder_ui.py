@@ -185,6 +185,13 @@ def render_all_tests_section():
                     _open_test_directly(test_name)
 
 
+def _open_test_directly(test_name):
+    """Open a test directly in the finder's right panel."""
+    st.session_state.results = [test_name]
+    st.session_state.open_tests = {test_name}
+    st.rerun()                    
+
+
 def render_test_finder():
     """Render the Test Finder UI."""
 

@@ -277,7 +277,8 @@ def data_source_toggle(key_prefix, mode="one_sample"):
     key_prefix : str
         Unique prefix for widget keys (e.g., "ttest_2samp")
     mode : str
-        "one_sample", "two_sample", "multi_sample", "paired", or "correlation"
+        "one_sample", "two_sample", "multi_sample", "paired", "repeated", or "correlation"
+        - "repeated": for 3+ measurements on same subjects (Friedman test, etc.)
     
     Returns
     -------
@@ -419,6 +420,23 @@ def data_source_toggle(key_prefix, mode="one_sample"):
             data["x"] = corr_df[x_col].values
             data["y"] = corr_df[y_col].values
             data["col_names"] = [x_col, y_col]
+            
+        elif mode == "repeated":
+            col_options = list(df.select_dtypes(include=["int64", "float64"]).columns)
+            selected_cols = st.multiselect(
+                "Select measurement columns (3+ time points/conditions for same subjects)",
+                col_options,
+                default=col_options[:min(3, len(col_options))],
+                key=f"{key_prefix}_repeated_cols",
+            )
+            
+            if len(selected_cols) < 3:
+                st.error(f"Friedman Test requires at least 3 repeated measurements. You selected {len(selected_cols)}.")
+                return {"mode": "simulated", "data": None, "using_uploaded": False}
+            
+            repeated_df = df[selected_cols].dropna()
+            data["measurements"] = [repeated_df[col].values for col in selected_cols]
+            data["col_names"] = selected_cols
         
         return {"mode": "uploaded", "data": data, "using_uploaded": True}
         

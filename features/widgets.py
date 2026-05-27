@@ -247,48 +247,94 @@ def render_test_widget(test_name):
 
         st.subheader("Interactive One-sample z-test")
 
+        st.info("""
+        **z-test** assumes the population standard deviation is **known**. In practice,
+        it is rarely used since we almost never know the population σ.
+        
+        When σ is unknown, use the **One-sample t-test** instead.
+        """)
+
+        # =========================
+        # DATA SOURCE TOGGLE
+        # =========================
+
+        src = data_source_toggle("ztest_1samp", mode="one_sample")
+
         # =========================
         # CONTROLS
         # =========================
 
         population_mean = st.slider(
-            "Population Mean",
+            "Population Mean (μ₀)",
             -10.0,
             10.0,
             0.0,
             0.1,
         )
 
-        shift = st.slider(
-            "Sample Mean Shift",
-            -5.0,
-            5.0,
+        known_sigma = st.slider(
+            "Known Population σ",
+            0.1,
+            10.0,
             1.0,
             0.1,
-            key="sample_mean_shift_1",
         )
 
+        if src["using_uploaded"]:
+            sample = src["data"]["values"]
+        else:
+            shift = st.slider(
+                "Sample Mean Shift",
+                -5.0,
+                5.0,
+                1.0,
+                0.1,
+                key="sample_mean_shift_1",
+            )
+
+            np.random.seed(42)
+            sample = np.random.normal(
+                population_mean + shift,
+                known_sigma,
+                300,
+            )
+
         # =========================
-        # DATA
+        # DATA SUMMARY
         # =========================
 
-        np.random.seed(42)
+        st.divider()
+        st.subheader("Data Summary")
 
-        sample = np.random.normal(
-            population_mean + shift,
-            1,
-            300,
-        )
+        n_z = len(sample)
+        sample_mean_z = np.mean(sample)
+        sample_sd_z = np.std(sample, ddof=1)
 
-        z, p = ztest(sample, value=population_mean)
+        summary_data = {
+            "Metric": ["n", "Sample Mean", "Sample SD", "Known σ"],
+            "Value": [
+                n_z,
+                f"{sample_mean_z:.3f}",
+                f"{sample_sd_z:.3f}",
+                f"{known_sigma:.3f}",
+            ],
+        }
+        st.table(pd.DataFrame(summary_data))
 
         # =========================
-        # STATS
+        # TEST
         # =========================
+
+        se_z = known_sigma / np.sqrt(n_z)
+        z = (sample_mean_z - population_mean) / se_z
+        from scipy.stats import norm
+        p_two_sided = 2 * (1 - norm.cdf(abs(z)))
+
+        ci_low = sample_mean_z - 1.96 * se_z
+        ci_high = sample_mean_z + 1.96 * se_z
 
         st.latex(rf"z = {z:.3f}")
-
-        st.latex(rf"\text{{{format_p_value(p)}}}")
+        st.latex(rf"\text{{{format_p_value(p_two_sided)}}}")
 
         # =========================
         # PLOT
@@ -296,16 +342,25 @@ def render_test_widget(test_name):
 
         fig = go.Figure()
 
-        fig.add_trace(go.Histogram(x=sample))
+        fig.add_trace(go.Histogram(x=sample, name="Sample", nbinsx=25))
 
         fig.add_vline(
             x=population_mean,
             line_dash="dash",
+            line_color="green",
+            annotation_text="H₀ Mean",
+        )
+        fig.add_vline(
+            x=sample_mean_z,
+            line_dash="dot",
+            line_color="blue",
+            annotation_text="Sample Mean",
         )
 
         fig.update_layout(
             template="plotly_dark",
-            height=550,
+            height=450,
+            title="Histogram with Mean Annotations",
         )
 
         st.plotly_chart(fig, use_container_width=True)
@@ -317,15 +372,11 @@ def render_test_widget(test_name):
         st.divider()
         st.subheader("Detailed Results")
 
-        n_z = len(sample)
-        sample_mean_z = np.mean(sample)
-        se_z = 1 / np.sqrt(n_z)
-        ci_z = 1.96 * se_z
-
         results_data = {
             "Metric": [
                 "Sample Mean",
                 "Population Mean (μ₀)",
+                "Mean Difference",
                 "z-statistic",
                 "p-value",
                 "SE (σ/√n)",
@@ -336,12 +387,13 @@ def render_test_widget(test_name):
             "Value": [
                 f"{sample_mean_z:.3f}",
                 f"{population_mean:.3f}",
+                f"{sample_mean_z - population_mean:.3f}",
                 f"{z:.3f}",
-                f"{p:.5f}",
+                format_p_value(p_two_sided),
                 f"{se_z:.4f}",
                 f"{n_z}",
-                f"{sample_mean_z - ci_z:.2f} to {sample_mean_z + ci_z:.2f}",
-                "1.0",
+                f"[{ci_low:.2f}, {ci_high:.2f}]",
+                f"{known_sigma:.1f}",
             ],
         }
         st.table(pd.DataFrame(results_data))
@@ -365,8 +417,7 @@ def render_test_widget(test_name):
         x_dense = np.linspace(sample.min(), sample.max(), 200)
         from scipy.stats import norm as norm2
 
-        y_dense = norm2.pdf(x_dense, sample_mean_z, 1 / np.sqrt(n_z) * np.sqrt(n_z))
-        y_dense = norm2.pdf(x_dense, sample_mean_z, np.std(sample, ddof=1))
+        y_dense = norm2.pdf(x_dense, sample_mean_z, sample_sd_z)
         fig2.add_trace(
             go.Scatter(
                 x=x_dense,
@@ -395,6 +446,7 @@ def render_test_widget(test_name):
             height=400,
             xaxis_title="Value",
             yaxis_title="Density",
+            title="Density Plot with Normal Fit",
         )
 
         st.plotly_chart(fig2, use_container_width=True)
@@ -587,37 +639,84 @@ def render_test_widget(test_name):
 
         st.subheader("Interactive One-sample Wilcoxon Signed-Rank Test")
 
+        st.info("""
+        **One-sample Wilcoxon Signed-Rank Test** is a nonparametric alternative to the one-sample t-test.
+        It tests whether the median of a sample differs from a hypothesized value (typically 0).
+        
+        - Use when data is **not normally distributed**
+        - Tests for **median** (not mean)
+        - Also used for paired differences: H₀: median difference = 0
+        """)
+
+        # =========================
+        # DATA SOURCE TOGGLE
+        # =========================
+
+        src = data_source_toggle("wilcoxon_1samp", mode="one_sample")
+
         # =========================
         # CONTROLS
         # =========================
 
-        median_shift = st.slider(
-            "Median Shift",
-            -5.0,
-            5.0,
-            1.0,
-            0.1,
+        hypothesized_median = st.slider(
+            "Hypothesized Median (H₀)",
+            -10.0,
+            10.0,
+            0.0,
+            0.5,
         )
 
+        if src["using_uploaded"]:
+            sample_raw = src["data"]["values"]
+            sample = sample_raw - hypothesized_median
+        else:
+            median_shift = st.slider(
+                "Median Shift from H₀",
+                -5.0,
+                5.0,
+                1.0,
+                0.1,
+            )
+
+            np.random.seed(42)
+            sample_raw = np.random.exponential(1, 80) + hypothesized_median + median_shift
+            sample = sample_raw - hypothesized_median
+
         # =========================
-        # DATA
+        # DATA SUMMARY
         # =========================
 
-        np.random.seed(42)
+        st.divider()
+        st.subheader("Data Summary")
 
-        sample = np.random.exponential(1, 80)
+        n_1w = len(sample)
+        median_1w = np.median(sample_raw)
+        median_diff_1w = median_1w - hypothesized_median
+        mean_1w = np.mean(sample_raw)
+        sd_1w = np.std(sample_raw, ddof=1)
 
-        sample = sample + median_shift
-
-        stat, p = wilcoxon(sample)
+        summary_data = {
+            "Metric": ["n", "Median", "Mean", "SD", "Hypothesized Median", "Median Difference"],
+            "Value": [
+                f"{n_1w}",
+                f"{median_1w:.3f}",
+                f"{mean_1w:.3f}",
+                f"{sd_1w:.3f}",
+                f"{hypothesized_median}",
+                f"{median_diff_1w:.3f}",
+            ],
+        }
+        st.table(pd.DataFrame(summary_data))
 
         # =========================
-        # STATS
+        # TEST
         # =========================
 
-        st.latex(rf"W = {stat:.3f}")
+        T_1w, p_1w = wilcoxon(sample)
+        r_rb_1w = 1 - 2 * T_1w / (n_1w * (n_1w + 1) / 2)
 
-        st.latex(rf"\text{{{format_p_value(p)}}}")
+        st.latex(rf"W = {T_1w:.3f}")
+        st.latex(rf"\text{{{format_p_value(p_1w)}}}")
 
         # =========================
         # PLOT
@@ -625,13 +724,25 @@ def render_test_widget(test_name):
 
         fig = go.Figure()
 
-        fig.add_trace(go.Box(y=sample))
+        fig.add_trace(go.Box(y=sample_raw, name="Sample", boxmean="sd", marker_color="#4C78A8"))
 
-        fig.add_hline(y=0)
+        fig.add_hline(
+            y=hypothesized_median,
+            line_dash="dash",
+            line_color="red",
+            annotation_text="H₀ Median",
+        )
+        fig.add_hline(
+            y=median_1w,
+            line_dash="dot",
+            line_color="blue",
+            annotation_text="Observed Median",
+        )
 
         fig.update_layout(
             template="plotly_dark",
-            height=500,
+            height=450,
+            title="Boxplot with Median Annotations",
         )
 
         st.plotly_chart(fig, use_container_width=True)
@@ -643,15 +754,6 @@ def render_test_widget(test_name):
         st.divider()
         st.subheader("Detailed Results")
 
-        n_1w = len(sample)
-        median_1w = np.median(sample)
-        hypothesized_median = 0
-        median_diff_1w = median_1w - hypothesized_median
-        from scipy.stats import wilcoxon as wilcoxon_1samp
-
-        T_1w, p_1w = wilcoxon_1samp(sample)
-        r_rb_1w = 1 - 2 * T_1w / (n_1w * (n_1w + 1) / 2)
-
         results_data = {
             "Metric": [
                 "Median",
@@ -661,17 +763,15 @@ def render_test_widget(test_name):
                 "Sample Size (n)",
                 "Median Difference",
                 "Rank-biserial r",
-                "",
             ],
             "Value": [
                 f"{median_1w:.3f}",
                 f"{hypothesized_median}",
                 f"{T_1w:.3f}",
-                f"{p_1w:.5f}",
+                format_p_value(p_1w),
                 f"{n_1w}",
                 f"{median_diff_1w:.3f}",
                 f"{r_rb_1w:.4f}",
-                "",
             ],
         }
         st.table(pd.DataFrame(results_data))
@@ -682,13 +782,15 @@ def render_test_widget(test_name):
 
         fig2 = go.Figure()
 
-        fig2.add_trace(go.Box(y=sample, name="Sample", boxmean="sd"))
+        fig2.add_trace(
+            go.Box(y=sample_raw, name="Sample", boxmean="sd", marker_color="#4C78A8")
+        )
 
         jitter_x = np.random.normal(0, 0.06, n_1w)
         fig2.add_trace(
             go.Scatter(
                 x=jitter_x,
-                y=sample,
+                y=sample_raw,
                 mode="markers",
                 name="Data points",
                 marker=dict(color="rgba(0, 123, 255, 0.5)", size=5),
@@ -699,12 +801,12 @@ def render_test_widget(test_name):
             y=hypothesized_median,
             line_dash="dash",
             line_color="red",
-            annotation_text="H₀: median = 0",
+            annotation_text=f"H₀: median = {hypothesized_median}",
         )
 
         ci_1w = (
             1.58
-            * (np.percentile(sample, 75) - np.percentile(sample, 25))
+            * (np.percentile(sample_raw, 75) - np.percentile(sample_raw, 25))
             / np.sqrt(n_1w)
         )
         fig2.add_hline(
@@ -719,6 +821,7 @@ def render_test_widget(test_name):
             height=450,
             xaxis=dict(showticklabels=False),
             yaxis_title="Value",
+            title="Boxplot with Individual Data Points",
         )
 
         st.plotly_chart(fig2, use_container_width=True)
@@ -2868,54 +2971,103 @@ def render_test_widget(test_name):
 
         st.subheader("Interactive Wilcoxon Signed-Rank Test")
 
-        # =========================
-        # CONTROLS
-        # =========================
-
-        median_shift = st.slider(
-            "Median Shift",
-            -5.0,
-            5.0,
-            1.0,
-            0.1,
-            key="median_shift_1",
-        )
-
-        noise = st.slider(
-            "Noise",
-            0.1,
-            5.0,
-            1.0,
-            0.1,
-            key="noise_3",
-        )
-
-        n = st.slider(
-            "Sample Size",
-            10,
-            200,
-            40,
-            key="sample_size_2",
-        )
+        st.info("""
+        **Wilcoxon Signed-Rank Test (paired)** is the nonparametric alternative to the **Paired t-test**.
+        
+        Use when:
+        - Comparing **two related/dependent groups** (e.g., before/after measurements)
+        - Data is **not normally distributed**
+        - Tests for differences in **medians** (not means)
+        """)
 
         # =========================
-        # DATA
+        # DATA SOURCE TOGGLE
         # =========================
 
-        np.random.seed(42)
+        src = data_source_toggle("wilcoxon_signedrank_paired", mode="paired")
 
-        before = np.random.exponential(1, n)
+        # =========================
+        # CONTROLS / DATA
+        # =========================
 
-        after = before + median_shift + np.random.normal(0, noise, n)
+        if src["using_uploaded"]:
+            before = src["data"]["values1"]
+            after = src["data"]["values2"]
+            col_names = src["data"].get("col_names", ["Before", "After"])
+        else:
+            median_shift = st.slider(
+                "Median Shift",
+                -5.0,
+                5.0,
+                1.0,
+                0.1,
+                key="median_shift_1",
+            )
+
+            noise = st.slider(
+                "Noise",
+                0.1,
+                5.0,
+                1.0,
+                0.1,
+                key="noise_3",
+            )
+
+            n = st.slider(
+                "Sample Size",
+                10,
+                200,
+                40,
+                key="sample_size_2",
+            )
+
+            np.random.seed(42)
+            before = np.random.exponential(1, n)
+            after = before + median_shift + np.random.normal(0, noise, n)
+            col_names = ["Before", "After"]
+
+        # =========================
+        # DATA SUMMARY
+        # =========================
+
+        st.divider()
+        st.subheader("Data Summary")
+
+        n = len(before)
+        median_pre = np.median(before)
+        median_post = np.median(after)
+        mean_pre = np.mean(before)
+        mean_post = np.mean(after)
+        median_diff = median_post - median_pre
+
+        summary_data = {
+            "Measure": [col_names[0], col_names[1], "Difference"],
+            "n": [n, n, n],
+            "Median": [
+                f"{median_pre:.3f}",
+                f"{median_post:.3f}",
+                f"{median_diff:.3f}",
+            ],
+            "Mean": [
+                f"{mean_pre:.3f}",
+                f"{mean_post:.3f}",
+                f"{mean_post - mean_pre:.3f}",
+            ],
+        }
+        st.table(pd.DataFrame(summary_data))
+
+        # =========================
+        # TEST
+        # =========================
 
         stat, p = wilcoxon(before, after)
 
-        # =========================
-        # STATS
-        # =========================
+        from scipy.stats import norm as norm_w
+
+        z_w = -norm_w.ppf(p / 2) if p > 0 else 0
+        r_ws = z_w / np.sqrt(n) if n > 0 else 0
 
         st.latex(rf"W = {stat:.3f}")
-
         st.latex(rf"\text{{{format_p_value(p)}}}")
 
         # =========================
@@ -2925,19 +3077,20 @@ def render_test_widget(test_name):
         fig = go.Figure()
 
         for i in range(n):
-
             fig.add_trace(
                 go.Scatter(
-                    x=["Before", "After"],
+                    x=col_names,
                     y=[before[i], after[i]],
                     mode="lines+markers",
                     showlegend=False,
+                    line=dict(color="rgba(150, 150, 150, 0.3)", width=1),
                 )
             )
 
         fig.update_layout(
             template="plotly_dark",
-            height=600,
+            height=500,
+            title="Spaghetti Plot: Individual Changes",
         )
 
         st.plotly_chart(fig, use_container_width=True)
@@ -2949,24 +3102,15 @@ def render_test_widget(test_name):
         st.divider()
         st.subheader("Detailed Results")
 
-        median_pre = np.median(before)
-        median_post = np.median(after)
-        median_diff = median_post - median_pre
-        from scipy.stats import norm as norm_w
-
-        z_w = -norm_w.ppf(p / 2)
-        r_ws = z_w / np.sqrt(n) if n > 0 else 0
-
         results_data = {
             "Metric": [
-                "Median (Pre)",
-                "Median (Post)",
+                f"Median ({col_names[0]})",
+                f"Median ({col_names[1]})",
                 "Median Difference",
                 "W-statistic",
-                "z",
+                "z (approx)",
                 "p-value",
-                "Rank-biserial r",
-                "",
+                "Rank-biserial r (effect size)",
             ],
             "Value": [
                 f"{median_pre:.3f}",
@@ -2974,9 +3118,8 @@ def render_test_widget(test_name):
                 f"{median_diff:.3f}",
                 f"{stat:.3f}",
                 f"{z_w:.3f}",
-                f"{p:.5f}",
+                format_p_value(p),
                 f"{r_ws:.4f}",
-                "",
             ],
         }
         st.table(pd.DataFrame(results_data))
@@ -2990,7 +3133,7 @@ def render_test_widget(test_name):
         for i in range(n):
             fig2.add_trace(
                 go.Scatter(
-                    x=["Before", "After"],
+                    x=col_names,
                     y=[before[i], after[i]],
                     mode="lines+markers",
                     showlegend=False,
@@ -3001,7 +3144,7 @@ def render_test_widget(test_name):
 
         fig2.add_trace(
             go.Scatter(
-                x=["Before", "After"],
+                x=col_names,
                 y=[median_pre, median_post],
                 mode="lines+markers",
                 name="Median change",
@@ -3012,9 +3155,10 @@ def render_test_widget(test_name):
 
         fig2.update_layout(
             template="plotly_dark",
-            height=600,
+            height=500,
             xaxis_title="Time Point",
             yaxis_title="Value",
+            title="Profile Plot with Median Trend",
         )
 
         st.plotly_chart(fig2, use_container_width=True)
@@ -3025,52 +3169,96 @@ def render_test_widget(test_name):
 
         st.subheader("Interactive Mann-Whitney U Test")
 
-        # =========================
-        # CONTROLS
-        # =========================
-
-        location_shift = st.slider(
-            "Distribution Shift",
-            0.0,
-            10.0,
-            2.0,
-            0.1,
-        )
-
-        spread = st.slider(
-            "Distribution Spread",
-            0.1,
-            5.0,
-            1.0,
-            0.1,
-        )
-
-        n = st.slider(
-            "Sample Size",
-            10,
-            300,
-            60,
-            key="sample_size_3",
-        )
+        st.info("""
+        **Mann-Whitney U Test** (also called Wilcoxon rank-sum test) is the **nonparametric alternative** 
+        to the **Student's t-test (Independent)**.
+        
+        Use when:
+        - Comparing **two independent groups**
+        - Data is **not normally distributed**
+        - Tests for **stochastic dominance** (is one group systematically larger/smaller?)
+        """)
 
         # =========================
-        # DATA
+        # DATA SOURCE TOGGLE
         # =========================
 
-        np.random.seed(42)
+        src = data_source_toggle("mannwhitney_2samp", mode="two_sample")
 
-        g1 = np.random.exponential(spread, n)
+        # =========================
+        # CONTROLS / DATA
+        # =========================
 
-        g2 = np.random.exponential(spread, n) + location_shift
+        if src["using_uploaded"]:
+            g1 = src["data"]["group1"]
+            g2 = src["data"]["group2"]
+            group_names = src["data"]["group_names"]
+        else:
+            location_shift = st.slider(
+                "Distribution Shift",
+                0.0,
+                10.0,
+                2.0,
+                0.1,
+            )
+
+            spread = st.slider(
+                "Distribution Spread",
+                0.1,
+                5.0,
+                1.0,
+                0.1,
+            )
+
+            n = st.slider(
+                "Sample Size",
+                10,
+                300,
+                60,
+                key="sample_size_3",
+            )
+
+            np.random.seed(42)
+            g1 = np.random.exponential(spread, n)
+            g2 = np.random.exponential(spread, n) + location_shift
+            group_names = ["Group 1", "Group 2"]
+
+        # =========================
+        # DATA SUMMARY
+        # =========================
+
+        st.divider()
+        st.subheader("Data Summary")
+
+        n1, n2 = len(g1), len(g2)
+        medians_mw = [np.median(g1), np.median(g2)]
+        means_mw = [np.mean(g1), np.mean(g2)]
+        iqr_mw = [
+            f"{np.percentile(g, 25):.2f}–{np.percentile(g, 75):.2f}" for g in [g1, g2]
+        ]
+
+        summary_data = {
+            "Group": group_names,
+            "n": [n1, n2],
+            "Median": [f"{m:.3f}" for m in medians_mw],
+            "Mean": [f"{m:.3f}" for m in means_mw],
+            "IQR": iqr_mw,
+        }
+        st.table(pd.DataFrame(summary_data))
+
+        # =========================
+        # TEST
+        # =========================
 
         u, p = mannwhitneyu(g1, g2)
 
-        # =========================
-        # STATS
-        # =========================
+        from scipy.stats import norm as norm_mw
+
+        z_mw = -norm_mw.ppf(p / 2) if p > 0 else 0
+        n_total = n1 * n2
+        r_rb_mw = 1 - 2 * min(u, n_total - u) / n_total if n_total > 0 else 0
 
         st.latex(rf"U = {u:.3f}")
-
         st.latex(rf"\text{{{format_p_value(p)}}}")
 
         # =========================
@@ -3079,12 +3267,13 @@ def render_test_widget(test_name):
 
         fig = go.Figure()
 
-        fig.add_trace(go.Violin(y=g1, name="Group 1"))
-        fig.add_trace(go.Violin(y=g2, name="Group 2"))
+        fig.add_trace(go.Violin(y=g1, name=group_names[0], box_visible=True, meanline_visible=True))
+        fig.add_trace(go.Violin(y=g2, name=group_names[1], box_visible=True, meanline_visible=True))
 
         fig.update_layout(
             template="plotly_dark",
-            height=550,
+            height=450,
+            title=f"Violin Plots: {group_names[0]} vs {group_names[1]}",
         )
 
         st.plotly_chart(fig, use_container_width=True)
@@ -3096,35 +3285,22 @@ def render_test_widget(test_name):
         st.divider()
         st.subheader("Detailed Results")
 
-        medians_mw = [np.median(g) for g in [g1, g2]]
-        iqr_mw = [
-            f"{np.percentile(g, 25):.2f}–{np.percentile(g, 75):.2f}" for g in [g1, g2]
-        ]
-        from scipy.stats import norm as norm_mw
-
-        z_mw = -norm_mw.ppf(p / 2)
-        r_rb_mw = 1 - 2 * min(u, n * n - u) / (n * n)
-
         results_data = {
             "Metric": [
-                "Median G1 (IQR)",
-                "Median G2 (IQR)",
+                f"Median {group_names[0]} (IQR)",
+                f"Median {group_names[1]} (IQR)",
                 "U-statistic",
-                "z",
+                "z (normal approx)",
                 "p-value",
-                "Rank-biserial r",
-                "",
-                "",
+                "Rank-biserial r (effect size)",
             ],
             "Value": [
                 f"{medians_mw[0]:.3f} ({iqr_mw[0]})",
                 f"{medians_mw[1]:.3f} ({iqr_mw[1]})",
                 f"{u:.3f}",
                 f"{z_mw:.3f}",
-                f"{p:.5f}",
+                format_p_value(p),
                 f"{r_rb_mw:.4f}",
-                "",
-                "",
             ],
         }
         st.table(pd.DataFrame(results_data))
@@ -3167,48 +3343,91 @@ def render_test_widget(test_name):
 
         st.subheader("Interactive Kruskal-Wallis Test")
 
-        # =========================
-        # CONTROLS
-        # =========================
-
-        shift = st.slider(
-            "Group Separation",
-            0.0,
-            10.0,
-            2.0,
-            0.1,
-            key="group_separation_2",
-        )
-
-        spread = st.slider(
-            "Distribution Spread",
-            0.1,
-            5.0,
-            1.0,
-            0.1,
-            key="distribution_spread_1",
-        )
+        st.info("""
+        **Kruskal-Wallis Test** is the **nonparametric alternative** to **One-way ANOVA**.
+        
+        Use when:
+        - Comparing **three or more independent groups**
+        - Data is **not normally distributed**
+        - Tests for differences in **medians** across groups (stochastic dominance)
+        - Also called "one-way ANOVA on ranks"
+        """)
 
         # =========================
-        # DATA
+        # DATA SOURCE TOGGLE
         # =========================
 
-        np.random.seed(42)
-
-        g1 = np.random.gamma(2, spread, 60)
-
-        g2 = np.random.gamma(2, spread, 60) + shift
-
-        g3 = np.random.gamma(2, spread, 60) + shift * 2
-
-        H, p = kruskal(g1, g2, g3)
+        src = data_source_toggle("kruskal_wallis", mode="multi_sample")
 
         # =========================
-        # STATS
+        # CONTROLS / DATA
         # =========================
+
+        if src["using_uploaded"]:
+            groups_kw = src["data"]["groups"]
+            group_names = src["data"]["group_names"]
+        else:
+            shift = st.slider(
+                "Group Separation",
+                0.0,
+                10.0,
+                2.0,
+                0.1,
+                key="group_separation_2",
+            )
+
+            spread = st.slider(
+                "Distribution Spread",
+                0.1,
+                5.0,
+                1.0,
+                0.1,
+                key="distribution_spread_1",
+            )
+
+            np.random.seed(42)
+            g1 = np.random.gamma(2, spread, 60)
+            g2 = np.random.gamma(2, spread, 60) + shift
+            g3 = np.random.gamma(2, spread, 60) + shift * 2
+            groups_kw = [g1, g2, g3]
+            group_names = ["Group 1", "Group 2", "Group 3"]
+
+        # =========================
+        # DATA SUMMARY
+        # =========================
+
+        st.divider()
+        st.subheader("Data Summary")
+
+        n_kw = [len(g) for g in groups_kw]
+        medians_kw = [np.median(g) for g in groups_kw]
+        means_kw = [np.mean(g) for g in groups_kw]
+        iqr_kw = [
+            f"{np.percentile(g, 25):.2f}–{np.percentile(g, 75):.2f}" for g in groups_kw
+        ]
+
+        summary_data = {
+            "Group": group_names,
+            "n": n_kw,
+            "Median": [f"{m:.3f}" for m in medians_kw],
+            "Mean": [f"{m:.3f}" for m in means_kw],
+            "IQR": iqr_kw,
+        }
+        st.table(pd.DataFrame(summary_data))
+
+        # =========================
+        # TEST
+        # =========================
+
+        H, p = kruskal(*groups_kw)
+
+        n_total_kw = sum(n_kw)
+        k_kw = len(groups_kw)
+        df_kw = k_kw - 1
+        eps_sq = H / (n_total_kw - 1) if n_total_kw > 1 else 0
 
         st.latex(rf"H = {H:.3f}")
-
+        st.latex(rf"df = {df_kw}")
         st.latex(rf"\text{{{format_p_value(p)}}}")
 
         # =========================
@@ -3217,13 +3436,13 @@ def render_test_widget(test_name):
 
         fig = go.Figure()
 
-        fig.add_trace(go.Box(y=g1, name="Group 1"))
-        fig.add_trace(go.Box(y=g2, name="Group 2"))
-        fig.add_trace(go.Box(y=g3, name="Group 3"))
+        for i, (g, name) in enumerate(zip(groups_kw, group_names)):
+            fig.add_trace(go.Box(y=g, name=name, boxmean="sd"))
 
         fig.update_layout(
             template="plotly_dark",
-            height=550,
+            height=450,
+            title="Boxplots by Group",
         )
 
         st.plotly_chart(fig, use_container_width=True)
@@ -3235,36 +3454,24 @@ def render_test_widget(test_name):
         st.divider()
         st.subheader("Detailed Results")
 
-        n_kw = [len(g1), len(g2), len(g3)]
-        medians_kw = [np.median(g) for g in [g1, g2, g3]]
-        iqr_kw = [
-            f"{np.percentile(g, 25):.2f}–{np.percentile(g, 75):.2f}"
-            for g in [g1, g2, g3]
+        metric_list = [f"Median {name} (IQR)" for name in group_names] + [
+            "H-statistic",
+            "df",
+            "p-value",
+            "ε² (epsilon-squared, effect size)",
         ]
-        n_total_kw = sum(n_kw)
-        eps_sq = H / (n_total_kw - 1) if n_total_kw > 1 else 0
+        value_list = [
+            f"{m:.3f} ({iqr})" for m, iqr in zip(medians_kw, iqr_kw)
+        ] + [
+            f"{H:.3f}",
+            f"{df_kw}",
+            format_p_value(p),
+            f"{eps_sq:.4f}",
+        ]
 
         results_data = {
-            "Metric": [
-                "Median G1 (IQR)",
-                "Median G2 (IQR)",
-                "Median G3 (IQR)",
-                "H",
-                "df",
-                "p-value",
-                "ε²",
-                "",
-            ],
-            "Value": [
-                f"{medians_kw[0]:.3f} ({iqr_kw[0]})",
-                f"{medians_kw[1]:.3f} ({iqr_kw[1]})",
-                f"{medians_kw[2]:.3f} ({iqr_kw[2]})",
-                f"{H:.3f}",
-                "2",
-                f"{p:.5f}",
-                f"{eps_sq:.4f}",
-                "",
-            ],
+            "Metric": metric_list,
+            "Value": value_list,
         }
         st.table(pd.DataFrame(results_data))
 
@@ -3274,9 +3481,7 @@ def render_test_widget(test_name):
 
         fig2 = go.Figure()
 
-        for i, (g, name) in enumerate(
-            zip([g1, g2, g3], ["Group 1", "Group 2", "Group 3"])
-        ):
+        for i, (g, name) in enumerate(zip(groups_kw, group_names)):
             fig2.add_trace(go.Box(y=g, name=name, boxmean="sd"))
             jitter_x = np.random.normal(i + 1, 0.06, len(g))
             fig2.add_trace(
@@ -3291,16 +3496,17 @@ def render_test_widget(test_name):
 
         fig2.update_layout(
             template="plotly_dark",
-            height=550,
+            height=500,
             xaxis_title="Group",
             yaxis_title="Value",
+            title="Boxplots with Individual Data Points",
         )
 
         st.plotly_chart(fig2, use_container_width=True)
 
         st.divider()
         st.subheader("Post-Hoc Tests")
-        render_post_hoc([g1, g2, g3], param_type="nonparametric", key="kw_ph")
+        render_post_hoc(groups_kw, param_type="nonparametric", key="kw_ph")
 
     elif test_name == "Friedman Test":
 
@@ -3308,55 +3514,96 @@ def render_test_widget(test_name):
 
         st.subheader("Interactive Friedman Test")
 
-        # =========================
-        # CONTROLS
-        # =========================
-
-        trend = st.slider(
-            "Repeated Trend",
-            -5.0,
-            5.0,
-            1.0,
-            0.1,
-        )
-
-        noise = st.slider(
-            "Noise",
-            0.1,
-            5.0,
-            1.0,
-            0.1,
-            key="noise_4",
-        )
-
-        subjects = st.slider(
-            "Subjects",
-            5,
-            100,
-            20,
-            key="subjects_2",
-        )
+        st.info("""
+        **Friedman Test** is the **nonparametric alternative** to **Repeated Measures ANOVA**.
+        
+        Use when:
+        - Comparing **three or more measurements** from the **same subjects** (repeated measures)
+        - Data is **not normally distributed** or measurements are ordinal
+        - Tests for differences across conditions/time points
+        """)
 
         # =========================
-        # DATA
+        # DATA SOURCE TOGGLE
         # =========================
 
-        np.random.seed(42)
-
-        t1 = np.random.exponential(1, subjects)
-
-        t2 = t1 + trend + np.random.normal(0, noise, subjects)
-
-        t3 = t2 + trend + np.random.normal(0, noise, subjects)
-
-        stat, p = friedmanchisquare(t1, t2, t3)
+        src = data_source_toggle("friedman", mode="repeated")
 
         # =========================
-        # STATS
+        # CONTROLS / DATA
         # =========================
+
+        if src["using_uploaded"]:
+            measurements = src["data"]["measurements"]
+            time_names = src["data"]["col_names"]
+            n_subj = len(measurements[0])
+        else:
+            trend = st.slider(
+                "Repeated Trend",
+                -5.0,
+                5.0,
+                1.0,
+                0.1,
+            )
+
+            noise = st.slider(
+                "Noise",
+                0.1,
+                5.0,
+                1.0,
+                0.1,
+                key="noise_4",
+            )
+
+            n_subj = st.slider(
+                "Subjects",
+                5,
+                100,
+                20,
+                key="subjects_2",
+            )
+
+            np.random.seed(42)
+
+            t1 = np.random.exponential(1, n_subj)
+            t2 = t1 + trend + np.random.normal(0, noise, n_subj)
+            t3 = t2 + trend + np.random.normal(0, noise, n_subj)
+            measurements = [t1, t2, t3]
+            time_names = ["T1", "T2", "T3"]
+
+        # =========================
+        # DATA SUMMARY
+        # =========================
+
+        st.divider()
+        st.subheader("Data Summary")
+
+        medians_f = [np.median(m) for m in measurements]
+        means_f = [np.mean(m) for m in measurements]
+        iqr_f = [
+            f"{np.percentile(m, 25):.2f}–{np.percentile(m, 75):.2f}" for m in measurements
+        ]
+
+        summary_data = {
+            "Time/Condition": time_names,
+            "Median": [f"{m:.3f}" for m in medians_f],
+            "Mean": [f"{m:.3f}" for m in means_f],
+            "IQR": iqr_f,
+        }
+        st.table(pd.DataFrame(summary_data))
+
+        # =========================
+        # TEST
+        # =========================
+
+        stat, p = friedmanchisquare(*measurements)
+
+        k_f = len(measurements)
+        df_f = k_f - 1
+        kendall_w = stat / (n_subj * (k_f - 1)) if n_subj > 0 and k_f > 1 else 0
 
         st.latex(rf"\chi^2 = {stat:.3f}")
-
+        st.latex(rf"df = {df_f}")
         st.latex(rf"\text{{{format_p_value(p)}}}")
 
         # =========================
@@ -3365,20 +3612,35 @@ def render_test_widget(test_name):
 
         fig = go.Figure()
 
-        for i in range(subjects):
-
+        for i in range(n_subj):
             fig.add_trace(
                 go.Scatter(
-                    x=["T1", "T2", "T3"],
-                    y=[t1[i], t2[i], t3[i]],
+                    x=time_names,
+                    y=[measurements[j][i] for j in range(len(measurements))],
                     mode="lines+markers",
                     showlegend=False,
+                    line=dict(color="rgba(200, 200, 200, 0.3)", width=1),
+                    marker=dict(size=3),
                 )
             )
 
+        fig.add_trace(
+            go.Scatter(
+                x=time_names,
+                y=medians_f,
+                mode="lines+markers",
+                name="Median trend",
+                line=dict(color="red", width=3),
+                marker=dict(color="red", size=10),
+            )
+        )
+
         fig.update_layout(
             template="plotly_dark",
-            height=600,
+            height=500,
+            xaxis_title="Time/Condition",
+            yaxis_title="Value",
+            title=f"Individual Subject Trajectories (n={n_subj})",
         )
 
         st.plotly_chart(fig, use_container_width=True)
@@ -3390,74 +3652,28 @@ def render_test_widget(test_name):
         st.divider()
         st.subheader("Detailed Results")
 
-        medians_f = [np.median(t1), np.median(t2), np.median(t3)]
-        kendall_w = stat / (subjects * (3 - 1))
+        metric_list = [f"Median {name}" for name in time_names] + [
+            "χ² (Friedman chi-square)",
+            "df",
+            "p-value",
+            "Kendall's W (effect size, concordance)",
+        ]
+        value_list = [f"{m:.3f}" for m in medians_f] + [
+            f"{stat:.3f}",
+            f"{df_f}",
+            format_p_value(p),
+            f"{kendall_w:.4f}",
+        ]
 
         results_data = {
-            "Metric": [
-                "Median T1",
-                "Median T2",
-                "Median T3",
-                "χ²",
-                "df",
-                "p-value",
-                "Kendall's W",
-                "",
-            ],
-            "Value": [
-                f"{medians_f[0]:.3f}",
-                f"{medians_f[1]:.3f}",
-                f"{medians_f[2]:.3f}",
-                f"{stat:.3f}",
-                "2",
-                f"{p:.5f}",
-                f"{kendall_w:.4f}",
-                "",
-            ],
+            "Metric": metric_list,
+            "Value": value_list,
         }
         st.table(pd.DataFrame(results_data))
 
-        # =========================
-        # ENHANCED CHART
-        # =========================
-
-        fig2 = go.Figure()
-
-        for i in range(subjects):
-            fig2.add_trace(
-                go.Scatter(
-                    x=["T1", "T2", "T3"],
-                    y=[t1[i], t2[i], t3[i]],
-                    mode="lines+markers",
-                    showlegend=False,
-                    line=dict(color="rgba(200, 200, 200, 0.3)", width=1),
-                    marker=dict(size=3),
-                )
-            )
-
-        fig2.add_trace(
-            go.Scatter(
-                x=["T1", "T2", "T3"],
-                y=medians_f,
-                mode="lines+markers",
-                name="Median trend",
-                line=dict(color="red", width=3),
-                marker=dict(color="red", size=10),
-            )
-        )
-
-        fig2.update_layout(
-            template="plotly_dark",
-            height=600,
-            xaxis_title="Time Point",
-            yaxis_title="Value",
-        )
-
-        st.plotly_chart(fig2, use_container_width=True)
-
         st.divider()
         st.subheader("Post-Hoc Tests")
-        render_post_hoc([t1, t2, t3], param_type="nonparametric", key="friedman_ph")
+        render_post_hoc(measurements, param_type="nonparametric", key="friedman_ph")
 
     elif test_name == "Permutation MANOVA or Non-Parametric MANOVA":
 
@@ -3636,107 +3852,68 @@ def render_test_widget(test_name):
     elif test_name == "Pearson Correlation":
         st.subheader("Interactive Pearson Correlation")
 
-        # =========================
-        # CONTROLS
-        # =========================
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-            r = st.slider("Correlation Coefficient (r)", -1.0, 1.0, 0.5, 0.01)
-
-        with col2:
-            n = st.slider("Sample Size (n)", 3, 100, 30)
+        st.info("""
+        **Pearson Correlation (r)** measures the **linear relationship** between two continuous variables.
+        
+        - r = +1: perfect positive linear relationship
+        - r = -1: perfect negative linear relationship  
+        - r = 0: no linear relationship
+        
+        Assumptions: normality, linearity, homoscedasticity
+        """)
 
         # =========================
-        # LATEX
+        # DATA SOURCE TOGGLE
+        # =========================
+
+        src = data_source_toggle("pearson", mode="correlation")
+
+        # =========================
+        # CONTROLS / DATA
+        # =========================
+
+        np.random.seed(42)
+
+        if src["using_uploaded"]:
+            x = src["data"]["x"]
+            y = src["data"]["y"]
+            col_names = src["data"]["col_names"]
+            n = len(x)
+            from scipy.stats import pearsonr
+            r, p = pearsonr(x, y)
+        else:
+            col1, col2 = st.columns(2)
+
+            with col1:
+                r = st.slider("Correlation Coefficient (r)", -1.0, 1.0, 0.5, 0.01)
+
+            with col2:
+                n = st.slider("Sample Size (n)", 3, 100, 30)
+
+            x = np.random.normal(size=n)
+            y = r * x + np.sqrt(1 - r**2) * np.random.normal(size=n)
+            col_names = ["X", "Y"]
+            from scipy.stats import pearsonr
+            _, p = pearsonr(x, y)
+
+        # =========================
+        # STATS
         # =========================
 
         st.latex(rf"""
             r = {r:.2f}
             """)
 
-        # =========================
-        # PLOTLY FIGURE
-        # =========================
-
-        x = np.random.normal(size=n)
-        y = r * x + np.sqrt(1 - r**2) * np.random.normal(size=n)
-
-        fig = go.Figure()
-
-        fig.add_trace(
-            go.Scatter(
-                x=x,
-                y=y,
-                mode="markers",
-                name="Data Points",
-            )
-        )
-
-        fig.update_layout(
-            height=500,
-            template="plotly_dark",
-            margin=dict(l=20, r=20, t=40, b=20),
-            xaxis_title="X",
-            yaxis_title="Y",
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
-
-    elif test_name == "Spearman Rank Correlation":
-
-        from scipy.stats import spearmanr
-
-        st.subheader("Interactive Spearman Rank Correlation")
+        st.latex(rf"\text{{{format_p_value(p)}}}")
 
         # =========================
-        # CONTROLS
-        # =========================
-        direction = st.selectbox(
-            "Correlation Direction",
-            [
-                "Positive",
-                "Negative",
-            ],
-        )
-
-        curve_strength = st.slider(
-            "Monotonic Strength",
-            0.1,
-            3.0,
-            1.0,
-            0.1,
-        )
-
-        noise = st.slider(
-            "Noise",
-            0.1,
-            5.0,
-            1.0,
-            0.1,
-            key="noise_5",
-        )
-
-        # =========================
-        # DATA
+        # REGRESSION LINE
         # =========================
 
-        np.random.seed(42)
-
-        x = np.linspace(0, 10, 300)
-
-        direction_multiplier = 1 if direction == "Positive" else -1
-
-        y = direction_multiplier * (x**curve_strength) + np.random.normal(0, noise, 300)
-
-        rho, _ = spearmanr(x, y)
-
-        # =========================
-        # EQUATION
-        # =========================
-
-        st.latex(rf"\rho = {rho:.3f}")
+        from scipy.stats import linregress
+        slope, intercept, _, _, _ = linregress(x, y)
+        x_line = np.array([min(x), max(x)])
+        y_line = intercept + slope * x_line
 
         # =========================
         # PLOT
@@ -3749,18 +3926,169 @@ def render_test_widget(test_name):
                 x=x,
                 y=y,
                 mode="markers",
-                name="Ranked Data",
+                name="Data Points",
+                marker=dict(color="rgba(100, 150, 255, 0.7)", size=8),
+            )
+        )
+
+        fig.add_trace(
+            go.Scatter(
+                x=x_line,
+                y=y_line,
+                mode="lines",
+                name=f"Regression: y = {intercept:.2f} + {slope:.2f}x",
+                line=dict(color="red", width=2, dash="dash"),
+            )
+        )
+
+        fig.update_layout(
+            height=500,
+            template="plotly_dark",
+            margin=dict(l=20, r=20, t=60, b=20),
+            xaxis_title=col_names[0],
+            yaxis_title=col_names[1],
+            title=f"r = {r:.3f}, n = {n}",
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+
+        # =========================
+        # DATA SUMMARY
+        # =========================
+
+        st.divider()
+        st.subheader("Summary Statistics")
+
+        summary_data = {
+            "Variable": col_names,
+            "n": [n, n],
+            "Mean": [f"{np.mean(x):.3f}", f"{np.mean(y):.3f}"],
+            "SD": [f"{np.std(x, ddof=1):.3f}", f"{np.std(y, ddof=1):.3f}"],
+        }
+        st.table(pd.DataFrame(summary_data))
+
+    elif test_name == "Spearman Rank Correlation":
+
+        from scipy.stats import spearmanr
+
+        st.subheader("Interactive Spearman Rank Correlation")
+
+        st.info("""
+        **Spearman's ρ (rho)** is the **nonparametric alternative** to Pearson's r.
+        
+        Use when:
+        - Relationship is **monotonic** but not necessarily linear
+        - Data is **ordinal** or **not normally distributed**
+        - Measures rank-based association
+        """)
+
+        # =========================
+        # DATA SOURCE TOGGLE
+        # =========================
+
+        src = data_source_toggle("spearman", mode="correlation")
+
+        # =========================
+        # CONTROLS / DATA
+        # =========================
+
+        np.random.seed(42)
+
+        if src["using_uploaded"]:
+            x = src["data"]["x"]
+            y = src["data"]["y"]
+            col_names = src["data"]["col_names"]
+        else:
+            direction = st.selectbox(
+                "Correlation Direction",
+                [
+                    "Positive",
+                    "Negative",
+                ],
+            )
+
+            curve_strength = st.slider(
+                "Monotonic Strength",
+                0.1,
+                3.0,
+                1.0,
+                0.1,
+            )
+
+            noise = st.slider(
+                "Noise",
+                0.1,
+                5.0,
+                1.0,
+                0.1,
+                key="noise_5",
+            )
+
+            x = np.linspace(0, 10, 300)
+            direction_multiplier = 1 if direction == "Positive" else -1
+            y = direction_multiplier * (x**curve_strength) + np.random.normal(0, noise, 300)
+            col_names = ["X", "Y"]
+
+        # =========================
+        # TEST
+        # =========================
+
+        rho, p = spearmanr(x, y)
+
+        st.latex(rf"\rho = {rho:.3f}")
+        st.latex(rf"\text{{{format_p_value(p)}}}")
+
+        # =========================
+        # PLOT
+        # =========================
+
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Scatter(
+                x=x,
+                y=y,
+                mode="markers",
+                name="Data",
+                marker=dict(color="rgba(100, 200, 150, 0.6)", size=6),
             )
         )
 
         fig.update_layout(
             template="plotly_dark",
-            height=550,
-            xaxis_title="Ranked X",
-            yaxis_title="Ranked Y",
+            height=500,
+            xaxis_title=col_names[0],
+            yaxis_title=col_names[1],
+            title=f"Spearman ρ = {rho:.3f}",
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+        # =========================
+        # DATA SUMMARY
+        # =========================
+
+        st.divider()
+        st.subheader("Summary Statistics")
+
+        from scipy.stats import pearsonr
+        r_pearson, _ = pearsonr(x, y)
+
+        summary_data = {
+            "Metric": [
+                "Sample Size (n)",
+                "Spearman's ρ",
+                "Pearson's r (for comparison)",
+                "p-value",
+            ],
+            "Value": [
+                f"{len(x)}",
+                f"{rho:.4f}",
+                f"{r_pearson:.4f}",
+                format_p_value(p),
+            ],
+        }
+        st.table(pd.DataFrame(summary_data))
 
     elif test_name == "Kendall's Tau-b":
 
@@ -3768,30 +4096,46 @@ def render_test_widget(test_name):
 
         st.subheader("Interactive Kendall's Tau-b")
 
-        # =========================
-        # CONTROLS
-        # =========================
-
-        strength = st.slider("Association Strength", 0.0, 1.0, 0.5, 0.05)
-
-        n = st.slider("Sample Size", 10, 200, 60, key="kendall_s_tau_b_sample_size")
-
-        noise = st.slider("Noise", 0.1, 5.0, 1.0, 0.1, key="kendall_s_tau_b_noise")
+        st.info("""
+        **Kendall's τ-b (tau-b)** is another **nonparametric** measure of rank correlation.
+        
+        - Based on **concordant/discordant pairs**
+        - Good for **small samples** or when there are **ties**
+        - τ-b corrects for ties (unlike the simpler τ-a)
+        """)
 
         # =========================
-        # DATA
+        # DATA SOURCE TOGGLE
+        # =========================
+
+        src = data_source_toggle("kendall", mode="correlation")
+
+        # =========================
+        # CONTROLS / DATA
         # =========================
 
         np.random.seed(42)
 
-        x = np.random.normal(0, 1, n)
-        y = strength * x + np.random.normal(0, noise, n)
+        if src["using_uploaded"]:
+            x = src["data"]["x"]
+            y = src["data"]["y"]
+            col_names = src["data"]["col_names"]
+        else:
+            strength = st.slider("Association Strength", 0.0, 1.0, 0.5, 0.05)
+
+            n = st.slider("Sample Size", 10, 200, 60, key="kendall_s_tau_b_sample_size")
+
+            noise = st.slider("Noise", 0.1, 5.0, 1.0, 0.1, key="kendall_s_tau_b_noise")
+
+            x = np.random.normal(0, 1, n)
+            y = strength * x + np.random.normal(0, noise, n)
+            col_names = ["X", "Y"]
+
+        # =========================
+        # TEST
+        # =========================
 
         tau, p = kendalltau(x, y)
-
-        # =========================
-        # STATS
-        # =========================
 
         st.latex(rf"\tau_b = {tau:.3f}")
         st.latex(rf"\text{{{format_p_value(p)}}}")
@@ -3802,16 +4146,43 @@ def render_test_widget(test_name):
 
         fig = go.Figure()
 
-        fig.add_trace(go.Scatter(x=x, y=y, mode="markers"))
+        fig.add_trace(
+            go.Scatter(
+                x=x,
+                y=y,
+                mode="markers",
+                name="Data",
+                marker=dict(color="rgba(200, 150, 100, 0.6)", size=8),
+            )
+        )
 
         fig.update_layout(
             template="plotly_dark",
             height=500,
-            xaxis_title="X",
-            yaxis_title="Y",
+            xaxis_title=col_names[0],
+            yaxis_title=col_names[1],
+            title=f"Kendall's τ-b = {tau:.3f}",
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+        # =========================
+        # COMPARISON
+        # =========================
+
+        st.divider()
+        st.subheader("Comparison with Other Correlation Measures")
+
+        from scipy.stats import pearsonr, spearmanr
+        r, _ = pearsonr(x, y)
+        rho, _ = spearmanr(x, y)
+
+        comp_data = {
+            "Measure": ["Pearson's r", "Spearman's ρ", "Kendall's τ-b"],
+            "Value": [f"{r:.4f}", f"{rho:.4f}", f"{tau:.4f}"],
+            "Type": ["Linear (parametric)", "Monotonic (nonparametric)", "Concordant pairs (nonparametric)"],
+        }
+        st.table(pd.DataFrame(comp_data))
 
     elif test_name == "Chi-Square Test of Independence":
 
@@ -3873,50 +4244,74 @@ def render_test_widget(test_name):
 
     elif test_name == "Point-Biserial Correlation":
 
-        from scipy.stats import pointbiserialr
+        from scipy.stats import pointbiserialr, ttest_ind
 
         st.subheader("Interactive Point-Biserial Correlation")
 
-        # =========================
-        # CONTROLS
-        # =========================
-
-        group_difference = st.slider(
-            "Group Mean Difference",
-            0.0,
-            10.0,
-            3.0,
-            0.1,
-        )
-
-        noise = st.slider(
-            "Noise",
-            0.1,
-            5.0,
-            1.0,
-            0.1,
-            key="noise_7",
-        )
+        st.info("""
+        **Point-Biserial Correlation (r_pb)** measures the relationship between a
+        **binary/dichotomous variable** and a **continuous variable**.
+        
+        - Mathematically equivalent to **Pearson's r** with one binary variable
+        - Also directly related to the **independent samples t-test**
+        - r_pb² = proportion of variance explained by group membership
+        """)
 
         # =========================
-        # DATA
+        # DATA SOURCE TOGGLE
+        # =========================
+
+        src = data_source_toggle("pointbiserial", mode="two_sample")
+
+        # =========================
+        # CONTROLS / DATA
         # =========================
 
         np.random.seed(42)
 
-        group = np.random.binomial(1, 0.5, 300)
+        if src["using_uploaded"]:
+            g0 = src["data"]["group1"]
+            g1 = src["data"]["group2"]
+            group_names = src["data"]["group_names"]
+            
+            group = np.concatenate([np.zeros(len(g0)), np.ones(len(g1))])
+            y = np.concatenate([g0, g1])
+        else:
+            group_difference = st.slider(
+                "Group Mean Difference",
+                0.0,
+                10.0,
+                3.0,
+                0.1,
+            )
 
-        y = group * group_difference + np.random.normal(0, noise, 300)
+            noise = st.slider(
+                "Noise",
+                0.1,
+                5.0,
+                1.0,
+                0.1,
+                key="noise_7",
+            )
 
-        r, p = pointbiserialr(group, y)
+            group = np.random.binomial(1, 0.5, 300)
+            y = group * group_difference + np.random.normal(0, noise, 300)
+            
+            g0 = y[group == 0]
+            g1 = y[group == 1]
+            group_names = ["Group 0", "Group 1"]
 
         # =========================
-        # EQUATION
+        # TEST
         # =========================
+
+        group_for_pb = np.concatenate([np.zeros(len(g0)), np.ones(len(g1))])
+        y_for_pb = np.concatenate([g0, g1])
+        r, p = pointbiserialr(group_for_pb, y_for_pb)
 
         st.latex(rf"r_{{pb}} = {r:.3f}")
-
         st.latex(rf"\text{{{format_p_value(p)}}}")
+        st.latex(rf"R^2 = {r**2:.4f}")
 
         # =========================
         # PLOT
@@ -3926,25 +4321,55 @@ def render_test_widget(test_name):
 
         fig.add_trace(
             go.Box(
-                y=y[group == 0],
-                name="Group 0",
+                y=g0,
+                name=group_names[0],
+                boxmean="sd",
             )
         )
 
         fig.add_trace(
             go.Box(
-                y=y[group == 1],
-                name="Group 1",
+                y=g1,
+                name=group_names[1],
+                boxmean="sd",
             )
         )
 
         fig.update_layout(
             template="plotly_dark",
-            height=550,
+            height=500,
             yaxis_title="Continuous Variable",
+            title=f"Point-Biserial r = {r:.3f}",
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+        # =========================
+        # SUMMARY & COMPARISON
+        # =========================
+
+        st.divider()
+        st.subheader("Group Statistics & Comparison")
+
+        n0, n1 = len(g0), len(g1)
+        mean0, mean1 = np.mean(g0), np.mean(g1)
+        sd0, sd1 = np.std(g0, ddof=1), np.std(g1, ddof=1)
+        
+        t_ind, p_ind = ttest_ind(g0, g1)
+        
+        summary_data = {
+            "Group": group_names,
+            "n": [n0, n1],
+            "Mean": [f"{mean0:.3f}", f"{mean1:.3f}"],
+            "SD": [f"{sd0:.3f}", f"{sd1:.3f}"],
+        }
+        st.table(pd.DataFrame(summary_data))
+
+        st.info(f"""
+        **Relationship with t-test:**
+        - t({n0+n1-2}) = {t_ind:.3f}, {format_p_value(p_ind)}
+        - r_pb² = {(r**2):.4f} ({(r**2)*100:.1f}% of variance explained by group membership)
+        """)
 
     # Regression Tests
 
@@ -4020,48 +4445,100 @@ def render_test_widget(test_name):
     elif test_name == "Simple Linear Regression":
         st.subheader("Interactive Simple Linear Regression")
 
-        # =========================
-        # CONTROLS
-        # =========================
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-            beta0 = st.slider(
-                "Intercept (β₀)",
-                -20.0,
-                20.0,
-                0.0,
-                0.1,
-                key="simple_linear_regression_intercept",
-            )
-
-        with col2:
-            beta1 = st.slider(
-                "Slope (β₁)",
-                -10.0,
-                10.0,
-                1.0,
-                0.1,
-                key="simple_linear_regression_slope",
-            )
+        st.info("""
+        **Simple Linear Regression** models the linear relationship between:
+        - A **predictor variable (X)**
+        - An **outcome variable (Y)**
+        
+        Model: Y = β₀ + β₁X + ε
+        
+        - β₀: intercept (value of Y when X=0)
+        - β₁: slope (change in Y per unit change in X)
+        """)
 
         # =========================
-        # DATA
+        # DATA SOURCE TOGGLE
         # =========================
 
-        x = np.linspace(0, 10, 500)
+        src = data_source_toggle("regression", mode="correlation")
 
-        y = beta0 + beta1 * x
+        # =========================
+        # CONTROLS / DATA
+        # =========================
+
+        np.random.seed(42)
+
+        if src["using_uploaded"]:
+            x = src["data"]["x"]
+            y = src["data"]["y"]
+            col_names = src["data"]["col_names"]
+            n = len(x)
+        else:
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                beta0 = st.slider(
+                    "Intercept (β₀)",
+                    -20.0,
+                    20.0,
+                    0.0,
+                    0.1,
+                    key="simple_linear_regression_intercept",
+                )
+
+            with col2:
+                beta1 = st.slider(
+                    "Slope (β₁)",
+                    -10.0,
+                    10.0,
+                    1.0,
+                    0.1,
+                    key="simple_linear_regression_slope",
+                )
+
+            with col3:
+                noise = st.slider(
+                    "Noise (σ)",
+                    0.0,
+                    20.0,
+                    3.0,
+                    0.1,
+                    key="slr_noise",
+                )
+
+            n = st.slider("Sample Size (n)", 10, 500, 100, key="slr_n")
+
+            x = np.linspace(0, 10, n)
+            y_true = beta0 + beta1 * x
+            y = y_true + np.random.normal(0, noise, n)
+            col_names = ["X", "Y"]
+
+        # =========================
+        # FIT REGRESSION
+        # =========================
+
+        from scipy.stats import linregress, pearsonr
+        result = linregress(x, y)
+        slope, intercept, r, p, se_slope = result
+        
+        r, _ = pearsonr(x, y)
+        r2 = r ** 2
+        
+        y_pred = intercept + slope * x
+        residuals = y - y_pred
+        mse = np.mean(residuals ** 2)
+        rmse = np.sqrt(mse)
 
         # =========================
         # EQUATION
         # =========================
 
-        st.latex(rf"y = {beta0:.2f} + ({beta1:.2f})x")
+        st.latex(rf"\hat{{y}} = {intercept:.3f} + ({slope:.3f})x")
+        st.latex(rf"R^2 = {r2:.4f}")
+        st.latex(rf"F_{{1,{n-2}}} \text{{ p = {format_p_value(p)}}}")
 
         # =========================
-        # PLOT
+        # PLOT - SCATTER WITH REGRESSION LINE
         # =========================
 
         fig = go.Figure()
@@ -4070,19 +4547,118 @@ def render_test_widget(test_name):
             go.Scatter(
                 x=x,
                 y=y,
+                mode="markers",
+                name="Observed Data",
+                marker=dict(color="rgba(100, 150, 255, 0.6)", size=8),
+            )
+        )
+
+        sorted_idx = np.argsort(x)
+        fig.add_trace(
+            go.Scatter(
+                x=x[sorted_idx],
+                y=y_pred[sorted_idx],
                 mode="lines",
-                name="Regression Line",
+                name=f"Regression: ŷ = {intercept:.2f} + {slope:.2f}x",
+                line=dict(color="red", width=3),
             )
         )
 
         fig.update_layout(
             template="plotly_dark",
             height=500,
-            xaxis_title="x",
-            yaxis_title="y",
+            xaxis_title=col_names[0],
+            yaxis_title=col_names[1],
+            title=f"Simple Linear Regression: R² = {r2:.4f}",
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+        # =========================
+        # DETAILED RESULTS TABLE
+        # =========================
+
+        st.divider()
+        st.subheader("Regression Coefficients")
+
+        from scipy import stats
+        t_intercept = intercept / (np.std(residuals) * np.sqrt(1/n + np.mean(x)**2 / np.sum((x - np.mean(x))**2))) if n > 2 else np.nan
+
+        coeff_data = {
+            "Term": ["Intercept (β₀)", "Slope (β₁)"],
+            "Estimate": [f"{intercept:.4f}", f"{slope:.4f}"],
+            "SE": ["(not computed)", f"{se_slope:.4f}"],
+            "t": ["-", f"{slope/se_slope:.3f}" if se_slope > 0 else "-"],
+            "p-value": ["-", format_p_value(p)],
+        }
+        st.table(pd.DataFrame(coeff_data))
+
+        # =========================
+        # MODEL FIT STATISTICS
+        # =========================
+
+        st.divider()
+        st.subheader("Model Fit")
+
+        fit_data = {
+            "Metric": [
+                "Sample Size (n)",
+                "Pearson r",
+                "R-squared (R²)",
+                "Adjusted R²",
+                "RMSE (Root MSE)",
+            ],
+            "Value": [
+                f"{n}",
+                f"{r:.4f}",
+                f"{r2:.4f}",
+                f"{1 - (1 - r2) * (n - 1) / (n - 2):.4f}" if n > 2 else "-",
+                f"{rmse:.4f}",
+            ],
+        }
+        st.table(pd.DataFrame(fit_data))
+
+        # =========================
+        # RESIDUAL PLOT
+        # =========================
+
+        st.divider()
+        st.subheader("Residual Plot (Check Homoscedasticity)")
+
+        fig_resid = go.Figure()
+
+        fig_resid.add_trace(
+            go.Scatter(
+                x=y_pred,
+                y=residuals,
+                mode="markers",
+                name="Residuals",
+                marker=dict(color="rgba(255, 150, 100, 0.6)", size=6),
+            )
+        )
+
+        fig_resid.add_hline(
+            y=0,
+            line=dict(color="red", dash="dash"),
+            name="Zero Line",
+        )
+
+        fig_resid.update_layout(
+            template="plotly_dark",
+            height=400,
+            xaxis_title="Predicted Values (ŷ)",
+            yaxis_title="Residuals (y - ŷ)",
+            title="Residuals vs Fitted Values",
+        )
+
+        st.plotly_chart(fig_resid, use_container_width=True)
+
+        st.info("""
+        **How to interpret the residual plot:**
+        - ✅ Good: Random scatter around 0, no pattern
+        - ❌ Funnel shape = Heteroscedasticity (non-constant variance)
+        - ❌ Curved pattern = Nonlinear relationship (consider adding polynomial term)
+        """)
 
     elif test_name == "Multiple Linear Regression":
         st.subheader("Interactive Multiple Linear Regression")
