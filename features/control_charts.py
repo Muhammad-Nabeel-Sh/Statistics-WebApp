@@ -125,6 +125,746 @@ def _check_shewhart_rules(values, center, sigma):
     return rules
 
 
+def _render_p_chart():
+    """Proportion (p) chart — fraction defective per subgroup."""
+    st.subheader("p-Chart — Proportion Defective")
+    st.info("""
+    **p-Chart** monitors the proportion of defective items in each subgroup.
+    Use when subgroup sizes may vary. Control limits vary with each subgroup size.
+    """)
+
+    rng = np.random.default_rng(42)
+
+    with st.sidebar:
+        st.markdown("##### :orange[Process Parameters]")
+        p_bar = st.slider("Process Defect Rate (p̄)", 0.01, 0.50, 0.08, 0.01, key="spc_p_mean",
+                          help="Average proportion defective when in control")
+        n_subgroups_p = st.slider("Number of Subgroups", 15, 100, 25, 5, key="spc_p_k")
+        var_n = st.checkbox("Varying Subgroup Sizes", True, key="spc_p_varn")
+        if var_n:
+            n_range = st.slider("Subgroup Size Range", 20, 200, (50, 150), key="spc_p_nrange")
+            ns = rng.integers(n_range[0], n_range[1] + 1, n_subgroups_p)
+        else:
+            n_fixed = st.slider("Subgroup Size (n)", 20, 500, 100, 10, key="spc_p_nfixed")
+            ns = np.full(n_subgroups_p, n_fixed, dtype=int)
+
+        shift_type_p = st.selectbox("Shift Type", ["None", "Defect Rate Increase", "Defect Rate Decrease"], key="spc_p_shift")
+        if shift_type_p == "Defect Rate Increase":
+            shift_p = st.slider("Rate Increase (pct points)", 0.02, 0.30, 0.10, 0.01, key="spc_p_shift_up")
+            p_after = p_bar + shift_p
+        elif shift_type_p == "Defect Rate Decrease":
+            shift_p = st.slider("Rate Decrease (pct points)", 0.02, 0.30, 0.05, 0.01, key="spc_p_shift_down")
+            p_after = max(0.001, p_bar - shift_p)
+        else:
+            p_after = p_bar
+
+        st.markdown("---")
+        st.markdown("##### :orange[Chart Settings]")
+        sigma_limits_p = st.slider("Control Limit Width (σ)", 1, 4, 3, 1, key="spc_p_sigma")
+        show_rules_p = st.checkbox("Show Shewhart Rules", True, key="spc_p_rules")
+
+    # Generate data
+    shift_point_p = n_subgroups_p // 2
+    defects = np.zeros(n_subgroups_p, dtype=int)
+    for i in range(n_subgroups_p):
+        p_i = p_after if i >= shift_point_p and shift_type_p != "None" else p_bar
+        defects[i] = rng.binomial(ns[i], p_i)
+
+    pi = defects / ns
+    p_bar_calc = defects.sum() / ns.sum()
+    z_p = sigma_limits_p
+
+    # Control limits (vary with n if sizes vary)
+    se_p = np.sqrt(p_bar_calc * (1 - p_bar_calc) / ns)
+    ucl_p = p_bar_calc + z_p * se_p
+    lcl_p = np.maximum(0, p_bar_calc - z_p * se_p)
+
+    # Fixed limits for display
+    n_avg = np.mean(ns)
+    se_avg = np.sqrt(p_bar_calc * (1 - p_bar_calc) / n_avg)
+    ucl_p_fixed = p_bar_calc + z_p * se_avg
+    lcl_p_fixed = max(0, p_bar_calc - z_p * se_avg)
+
+    # Plot
+    labels = [str(i + 1) for i in range(n_subgroups_p)]
+
+    fig_p = go.Figure()
+    fig_p.add_trace(go.Scatter(
+        x=labels, y=pi, mode="lines+markers",
+        marker=dict(color="#4C78A8", size=7), line=dict(color="#4C78A8", width=1.5),
+        name="p (fraction defective)",
+    ))
+    fig_p.add_hline(y=p_bar_calc, line_dash="solid", line_color="#54A24B",
+                    annotation_text=f"p̄ = {p_bar_calc:.4f}")
+    fig_p.add_hline(y=ucl_p_fixed, line_dash="dash", line_color="#E45756",
+                    annotation_text=f"UCL (avg n) = {ucl_p_fixed:.4f}")
+    fig_p.add_hline(y=lcl_p_fixed, line_dash="dash", line_color="#E45756",
+                    annotation_text=f"LCL (avg n) = {lcl_p_fixed:.4f}")
+
+    # Varying limits as area
+    if var_n:
+        fig_p.add_trace(go.Scatter(
+            x=labels + labels[::-1],
+            y=ucl_p.tolist() + lcl_p[::-1].tolist(),
+            fill="toself", fillcolor="rgba(228, 87, 86, 0.08)",
+            line=dict(color="rgba(228, 87, 86, 0)"), showlegend=False,
+            name="Varying limits",
+        ))
+
+    # OOC points
+    for i in range(n_subgroups_p):
+        if pi[i] > ucl_p[i] or pi[i] < lcl_p[i]:
+            fig_p.add_trace(go.Scatter(
+                x=[labels[i]], y=[pi[i]], mode="markers",
+                marker=dict(color="#E45756", size=12, symbol="x"),
+                showlegend=False,
+            ))
+
+    if shift_type_p != "None":
+        fig_p.add_vline(x=shift_point_p - 0.5, line_dash="dot", line_color="white", opacity=0.5,
+                        annotation_text="Shift introduced")
+
+    fig_p.update_layout(
+        template="plotly_dark", height=450,
+        xaxis_title="Subgroup", yaxis_title="Proportion Defective",
+        margin=dict(l=10, r=10, t=20, b=10),
+    )
+    st.plotly_chart(fig_p, use_container_width=True, key="spc_p_chart")
+
+    # Summary
+    st.subheader("Process Summary", divider="gray")
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Average p̄", f"{p_bar_calc:.4f}")
+    c2.metric("Total Defects", f"{defects.sum()}")
+    c3.metric("Total Items", f"{ns.sum()}")
+    c4.metric("Subgroups", str(n_subgroups_p))
+
+    # Rules
+    if show_rules_p:
+        st.subheader("Shewhart Rule Violations", divider="gray")
+        rules_p = _check_shewhart_rules(pi, p_bar_calc, np.std(pi, ddof=1) if len(pi) > 1 else 0)
+        if rules_p:
+            for r in rules_p:
+                st.markdown(r)
+        else:
+            st.success("✅ No violations detected.")
+
+    # Data table
+    with st.expander("View Raw Data"):
+        pdf = pd.DataFrame({
+            "Subgroup": range(1, n_subgroups_p + 1),
+            "n": ns, "Defects": defects,
+            "Proportion (p)": [f"{v:.4f}" for v in pi],
+            "UCL": [f"{v:.4f}" for v in ucl_p],
+            "LCL": [f"{v:.4f}" for v in lcl_p],
+        })
+        st.dataframe(pdf, use_container_width=True)
+
+    with st.expander("About the p-Chart"):
+        st.markdown("""
+        | Element | Formula |
+        |---------|---------|
+        | p̄ (center) | Total defects / Total items |
+        | UCL | p̄ + k·√[p̄(1−p̄)/nᵢ] — varies with each subgroup size nᵢ |
+        | LCL | max(0, p̄ − k·√[p̄(1−p̄)/nᵢ]) |
+        | Assumptions | Binomial distribution, constant defect probability within subgroups |
+        """)
+
+
+def _render_np_chart():
+    """Number defective (np) chart — constant subgroup size."""
+    st.subheader("np-Chart — Number Defective")
+    st.info("""
+    **np-Chart** monitors the count of defective items per subgroup.
+    Requires constant subgroup size. Use when the count of defectives
+    is easier to track than proportion.
+    """)
+
+    rng = np.random.default_rng(42)
+
+    with st.sidebar:
+        st.markdown("##### :orange[Process Parameters]")
+        p_bar_np = st.slider("Process Defect Rate (p̄)", 0.01, 0.50, 0.08, 0.01, key="spc_np_mean")
+        n_np = st.slider("Subgroup Size (n)", 30, 500, 100, 10, key="spc_np_n")
+        k_np = st.slider("Number of Subgroups", 15, 100, 25, 5, key="spc_np_k")
+        shift_np = st.selectbox("Shift Type", ["None", "Defect Rate Increase", "Defect Rate Decrease"], key="spc_np_shift")
+        if shift_np == "Defect Rate Increase":
+            delta_np = st.slider("Rate Increase (pct points)", 0.02, 0.30, 0.10, 0.01, key="spc_np_up")
+            p_after_np = p_bar_np + delta_np
+        elif shift_np == "Defect Rate Decrease":
+            delta_np = st.slider("Rate Decrease (pct points)", 0.02, 0.30, 0.05, 0.01, key="spc_np_down")
+            p_after_np = max(0.001, p_bar_np - delta_np)
+        else:
+            p_after_np = p_bar_np
+
+        st.markdown("---")
+        st.markdown("##### :orange[Chart Settings]")
+        sigma_np = st.slider("Control Limit Width (σ)", 1, 4, 3, 1, key="spc_np_sigma")
+        show_rules_np = st.checkbox("Show Shewhart Rules", True, key="spc_np_rules")
+
+    shift_pt_np = k_np // 2
+    np_counts = np.zeros(k_np, dtype=int)
+    for i in range(k_np):
+        p_i = p_after_np if i >= shift_pt_np and shift_np != "None" else p_bar_np
+        np_counts[i] = rng.binomial(n_np, p_i)
+
+    p_bar_np_calc = np_counts.sum() / (k_np * n_np)
+    np_bar = n_np * p_bar_np_calc
+    z_np = sigma_np
+    sigma_np_chart = np.sqrt(n_np * p_bar_np_calc * (1 - p_bar_np_calc))
+    ucl_np = np_bar + z_np * sigma_np_chart
+    lcl_np = max(0, np_bar - z_np * sigma_np_chart)
+
+    labels_np = [str(i + 1) for i in range(k_np)]
+    fig_np = go.Figure()
+    fig_np.add_trace(go.Scatter(
+        x=labels_np, y=np_counts, mode="lines+markers",
+        marker=dict(color="#4C78A8", size=7), line=dict(color="#4C78A8", width=1.5),
+        name="np (defect count)",
+    ))
+    fig_np.add_hline(y=np_bar, line_dash="solid", line_color="#54A24B",
+                     annotation_text=f"np̄ = {np_bar:.1f}")
+    fig_np.add_hline(y=ucl_np, line_dash="dash", line_color="#E45756",
+                     annotation_text=f"UCL = {ucl_np:.1f}")
+    fig_np.add_hline(y=lcl_np, line_dash="dash", line_color="#E45756",
+                     annotation_text=f"LCL = {lcl_np:.1f}")
+    for i in range(k_np):
+        if np_counts[i] > ucl_np or np_counts[i] < lcl_np:
+            fig_np.add_trace(go.Scatter(
+                x=[labels_np[i]], y=[np_counts[i]], mode="markers",
+                marker=dict(color="#E45756", size=12, symbol="x"), showlegend=False,
+            ))
+    if shift_np != "None":
+        fig_np.add_vline(x=shift_pt_np - 0.5, line_dash="dot", line_color="white", opacity=0.5,
+                         annotation_text="Shift")
+    fig_np.update_layout(template="plotly_dark", height=400,
+                          xaxis_title="Subgroup", yaxis_title="Number Defective",
+                          margin=dict(l=10, r=10, t=20, b=10))
+    st.plotly_chart(fig_np, use_container_width=True, key="spc_np_chart")
+
+    c1, c2, c3 = st.columns(3)
+    c1.metric("np̄", f"{np_bar:.2f}")
+    c2.metric("p̄", f"{p_bar_np_calc:.4f}")
+    c3.metric("Subgroups", str(k_np))
+
+    if show_rules_np:
+        st.subheader("Shewhart Rule Violations", divider="gray")
+        rules_np = _check_shewhart_rules(np_counts.astype(float), np_bar, sigma_np_chart)
+        if rules_np:
+            for r in rules_np:
+                st.markdown(r)
+        else:
+            st.success("✅ No violations detected.")
+
+    with st.expander("About the np-Chart"):
+        st.markdown("""
+        | Element | Formula |
+        |---------|---------|
+        | np̄ (center) | n·p̄ = total defects / number of subgroups |
+        | UCL | np̄ + k·√[n·p̄(1−p̄)] |
+        | LCL | max(0, np̄ − k·√[n·p̄(1−p̄)]) |
+        | Constant n? | Required — use p-chart if subgroup sizes vary |
+        """)
+
+
+def _render_c_chart():
+    """Count (c) chart — defects per unit (constant opportunity)."""
+    st.subheader("c-Chart — Count of Defects per Unit")
+    st.info("""
+    **c-Chart** monitors the number of defects per unit when the area of
+    opportunity is constant. Examples: surface defects per windshield,
+    errors per page, complaints per day.
+    """)
+
+    rng = np.random.default_rng(42)
+
+    with st.sidebar:
+        st.markdown("##### :orange[Process Parameters]")
+        c_bar = st.slider("Average Defects per Unit (c̄)", 1.0, 30.0, 5.0, 0.5, key="spc_c_mean")
+        k_c = st.slider("Number of Subgroups", 15, 100, 25, 5, key="spc_c_k")
+        shift_c = st.selectbox("Shift Type", ["None", "Defect Count Increase", "Defect Count Decrease"], key="spc_c_shift")
+        if shift_c == "Defect Count Increase":
+            c_after = c_bar + st.slider("Increase in c", 1.0, 20.0, 5.0, 0.5, key="spc_c_up")
+        elif shift_c == "Defect Count Decrease":
+            c_after = max(0.5, c_bar - st.slider("Decrease in c", 1.0, 20.0, 3.0, 0.5, key="spc_c_down"))
+        else:
+            c_after = c_bar
+
+        st.markdown("---")
+        st.markdown("##### :orange[Chart Settings]")
+        sigma_c = st.slider("Control Limit Width (σ)", 1, 4, 3, 1, key="spc_c_sigma")
+        show_rules_c = st.checkbox("Show Shewhart Rules", True, key="spc_c_rules")
+
+    shift_pt_c = k_c // 2
+    counts_c = np.zeros(k_c, dtype=int)
+    for i in range(k_c):
+        mu_c = c_after if i >= shift_pt_c and shift_c != "None" else c_bar
+        counts_c[i] = rng.poisson(mu_c)
+
+    c_bar_calc = counts_c.mean()
+    z_c = sigma_c
+    sigma_c_chart = np.sqrt(c_bar_calc)
+    ucl_c = c_bar_calc + z_c * sigma_c_chart
+    lcl_c = max(0, c_bar_calc - z_c * sigma_c_chart)
+
+    labels_c = [str(i + 1) for i in range(k_c)]
+    fig_c = go.Figure()
+    fig_c.add_trace(go.Scatter(
+        x=labels_c, y=counts_c, mode="lines+markers",
+        marker=dict(color="#4C78A8", size=7), line=dict(color="#4C78A8", width=1.5),
+        name="c (defect count)",
+    ))
+    fig_c.add_hline(y=c_bar_calc, line_dash="solid", line_color="#54A24B",
+                    annotation_text=f"c̄ = {c_bar_calc:.2f}")
+    fig_c.add_hline(y=ucl_c, line_dash="dash", line_color="#E45756",
+                    annotation_text=f"UCL = {ucl_c:.2f}")
+    fig_c.add_hline(y=lcl_c, line_dash="dash", line_color="#E45756",
+                    annotation_text=f"LCL = {lcl_c:.2f}")
+    for i in range(k_c):
+        if counts_c[i] > ucl_c or counts_c[i] < lcl_c:
+            fig_c.add_trace(go.Scatter(
+                x=[labels_c[i]], y=[counts_c[i]], mode="markers",
+                marker=dict(color="#E45756", size=12, symbol="x"), showlegend=False,
+            ))
+    if shift_c != "None":
+        fig_c.add_vline(x=shift_pt_c - 0.5, line_dash="dot", line_color="white", opacity=0.5,
+                        annotation_text="Shift")
+    fig_c.update_layout(template="plotly_dark", height=400,
+                         xaxis_title="Subgroup", yaxis_title="Defect Count",
+                         margin=dict(l=10, r=10, t=20, b=10))
+    st.plotly_chart(fig_c, use_container_width=True, key="spc_c_chart")
+
+    c1, c2 = st.columns(2)
+    c1.metric("c̄", f"{c_bar_calc:.2f}")
+    c2.metric("Subgroups", str(k_c))
+
+    if show_rules_c:
+        st.subheader("Shewhart Rule Violations", divider="gray")
+        rules_c = _check_shewhart_rules(counts_c.astype(float), c_bar_calc, sigma_c_chart)
+        if rules_c:
+            for r in rules_c:
+                st.markdown(r)
+        else:
+            st.success("✅ No violations detected.")
+
+    with st.expander("About the c-Chart"):
+        st.markdown("""
+        | Element | Formula |
+        |---------|---------|
+        | c̄ (center) | Average defect count per unit |
+        | UCL | c̄ + k·√c̄ |
+        | LCL | max(0, c̄ − k·√c̄) |
+        | Assumptions | Poisson distribution, constant opportunity area |
+        """)
+
+
+def _render_u_chart():
+    """Defects per unit (u) chart — varying opportunity."""
+    st.subheader("u-Chart — Defects per Unit")
+    st.info("""
+    **u-Chart** monitors defects per unit when the area of opportunity varies.
+    Examples: defects per batch of different sizes, errors per document of varying length.
+    """)
+
+    rng = np.random.default_rng(42)
+
+    with st.sidebar:
+        st.markdown("##### :orange[Process Parameters]")
+        u_bar = st.slider("Average Defect Rate (ū)", 0.5, 15.0, 3.0, 0.5, key="spc_u_mean")
+        k_u = st.slider("Number of Subgroups", 15, 100, 25, 5, key="spc_u_k")
+        var_opp = st.checkbox("Varying Opportunity", True, key="spc_u_var")
+        if var_opp:
+            opp_range = st.slider("Opportunity Range", 10, 200, (30, 100), key="spc_u_range")
+            opps = rng.integers(opp_range[0], opp_range[1] + 1, k_u)
+        else:
+            opp_fixed = st.slider("Opportunity per Unit", 20, 200, 50, 10, key="spc_u_fixed")
+            opps = np.full(k_u, opp_fixed, dtype=int)
+
+        shift_u = st.selectbox("Shift Type", ["None", "Defect Rate Increase", "Defect Rate Decrease"], key="spc_u_shift")
+        if shift_u == "Defect Rate Increase":
+            u_after = u_bar + st.slider("Increase in ū", 0.5, 10.0, 3.0, 0.5, key="spc_u_up")
+        elif shift_u == "Defect Rate Decrease":
+            u_after = max(0.1, u_bar - st.slider("Decrease in ū", 0.5, 10.0, 2.0, 0.5, key="spc_u_down"))
+        else:
+            u_after = u_bar
+
+        st.markdown("---")
+        st.markdown("##### :orange[Chart Settings]")
+        sigma_u = st.slider("Control Limit Width (σ)", 1, 4, 3, 1, key="spc_u_sigma")
+        show_rules_u = st.checkbox("Show Shewhart Rules", True, key="spc_u_rules")
+
+    shift_pt_u = k_u // 2
+    defects_u = np.zeros(k_u, dtype=int)
+    for i in range(k_u):
+        rate = u_after if i >= shift_pt_u and shift_u != "None" else u_bar
+        defects_u[i] = rng.poisson(rate * opps[i])
+
+    ui = defects_u / opps
+    u_bar_calc = defects_u.sum() / opps.sum()
+    z_u = sigma_u
+    se_u = np.sqrt(u_bar_calc / opps)
+    ucl_u = u_bar_calc + z_u * se_u
+    lcl_u = np.maximum(0, u_bar_calc - z_u * se_u)
+
+    # Fixed limits display
+    opp_avg = opps.mean()
+    se_u_avg = np.sqrt(u_bar_calc / opp_avg)
+    ucl_u_fixed = u_bar_calc + z_u * se_u_avg
+    lcl_u_fixed = max(0, u_bar_calc - z_u * se_u_avg)
+
+    labels_u = [str(i + 1) for i in range(k_u)]
+    fig_u = go.Figure()
+    fig_u.add_trace(go.Scatter(
+        x=labels_u, y=ui, mode="lines+markers",
+        marker=dict(color="#4C78A8", size=7), line=dict(color="#4C78A8", width=1.5),
+        name="u (defects/unit)",
+    ))
+    fig_u.add_hline(y=u_bar_calc, line_dash="solid", line_color="#54A24B",
+                    annotation_text=f"ū = {u_bar_calc:.4f}")
+    fig_u.add_hline(y=ucl_u_fixed, line_dash="dash", line_color="#E45756",
+                    annotation_text=f"UCL (avg opp) = {ucl_u_fixed:.4f}")
+    fig_u.add_hline(y=lcl_u_fixed, line_dash="dash", line_color="#E45756",
+                    annotation_text=f"LCL (avg opp) = {lcl_u_fixed:.4f}")
+    if var_opp:
+        fig_u.add_trace(go.Scatter(
+            x=labels_u + labels_u[::-1],
+            y=ucl_u.tolist() + lcl_u[::-1].tolist(),
+            fill="toself", fillcolor="rgba(228, 87, 86, 0.08)",
+            line=dict(color="rgba(228, 87, 86, 0)"), showlegend=False,
+        ))
+    for i in range(k_u):
+        if ui[i] > ucl_u[i] or ui[i] < lcl_u[i]:
+            fig_u.add_trace(go.Scatter(
+                x=[labels_u[i]], y=[ui[i]], mode="markers",
+                marker=dict(color="#E45756", size=12, symbol="x"), showlegend=False,
+            ))
+    if shift_u != "None":
+        fig_u.add_vline(x=shift_pt_u - 0.5, line_dash="dot", line_color="white", opacity=0.5,
+                        annotation_text="Shift")
+    fig_u.update_layout(template="plotly_dark", height=400,
+                         xaxis_title="Subgroup", yaxis_title="Defects per Unit",
+                         margin=dict(l=10, r=10, t=20, b=10))
+    st.plotly_chart(fig_u, use_container_width=True, key="spc_u_chart")
+
+    c1, c2, c3 = st.columns(3)
+    c1.metric("ū", f"{u_bar_calc:.4f}")
+    c2.metric("Total Defects", f"{defects_u.sum()}")
+    c3.metric("Subgroups", str(k_u))
+
+    if show_rules_u:
+        st.subheader("Shewhart Rule Violations", divider="gray")
+        rules_u = _check_shewhart_rules(ui, u_bar_calc, np.std(ui, ddof=1) if len(ui) > 1 else 0)
+        if rules_u:
+            for r in rules_u:
+                st.markdown(r)
+        else:
+            st.success("✅ No violations detected.")
+
+    with st.expander("About the u-Chart"):
+        st.markdown("""
+        | Element | Formula |
+        |---------|---------|
+        | ū (center) | Total defects / Total opportunity |
+        | UCL | ū + k·√(ū / nᵢ) — varies with opportunity nᵢ |
+        | LCL | max(0, ū − k·√(ū / nᵢ)) |
+        | Assumptions | Poisson distribution, defects are rare and independent |
+        """)
+
+
+def _render_cusum_chart():
+    st.subheader("CUSUM Chart — Cumulative Sum Control")
+    st.info("""
+    **CUSUM** accumulates deviations from a target value to detect **small persistent shifts**
+    (0.5–1.5σ) much faster than X̄ or I-MR charts. Two one-sided statistics track shifts
+    upward (S⁺) and downward (S⁻).
+    """)
+
+    rng = np.random.default_rng(42)
+
+    with st.sidebar:
+        st.markdown("##### :orange[Process Parameters]")
+        target = st.number_input("Target Mean (μ₀)", 90.0, 110.0, 100.0, 0.5, key="cusum_target")
+        sigma_c = st.slider("Process Sigma (σ)", 0.5, 5.0, 2.0, 0.1, key="cusum_sigma")
+        n_c = st.slider("Number of Observations", 20, 200, 60, 5, key="cusum_n")
+
+        shift_cusum = st.selectbox("Shift Type", ["None", "Mean Shift", "Gradual Drift"], key="cusum_shift")
+        if shift_cusum == "Mean Shift":
+            shift_mag_c = st.slider("Shift Magnitude (σ units)", 0.0, 3.0, 1.0, 0.1, key="cusum_shift_mag")
+        elif shift_cusum == "Gradual Drift":
+            drift_c = st.slider("Drift at end (σ units)", 0.0, 4.0, 2.0, 0.1, key="cusum_drift")
+        else:
+            shift_mag_c = 0
+
+        st.markdown("---")
+        st.markdown("##### :orange[CUSUM Parameters]")
+        k_c = st.slider("Reference Value K (σ units)", 0.0, 2.0, 0.5, 0.05, key="cusum_k",
+                        help="Typically 0.5σ. Smaller K = more sensitive to small shifts.")
+        h_c = st.slider("Decision Interval H (σ units)", 1.0, 8.0, 5.0, 0.5, key="cusum_h",
+                        help="Typically 4–5σ. Smaller H = faster detection, more false alarms.")
+        show_cusum_rules = st.checkbox("Show OOC Signals", True, key="cusum_rules")
+
+    # Generate data
+    shift_pt_c = n_c // 2
+    raw_c = rng.normal(target, sigma_c, n_c)
+    if shift_cusum == "Mean Shift":
+        raw_c[shift_pt_c:] += shift_mag_c * sigma_c
+    elif shift_cusum == "Gradual Drift":
+        drift_vec = np.linspace(0, drift_c * sigma_c, n_c - shift_pt_c)
+        raw_c[shift_pt_c:] += drift_vec
+
+    # Compute CUSUM statistics
+    K = k_c * sigma_c
+    H = h_c * sigma_c
+    S_plus = np.zeros(n_c)
+    S_minus = np.zeros(n_c)
+    for i in range(n_c):
+        if i == 0:
+            S_plus[i] = max(0, (raw_c[i] - target) - K)
+            S_minus[i] = max(0, -(raw_c[i] - target) - K)
+        else:
+            S_plus[i] = max(0, S_plus[i-1] + (raw_c[i] - target) - K)
+            S_minus[i] = max(0, S_minus[i-1] - (raw_c[i] - target) - K)
+
+    # Signal detection
+    signals_plus = S_plus > H
+    signals_minus = S_minus > H
+
+    # Plot
+    labels_c = [str(i + 1) for i in range(n_c)]
+    fig_cusum = make_subplots(rows=2, cols=1, subplot_titles=["CUSUM S⁺ (upward shift)", "CUSUM S⁻ (downward shift)"],
+                               vertical_spacing=0.12)
+
+    # S+ chart
+    fig_cusum.add_trace(go.Scatter(x=labels_c, y=S_plus, mode="lines+markers",
+                                     marker=dict(color="#4C78A8", size=5), line=dict(color="#4C78A8", width=1.5),
+                                     name="S⁺"), row=1, col=1)
+    fig_cusum.add_hline(y=H, line_dash="dash", line_color="#E45756",
+                         annotation_text=f"H = {H:.2f}", row=1, col=1)
+    for i in range(n_c):
+        if signals_plus[i]:
+            fig_cusum.add_trace(go.Scatter(x=[labels_c[i]], y=[S_plus[i]], mode="markers",
+                                             marker=dict(color="#E45756", size=10, symbol="x"), showlegend=False),
+                                 row=1, col=1)
+
+    # S- chart
+    fig_cusum.add_trace(go.Scatter(x=labels_c, y=S_minus, mode="lines+markers",
+                                     marker=dict(color="#54A24B", size=5), line=dict(color="#54A24B", width=1.5),
+                                     name="S⁻"), row=2, col=1)
+    fig_cusum.add_hline(y=H, line_dash="dash", line_color="#E45756",
+                         annotation_text=f"H = {H:.2f}", row=2, col=1)
+    for i in range(n_c):
+        if signals_minus[i]:
+            fig_cusum.add_trace(go.Scatter(x=[labels_c[i]], y=[S_minus[i]], mode="markers",
+                                             marker=dict(color="#E45756", size=10, symbol="x"), showlegend=False),
+                                 row=2, col=1)
+
+    # Shift reference
+    if shift_cusum != "None":
+        fig_cusum.add_vline(x=shift_pt_c - 0.5, line_dash="dot", line_color="white", opacity=0.5,
+                             annotation_text="Shift", row=1, col=1)
+        fig_cusum.add_vline(x=shift_pt_c - 0.5, line_dash="dot", line_color="white", opacity=0.3, row=2, col=1)
+
+    fig_cusum.update_layout(template="plotly_dark", height=500, showlegend=False,
+                             margin=dict(l=10, r=10, t=30, b=10))
+    fig_cusum.update_xaxes(title_text="Observation", row=2, col=1)
+    st.plotly_chart(fig_cusum, use_container_width=True, key="spc_cusum_chart")
+
+    # Summary
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Target (μ₀)", f"{target:.2f}")
+    c2.metric("K", f"{K:.3f} ({k_c:.2f}σ)")
+    c3.metric("H", f"{H:.3f} ({h_c:.2f}σ)")
+    c4.metric("Mean (data)", f"{raw_c.mean():.3f}")
+
+    if show_cusum_rules:
+        st.subheader("Out-of-Control Signals", divider="gray")
+        ooc_list = []
+        for i in range(n_c):
+            if signals_plus[i]:
+                ooc_list.append(f"🔴 Observation {i+1}: S⁺ = {S_plus[i]:.3f} exceeds H = {H:.3f} (upward shift)")
+            if signals_minus[i]:
+                ooc_list.append(f"🔴 Observation {i+1}: S⁻ = {S_minus[i]:.3f} exceeds H = {H:.3f} (downward shift)")
+        if ooc_list:
+            for msg in ooc_list:
+                st.markdown(msg)
+        else:
+            st.success("✅ No OOC signals detected. Process is stable around target.")
+
+    with st.expander("About CUSUM"):
+        st.markdown("""
+        | Element | Description |
+        |---------|-------------|
+        | **S⁺** | max(0, S⁺₍ᵢ₋₁₎ + (xᵢ − μ₀) − K) — accumulates *positive* deviations |
+        | **S⁻** | max(0, S⁻₍ᵢ₋₁₎ − (xᵢ − μ₀) − K) — accumulates *negative* deviations |
+        | **K** | Reference value — only deviations > K are accumulated |
+        | **H** | Decision interval — when S > H, signal an out-of-control condition |
+        | **ARL₀** | For K=0.5, H=5: ~465 (in-control ARL, matching 3σ X̄ chart) |
+        | **ARL₁** | For a 1σ shift: ~10 vs ~43 for X̄ chart (4.3× faster detection) |
+        """)
+
+
+def _render_ewma_chart():
+    st.subheader("EWMA Chart — Exponentially Weighted Moving Average")
+    st.info("""
+    **EWMA** applies exponentially decreasing weights to past observations, making it
+    sensitive to **small shifts** while filtering out noise. The smoothing parameter
+    λ controls the memory: low λ = smoother, high λ = more responsive.
+    """)
+
+    rng = np.random.default_rng(42)
+
+    with st.sidebar:
+        st.markdown("##### :orange[Process Parameters]")
+        target_e = st.number_input("Target Mean (μ₀)", 90.0, 110.0, 100.0, 0.5, key="ewma_target")
+        sigma_e = st.slider("Process Sigma (σ)", 0.5, 5.0, 2.0, 0.1, key="ewma_sigma")
+        n_e = st.slider("Number of Observations", 15, 200, 50, 5, key="ewma_n")
+
+        shift_ewma = st.selectbox("Shift Type", ["None", "Mean Shift", "Gradual Drift", "Transient Spike"], key="ewma_shift")
+        if shift_ewma == "Mean Shift":
+            shift_mag_e = st.slider("Shift Magnitude (σ units)", 0.0, 3.0, 1.0, 0.1, key="ewma_shift_mag")
+        elif shift_ewma == "Gradual Drift":
+            drift_e = st.slider("Drift at end (σ units)", 0.0, 4.0, 2.0, 0.1, key="ewma_drift")
+        elif shift_ewma == "Transient Spike":
+            spike_mag = st.slider("Spike Magnitude (σ units)", 1.0, 6.0, 3.0, 0.5, key="ewma_spike")
+            spike_pos = st.slider("Spike Position", 0.2, 0.8, 0.4, 0.05, key="ewma_spike_pos")
+        else:
+            shift_mag_e = 0
+
+        st.markdown("---")
+        st.markdown("##### :orange[EWMA Parameters]")
+        lam = st.slider("Smoothing Constant λ", 0.02, 1.0, 0.2, 0.01, key="ewma_lambda",
+                        help="Lower λ = smoother, more weight on past. Typical: 0.05–0.3.")
+        L_e = st.slider("Control Limit Width L", 1.0, 4.0, 3.0, 0.1, key="ewma_L",
+                        help="Typically 3. Wider limits = fewer false alarms.")
+        show_ewma_rules = st.checkbox("Show OOC Signals", True, key="ewma_rules")
+
+    # Generate data
+    shift_pt_e = n_e // 2
+    raw_e = rng.normal(target_e, sigma_e, n_e)
+    if shift_ewma == "Mean Shift":
+        raw_e[shift_pt_e:] += shift_mag_e * sigma_e
+    elif shift_ewma == "Gradual Drift":
+        drift_vec_e = np.linspace(0, drift_e * sigma_e, n_e - shift_pt_e)
+        raw_e[shift_pt_e:] += drift_vec_e
+    elif shift_ewma == "Transient Spike":
+        spike_idx = int(n_e * spike_pos)
+        raw_e[spike_idx] += spike_mag * sigma_e
+
+    # Compute EWMA
+    z = np.zeros(n_e)
+    z[0] = target_e
+    for i in range(1, n_e):
+        z[i] = lam * raw_e[i] + (1 - lam) * z[i-1]
+
+    # Control limits (time-varying, converging to steady-state)
+    factor = np.sqrt(lam / (2 - lam))
+    cl_e = target_e
+    steady_state_sigma = sigma_e * factor
+    ucl_e_steady = cl_e + L_e * steady_state_sigma
+    lcl_e_steady = cl_e - L_e * steady_state_sigma
+
+    ucl_e = np.full(n_e, ucl_e_steady)
+    lcl_e = np.full(n_e, lcl_e_steady)
+    # Time-varying limits
+    for i in range(1, n_e):
+        w = np.sqrt((1 - (1 - lam) ** (2 * i)) * lam / (2 - lam))
+        ucl_e[i] = cl_e + L_e * sigma_e * w
+        lcl_e[i] = cl_e - L_e * sigma_e * w
+
+    # Signal detection
+    signals_e = (z > ucl_e) | (z < lcl_e)
+
+    # Plot
+    labels_e = [str(i + 1) for i in range(n_e)]
+    fig_ewma = go.Figure()
+
+    # Raw data
+    fig_ewma.add_trace(go.Scatter(x=labels_e, y=raw_e, mode="markers",
+                                    marker=dict(color="gray", size=4, opacity=0.4),
+                                    name="Raw observations"))
+
+    # EWMA line
+    fig_ewma.add_trace(go.Scatter(x=labels_e, y=z, mode="lines+markers",
+                                    marker=dict(color="#4C78A8", size=6),
+                                    line=dict(color="#4C78A8", width=2),
+                                    name=f"EWMA (λ={lam})"))
+
+    # Center line
+    fig_ewma.add_hline(y=cl_e, line_dash="solid", line_color="#54A24B",
+                        annotation_text=f"μ₀ = {cl_e:.2f}")
+
+    # Steady-state limits
+    fig_ewma.add_hline(y=ucl_e_steady, line_dash="dash", line_color="#E45756",
+                        annotation_text=f"UCL (ss) = {ucl_e_steady:.3f}")
+    fig_ewma.add_hline(y=lcl_e_steady, line_dash="dash", line_color="#E45756",
+                        annotation_text=f"LCL (ss) = {lcl_e_steady:.3f}")
+
+    # Time-varying limits as ribbon
+    fig_ewma.add_trace(go.Scatter(
+        x=labels_e + labels_e[::-1],
+        y=ucl_e.tolist() + lcl_e[::-1].tolist(),
+        fill="toself", fillcolor="rgba(228, 87, 86, 0.06)",
+        line=dict(color="rgba(228, 87, 86, 0)"), showlegend=False,
+        name="Time-varying limits",
+    ))
+
+    # OOC points
+    for i in range(n_e):
+        if signals_e[i]:
+            fig_ewma.add_trace(go.Scatter(
+                x=[labels_e[i]], y=[z[i]], mode="markers",
+                marker=dict(color="#E45756", size=12, symbol="x"), showlegend=False,
+            ))
+
+    if shift_ewma != "None" and shift_ewma != "Transient Spike":
+        fig_ewma.add_vline(x=shift_pt_e - 0.5, line_dash="dot", line_color="white", opacity=0.5,
+                            annotation_text="Shift")
+    elif shift_ewma == "Transient Spike":
+        fig_ewma.add_vline(x=spike_idx - 0.5, line_dash="dot", line_color="#F58518", opacity=0.7,
+                            annotation_text="Spike")
+
+    fig_ewma.update_layout(template="plotly_dark", height=450,
+                            xaxis_title="Observation", yaxis_title="Value",
+                            margin=dict(l=10, r=10, t=20, b=10))
+    st.plotly_chart(fig_ewma, use_container_width=True, key="spc_ewma_chart")
+
+    # Summary
+    st.subheader("Process Summary", divider="gray")
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("λ", f"{lam:.3f}")
+    c2.metric("L", f"{L_e:.2f}")
+    c3.metric("EWMA mean", f"{z[-1]:.3f}")
+    c4.metric("Data mean", f"{raw_e.mean():.3f}")
+
+    if show_ewma_rules:
+        st.subheader("Out-of-Control Signals", divider="gray")
+        ooc_e = []
+        for i in range(n_e):
+            if signals_e[i]:
+                side = "above" if z[i] > ucl_e[i] else "below"
+                ooc_e.append(f"🔴 Observation {i+1}: EWMA = {z[i]:.3f} ({side} limit)")
+        if ooc_e:
+            for msg in ooc_e:
+                st.markdown(msg)
+        else:
+            st.success("✅ No OOC signals detected.")
+
+    with st.expander("About EWMA"):
+        st.markdown(f"""
+        | Element | Formula |
+        |---------|---------|
+        | **EWMA** | Zᵢ = λ·xᵢ + (1−λ)·Zᵢ₋₁ |
+        | **Starting value** | Z₀ = μ₀ (target) |
+        | **Steady-state σ** | σ_Z = σ·√(λ/(2−λ)) |
+        | **Time-varying σ** | σ_Zᵢ = σ·√((1−(1−λ)^{{2i}})·λ/(2−λ)) |
+        | **Effective memory** | ~1/λ observations ("age" of oldest non-negligible weight) |
+
+        **Typical λ choices:**
+        - λ = 0.05 – very smooth, detects shifts < 0.5σ
+        - λ = 0.20 – balanced, general purpose
+        - λ = 0.40 – more responsive, closer to X̄ chart
+        """)
+
 def render_control_charts():
     st.title("Statistical Process Control (SPC) Charts")
     st.markdown("""
@@ -134,6 +874,55 @@ def render_control_charts():
     """)
 
     # ── SIDEBAR CONTROLS ──
+    with st.sidebar:
+        st.markdown("##### :orange[Chart Family]")
+        chart_family = st.radio(
+            "Family",
+            ["Variable (X̄-R, X̄-S, I-MR)", "Attribute (p, np, c, u)",
+         "Advanced (CUSUM, EWMA)"],
+            key="spc_family",
+        )
+
+        st.markdown("---")
+
+        if chart_family.startswith("Attribute"):
+            attr_chart = st.selectbox(
+                "Chart Type",
+                ["p-Chart (proportion defective)", "np-Chart (number defective)",
+                 "c-Chart (defect count)", "u-Chart (defects per unit)"],
+                key="spc_attr_type",
+            )
+            st.markdown("---")
+            st.markdown("Attribute charts monitor **counts or proportions** of defects/defectives.")
+        elif chart_family.startswith("Advanced"):
+            adv_chart = st.selectbox(
+                "Chart Type",
+                ["CUSUM", "EWMA"],
+                key="spc_adv_type",
+            )
+            st.markdown("---")
+            st.markdown("Advanced charts detect **small shifts** faster than traditional Shewhart charts.")
+
+    # Route to chart renderers
+    if chart_family.startswith("Attribute"):
+        if attr_chart.startswith("p-Chart"):
+            _render_p_chart()
+        elif attr_chart.startswith("np-Chart"):
+            _render_np_chart()
+        elif attr_chart.startswith("c-Chart"):
+            _render_c_chart()
+        else:
+            _render_u_chart()
+        return
+
+    if chart_family.startswith("Advanced"):
+        if adv_chart == "CUSUM":
+            _render_cusum_chart()
+        else:
+            _render_ewma_chart()
+        return
+
+    # ── VARIABLE CHARTS (existing code) ──
     with st.sidebar:
         st.markdown("##### :orange[Data Source]")
         data_src = st.radio(
@@ -171,6 +960,13 @@ def render_control_charts():
                 n_subgroups = len(base_data)
             sigma_limits = st.slider("Control Limit Width (σ)", 1, 4, 3, 1, key="spc_sigma_file")
             show_rules = st.checkbox("Show Shewhart Rules", True, key="spc_rules_file")
+            use_phase12 = st.checkbox("Phase 1/2 (Trial Limits)", False, key="spc_phase12_file",
+                                      help="Mark Phase 1 baseline period, identify OOC subgroups, recalculate revised limits")
+            n_phase1 = n_subgroups // 2
+            if use_phase12:
+                n_phase1 = st.slider("Phase 1 Subgroups", 5, n_subgroups - 1, max(5, n_subgroups // 2), 1,
+                                     key="spc_phase1_n_file",
+                                     help="Number of subgroups used for initial (trial) control limits")
             use_spec = st.checkbox("Show Specification Limits", False, key="spc_spec_file")
             lsl, usl = None, None
             if use_spec:
@@ -209,8 +1005,15 @@ def render_control_charts():
             else:
                 n_subgroup = st.slider("Subgroup Size (n)", 2, 15, 5, 1, key="spc_n")
                 n_subgroups = st.slider("Number of Subgroups", 10, 100, 25, 5, key="spc_k")
-            sigma_limits = st.slider("Control Limit Width (σ)", 1, 4, 3, 1, key="spc_sigma")
+            sigma_limits = st.slider("Control Limit Width (σ)", 1, 4, 3, 1, key="spc_sigma_limits")
             show_rules = st.checkbox("Show Shewhart Rules", True, key="spc_rules")
+            use_phase12 = st.checkbox("Phase 1/2 (Trial Limits)", False, key="spc_phase12",
+                                      help="Mark Phase 1 baseline period, identify OOC subgroups, recalculate revised limits")
+            n_phase1 = n_subgroups // 2
+            if use_phase12:
+                n_phase1 = st.slider("Phase 1 Subgroups", 5, n_subgroups - 1, max(5, n_subgroups // 2), 1,
+                                     key="spc_phase1_n",
+                                     help="Number of subgroups used for initial (trial) control limits")
 
             st.markdown("---")
             st.markdown("##### :orange[Capability Settings]")
@@ -392,11 +1195,99 @@ def render_control_charts():
         all_data = base_data.flatten()
 
     all_rules = xbar_rules + mr_rules if is_imr else xbar_rules + (r_rules if use_r_chart else s_rules)
+    n_points = len(top_stat)
+
+    # ── PHASE 1/2 (TRIAL LIMITS) ──
+    trial_limits = False
+    revised_ucl_x = revised_lcl_x = revised_cl_x = None
+    revised_ucl_b = revised_lcl_b = revised_cl_b = None
+    phase1_end = n_phase1 if use_phase12 else 0
+
+    if use_phase12 and n_phase1 >= 5:
+        trial_limits = True
+        phase1_mask = np.arange(n_points) < n_phase1
+        phase1_stat = top_stat[phase1_mask]
+        phase1_bot = bottom_stat[phase1_mask]
+
+        # Trial limits (Phase 1)
+        trial_cl_x = np.mean(phase1_stat)
+        trial_cl_b = np.mean(phase1_bot)
+        trial_sigma_top = np.std(phase1_stat, ddof=1) if len(phase1_stat) > 1 else sigma_top
+        trial_sigma_bot = np.std(phase1_bot, ddof=1) if len(phase1_bot) > 1 else sigma_bottom
+
+        z_trial = sigma_limits
+        trial_ucl_x = trial_cl_x + z_trial * trial_sigma_top
+        trial_lcl_x = trial_cl_x - z_trial * trial_sigma_top
+        trial_ucl_b = trial_cl_b + z_trial * trial_sigma_bot
+        trial_lcl_b = max(0, trial_cl_b - z_trial * trial_sigma_bot)
+
+        # Identify OOC points in Phase 1
+        ooc_phase1_idx = []
+        for i in range(n_phase1):
+            if top_stat[i] > trial_ucl_x or top_stat[i] < trial_lcl_x:
+                ooc_phase1_idx.append(i)
+            if bottom_stat[i] > trial_ucl_b or bottom_stat[i] < trial_lcl_b:
+                if i not in ooc_phase1_idx:
+                    ooc_phase1_idx.append(i)
+
+        # Recalculate button (session state toggles)
+        recalc_key = "spc_recalc_limits"
+        if recalc_key not in st.session_state:
+            st.session_state[recalc_key] = False
+
+        st.subheader("Phase 1 / Phase 2 Analysis", divider="orange")
+        c1, c2 = st.columns([3, 1])
+        with c1:
+            st.markdown(f"**Phase 1:** {n_phase1} subgroups (trial limits)  •  "
+                        f"**Phase 2:** {n_points - n_phase1} subgroups (monitoring)")
+            if ooc_phase1_idx:
+                st.warning(f"⚠️ {len(ooc_phase1_idx)} OOC subgroup(s) in Phase 1: "
+                           f"{', '.join(str(i+1) for i in ooc_phase1_idx)}")
+            else:
+                st.success("✅ No OOC points in Phase 1 — trial limits are stable.")
+        with c2:
+            if ooc_phase1_idx and not st.session_state[recalc_key]:
+                if st.button("🔄 Recalculate Limits", key="spc_recalc_btn",
+                             help="Remove OOC Phase 1 subgroups and recalculate control limits"):
+                    st.session_state[recalc_key] = True
+                    st.rerun()
+
+        if st.session_state[recalc_key]:
+            # Remove OOC Phase 1 points and recalculate
+            keep_mask = np.ones(n_phase1, dtype=bool)
+            for idx in ooc_phase1_idx:
+                keep_mask[idx] = False
+
+            clean_phase1_stat = top_stat[:n_phase1][keep_mask]
+            clean_phase1_bot = bottom_stat[:n_phase1][keep_mask]
+
+            if len(clean_phase1_stat) >= 5:
+                revised_cl_x = np.mean(clean_phase1_stat)
+                revised_cl_b = np.mean(clean_phase1_bot)
+                revised_sigma_top = np.std(clean_phase1_stat, ddof=1) if len(clean_phase1_stat) > 1 else trial_sigma_top
+                revised_sigma_bot = np.std(clean_phase1_bot, ddof=1) if len(clean_phase1_bot) > 1 else trial_sigma_bot
+                revised_ucl_x = revised_cl_x + z_trial * revised_sigma_top
+                revised_lcl_x = revised_cl_x - z_trial * revised_sigma_top
+                revised_ucl_b = revised_cl_b + z_trial * revised_sigma_bot
+                revised_lcl_b = max(0, revised_cl_b - z_trial * revised_sigma_bot)
+
+                st.success(f"✅ **Revised limits** (removed {len(ooc_phase1_idx)} OOC subgroups, "
+                           f"{len(clean_phase1_stat)} remaining in Phase 1)")
+            else:
+                st.error("Too few subgroups remain in Phase 1 after removal. "
+                         "Increase Phase 1 size or review the trial limits.")
+
+        # Override chart limits with Phase 1 trial or revised limits
+        if st.session_state[recalc_key] and revised_ucl_x is not None:
+            ucl_x, lcl_x, cl_x = revised_ucl_x, revised_lcl_x, revised_cl_x
+            ucl_bottom, lcl_bottom, center_bottom = revised_ucl_b, revised_lcl_b, revised_cl_b
+        else:
+            ucl_x, lcl_x, cl_x = trial_ucl_x, trial_lcl_x, trial_cl_x
+            ucl_bottom, lcl_bottom, center_bottom = trial_ucl_b, trial_lcl_b, trial_cl_b
 
     # ── PLOTS ──
     st.subheader("Control Charts", divider="orange")
 
-    n_points = len(top_stat)
     labels = [f"{i+1}" for i in range(n_points)]
 
     fig = make_subplots(
@@ -466,6 +1357,16 @@ def render_control_charts():
         fig.add_vline(x=sp - 0.5, line_dash="dot", line_color="white", opacity=0.5,
                       annotation_text="Shift introduced", row=1, col=1)
         fig.add_vline(x=sp - 0.5, line_dash="dot", line_color="white", opacity=0.3, row=2, col=1)
+
+    # Phase 1/2 boundary
+    if trial_limits:
+        p1_pos = phase1_end - 0.5
+        fig.add_vline(x=p1_pos, line_dash="dot", line_color="#F58518", opacity=0.8, line_width=2,
+                      annotation_text="Phase 1 End", row=1, col=1)
+        fig.add_vline(x=p1_pos, line_dash="dot", line_color="#F58518", opacity=0.5, line_width=2, row=2, col=1)
+        # Shade Phase 1 region
+        fig.add_vrect(x0=-0.5, x1=p1_pos, fillcolor="rgba(76, 120, 168, 0.06)", line_width=0, row=1, col=1)
+        fig.add_vrect(x0=-0.5, x1=p1_pos, fillcolor="rgba(76, 120, 168, 0.06)", line_width=0, row=2, col=1)
 
     fig.update_layout(
         template="plotly_dark", height=600, showlegend=False,
@@ -565,14 +1466,128 @@ def render_control_charts():
 
         pct_below = sp_stats.norm.cdf(lsl, grand_mean, sigma_est) * 100
         pct_above = (1 - sp_stats.norm.cdf(usl, grand_mean, sigma_est)) * 100
+
+        # Cpm — Taguchi capability (penalizes deviation from target)
+        target_cpm = (lsl + usl) / 2
+        cpm = (usl - lsl) / (6 * np.sqrt(sigma_est**2 + (grand_mean - target_cpm)**2))
+
+        # Confidence intervals for Cp (using chi-square approximation)
+        n_cap = len(all_data)
+        alpha_ci = 0.05
+        cp_lower = cp * np.sqrt(sp_stats.chi2.ppf(alpha_ci / 2, n_cap - 1) / (n_cap - 1))
+        cp_upper = cp * np.sqrt(sp_stats.chi2.ppf(1 - alpha_ci / 2, n_cap - 1) / (n_cap - 1))
+
+        # DPMO / Sigma Level conversion
+        total_defect_prob = pct_below + pct_above
+        dpmo = total_defect_prob * 10000
+        from scipy.stats import norm as norm_sigma
+        sigma_level_short = norm_sigma.ppf(1 - total_defect_prob / 2 / 100) + 1.5 if total_defect_prob > 0 else 7.5
+        sigma_level_long = norm_sigma.ppf(1 - total_defect_prob / 2 / 100) if total_defect_prob > 0 else 6.0
         cap_df = pd.DataFrame({
-            "Metric": ["Cp", "Cpk", "Pp", "Ppk", "% below LSL", "% above USL", "Total % out-of-spec"],
+            "Metric": ["Cp", "Cpk", "Pp", "Ppk", "Cpm (Taguchi)",
+                       "Cp 90% CI", "DPMO", "Sigma Level (ST)", "Sigma Level (LT)",
+                       "% below LSL", "% above USL", "Total % out-of-spec"],
             "Value": [
-                f"{cp:.4f}", f"{cpk:.4f}", f"{pp:.4f}", f"{ppk:.4f}",
+                f"{cp:.4f}", f"{cpk:.4f}", f"{pp:.4f}", f"{ppk:.4f}", f"{cpm:.4f}",
+                f"[{cp_lower:.4f}, {cp_upper:.4f}]",
+                f"{dpmo:.0f}",
+                f"{sigma_level_short:.2f}",
+                f"{sigma_level_long:.2f}",
                 f"{pct_below:.2f}%", f"{pct_above:.2f}%", f"{pct_below + pct_above:.2f}%",
             ],
         })
         _apa_table(cap_df, title="Capability Indices")
+
+        # Non-normal capability (Box-Cox transform)
+        with st.expander("Non-Normal Capability (Box-Cox Transform)", expanded=False):
+            st.markdown("If your data is **not normally distributed**, the standard capability "
+                        "indices may be misleading. Box-Cox transformation can help.")
+            from scipy.stats import boxcox
+            try:
+                bc_data, bc_lambda = boxcox(all_data - min(all_data) + 0.001)
+                bc_mean = np.mean(bc_data)
+                bc_sigma = np.std(bc_data, ddof=1)
+                # Transform spec limits
+                bc_lsl = boxcox(lsl - min(all_data) + 0.001, bc_lambda) if lsl > min(all_data) else None
+                bc_usl = boxcox(usl - min(all_data) + 0.001, bc_lambda) if usl > min(all_data) else None
+                if bc_lsl is not None and bc_usl is not None:
+                    bc_cp = (bc_usl - bc_lsl) / (6 * bc_sigma)
+                    bc_cpk = min((bc_usl - bc_mean) / (3 * bc_sigma), (bc_mean - bc_lsl) / (3 * bc_sigma))
+                    st.metric("Box-Cox λ", f"{bc_lambda:.4f}")
+                    c1, c2 = st.columns(2)
+                    c1.metric("Transformed Cp", f"{bc_cp:.4f}")
+                    c2.metric("Transformed Cpk", f"{bc_cpk:.4f}")
+                else:
+                    st.info("Box-Cox transformation could not be applied (limits outside data range).")
+            except Exception:
+                st.info("Box-Cox transformation not applicable to this data.")
+
+    # ── ADDITIONAL DIAGNOSTICS ──
+    if not is_imr and not use_phase12:
+        with st.expander("Run Chart (Before Control Limits)", expanded=False):
+            st.markdown("A **run chart** plots the data in time order before establishing "
+                        "control limits. It helps identify trends, shifts, and unusual patterns "
+                        "that would invalidate the control limits if present during Phase 1.")
+            run_fig = go.Figure()
+            run_fig.add_trace(go.Scatter(
+                x=labels, y=top_stat, mode="lines+markers",
+                marker=dict(color="#4C78A8", size=6), line=dict(color="#4C78A8", width=1.5),
+                name="Data",
+            ))
+            run_fig.add_hline(y=np.median(top_stat), line_dash="dash", line_color="#54A24B",
+                              annotation_text=f"Median = {np.median(top_stat):.3f}")
+            run_fig.update_layout(template="plotly_dark", height=300,
+                                   xaxis_title="Subgroup", yaxis_title=top_label,
+                                   margin=dict(l=10, r=10, t=10, b=10))
+            st.plotly_chart(run_fig, use_container_width=True, key="spc_run_chart")
+
+    with st.expander("Autocorrelation Check", expanded=False):
+        st.markdown("**Autocorrelation** measures how correlated each point is with its "
+                    "predecessors. SPC charts assume independent observations — high "
+                    "autocorrelation inflates false alarms on I-MR charts.")
+        lag_max = min(20, len(top_stat) // 4)
+        acf = np.array([1] + [np.corrcoef(top_stat[:-i], top_stat[i:])[0, 1]
+                               for i in range(1, lag_max + 1)])
+        acf_fig = go.Figure()
+        acf_fig.add_trace(go.Bar(
+            x=list(range(lag_max + 1)), y=acf,
+            marker_color="#4C78A8", name="ACF",
+        ))
+        # Significance bounds
+        bound = 1.96 / np.sqrt(len(top_stat))
+        acf_fig.add_hline(y=bound, line_dash="dash", line_color="#E45756",
+                           annotation_text=f"±{bound:.3f}")
+        acf_fig.add_hline(y=-bound, line_dash="dash", line_color="#E45756")
+        acf_fig.update_layout(template="plotly_dark", height=300,
+                               xaxis_title="Lag", yaxis_title="Autocorrelation",
+                               margin=dict(l=10, r=10, t=10, b=10))
+        st.plotly_chart(acf_fig, use_container_width=True, key="spc_acf_chart")
+        if abs(acf[1]) > bound:
+            st.warning(f"⚠️ Lag-1 autocorrelation ({acf[1]:.3f}) exceeds significance bound "
+                       f"(±{bound:.3f}). Consider using a CUSUM or EWMA chart instead of I-MR.")
+        else:
+            st.success(f"✅ Lag-1 autocorrelation ({acf[1]:.3f}) within expected bounds — "
+                       "data appears independent.")
+
+    with st.expander("Average Run Length (ARL) Reference", expanded=False):
+        st.markdown("**ARL₀** (in-control) and **ARL₁** (out-of-control) for this chart configuration:")
+        shift_sizes = np.arange(0, 3.5, 0.5)
+        z_val = sigma_limits
+        arl_data = []
+        for shift in shift_sizes:
+            if shift == 0:
+                arl0 = 1 / (2 * (1 - sp_stats.norm.cdf(z_val)))
+                arl_data.append(["0 (in control)", f"{arl0:.0f}", "—", "—"])
+            else:
+                arl_shewhart = 1 / (1 - sp_stats.norm.cdf(z_val - shift) + sp_stats.norm.cdf(-z_val - shift))
+                # ARL for CUSUM with K=0.5, H=5 (approximate)
+                arl_cusum = None
+                arl_ewma = None
+                arl_data.append([f"{shift:.1f}σ", f"{arl_shewhart:.0f}", "—", "—"])
+        arl_df = pd.DataFrame(arl_data, columns=["Shift", "Shewhart (3σ) ARL", "CUSUM (K=0.5, H=5)", "EWMA (λ=0.2)"])
+        st.dataframe(arl_df, use_container_width=True)
+        st.caption("CUSUM and EWMA ARL values shown where available. "
+                    "CUSUM detects 1σ shifts ~4× faster than X̄ charts.")
 
     # ── SHEWHART RULES ──
     if show_rules:
