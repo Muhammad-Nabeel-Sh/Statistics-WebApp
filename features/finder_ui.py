@@ -5,6 +5,15 @@ from features.widgets import render_latex, render_test_widget
 from features.glossary import render_glossary
 
 
+def _check_workspace_nav():
+    """Handle top-right Data Import button navigation."""
+    cols = st.columns([6, 1])
+    with cols[1]:
+        if st.button("📁 Data Import", use_container_width=True, type="primary"):
+            st.session_state.page = "workspace"
+            st.rerun()
+
+
 def _categorize_tests():
     """Categorize tests by design type and parametric/non-parametric."""
     from collections import defaultdict
@@ -179,9 +188,7 @@ def render_all_tests_section():
             col_idx = i % 3
             with test_cols[col_idx]:
                 btn_key = f"alltest_cat_{main_cat.replace(' ', '_')}_{test_name.replace(' ', '_')}"
-                if st.button(
-                    f"📌 {test_name}", key=btn_key, use_container_width=True
-                ):
+                if st.button(f"📌 {test_name}", key=btn_key, use_container_width=True):
                     _open_test_directly(test_name)
 
 
@@ -189,11 +196,13 @@ def _open_test_directly(test_name):
     """Open a test directly in the finder's right panel."""
     st.session_state.results = [test_name]
     st.session_state.open_tests = {test_name}
-    st.rerun()                    
+    st.rerun()
 
 
 def render_test_finder():
     """Render the Test Finder UI."""
+
+    _check_workspace_nav()
 
     with st.sidebar:
         render_glossary()

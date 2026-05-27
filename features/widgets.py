@@ -40,8 +40,16 @@ def render_latex(formula_text):
         st.markdown(text_after)
 
 
-def render_test_widget(test_name):
-    """Render interactive widget for specific statistical test."""
+def render_test_widget(test_name, external_data=None):
+    """Render interactive widget for specific statistical test.
+    
+    Parameters
+    ----------
+    test_name : str
+    external_data : dict or None
+        If provided (with "using_uploaded": True), used instead of data_source_toggle.
+        Same format as data_source_toggle() return value.
+    """
 
     # One Sample Tests
 
@@ -55,7 +63,10 @@ def render_test_widget(test_name):
         # DATA SOURCE TOGGLE
         # =========================
 
-        src = data_source_toggle("ttest_1samp", mode="one_sample")
+        if external_data and external_data.get("using_uploaded"):
+            src = external_data
+        else:
+            src = data_source_toggle("ttest_1samp", mode="one_sample")
 
         # =========================
         # CONTROLS
@@ -258,7 +269,10 @@ def render_test_widget(test_name):
         # DATA SOURCE TOGGLE
         # =========================
 
-        src = data_source_toggle("ztest_1samp", mode="one_sample")
+        if external_data and external_data.get("using_uploaded"):
+            src = external_data
+        else:
+            src = data_source_toggle("ztest_1samp", mode="one_sample")
 
         # =========================
         # CONTROLS
@@ -652,7 +666,10 @@ def render_test_widget(test_name):
         # DATA SOURCE TOGGLE
         # =========================
 
-        src = data_source_toggle("wilcoxon_1samp", mode="one_sample")
+        if external_data and external_data.get("using_uploaded"):
+            src = external_data
+        else:
+            src = data_source_toggle("wilcoxon_1samp", mode="one_sample")
 
         # =========================
         # CONTROLS
@@ -1470,7 +1487,10 @@ def render_test_widget(test_name):
         # DATA SOURCE TOGGLE
         # =========================
 
-        src = data_source_toggle("ttest_indep_enhanced", mode="two_sample")
+        if external_data and external_data.get("using_uploaded"):
+            src = external_data
+        else:
+            src = data_source_toggle("ttest_indep_enhanced", mode="two_sample")
 
         # =========================
         # CONTROLS
@@ -1658,7 +1678,10 @@ def render_test_widget(test_name):
         # DATA SOURCE TOGGLE
         # =========================
 
-        src = data_source_toggle("welch_ttest", mode="two_sample")
+        if external_data and external_data.get("using_uploaded"):
+            src = external_data
+        else:
+            src = data_source_toggle("welch_ttest", mode="two_sample")
 
         # =========================
         # CONTROLS / DATA
@@ -1833,7 +1856,10 @@ def render_test_widget(test_name):
         # DATA SOURCE TOGGLE
         # =========================
 
-        src = data_source_toggle("ttest_paired", mode="paired")
+        if external_data and external_data.get("using_uploaded"):
+            src = external_data
+        else:
+            src = data_source_toggle("ttest_paired", mode="paired")
 
         # =========================
         # CONTROLS / DATA
@@ -2023,7 +2049,10 @@ def render_test_widget(test_name):
         # DATA SOURCE TOGGLE
         # =========================
 
-        src = data_source_toggle("oneway_anova", mode="multi_sample")
+        if external_data and external_data.get("using_uploaded"):
+            src = external_data
+        else:
+            src = data_source_toggle("oneway_anova", mode="multi_sample")
 
         # =========================
         # CONTROLS / DATA
@@ -2984,7 +3013,10 @@ def render_test_widget(test_name):
         # DATA SOURCE TOGGLE
         # =========================
 
-        src = data_source_toggle("wilcoxon_signedrank_paired", mode="paired")
+        if external_data and external_data.get("using_uploaded"):
+            src = external_data
+        else:
+            src = data_source_toggle("wilcoxon_signedrank_paired", mode="paired")
 
         # =========================
         # CONTROLS / DATA
@@ -3183,7 +3215,10 @@ def render_test_widget(test_name):
         # DATA SOURCE TOGGLE
         # =========================
 
-        src = data_source_toggle("mannwhitney_2samp", mode="two_sample")
+        if external_data and external_data.get("using_uploaded"):
+            src = external_data
+        else:
+            src = data_source_toggle("mannwhitney_2samp", mode="two_sample")
 
         # =========================
         # CONTROLS / DATA
@@ -3357,7 +3392,10 @@ def render_test_widget(test_name):
         # DATA SOURCE TOGGLE
         # =========================
 
-        src = data_source_toggle("kruskal_wallis", mode="multi_sample")
+        if external_data and external_data.get("using_uploaded"):
+            src = external_data
+        else:
+            src = data_source_toggle("kruskal_wallis", mode="multi_sample")
 
         # =========================
         # CONTROLS / DATA
@@ -3527,7 +3565,10 @@ def render_test_widget(test_name):
         # DATA SOURCE TOGGLE
         # =========================
 
-        src = data_source_toggle("friedman", mode="repeated")
+        if external_data and external_data.get("using_uploaded"):
+            src = external_data
+        else:
+            src = data_source_toggle("friedman", mode="repeated")
 
         # =========================
         # CONTROLS / DATA
@@ -3866,7 +3907,10 @@ def render_test_widget(test_name):
         # DATA SOURCE TOGGLE
         # =========================
 
-        src = data_source_toggle("pearson", mode="correlation")
+        if external_data and external_data.get("using_uploaded"):
+            src = external_data
+        else:
+            src = data_source_toggle("pearson", mode="correlation")
 
         # =========================
         # CONTROLS / DATA
@@ -3986,7 +4030,10 @@ def render_test_widget(test_name):
         # DATA SOURCE TOGGLE
         # =========================
 
-        src = data_source_toggle("spearman", mode="correlation")
+        if external_data and external_data.get("using_uploaded"):
+            src = external_data
+        else:
+            src = data_source_toggle("spearman", mode="correlation")
 
         # =========================
         # CONTROLS / DATA
@@ -4108,7 +4155,10 @@ def render_test_widget(test_name):
         # DATA SOURCE TOGGLE
         # =========================
 
-        src = data_source_toggle("kendall", mode="correlation")
+        if external_data and external_data.get("using_uploaded"):
+            src = external_data
+        else:
+            src = data_source_toggle("kendall", mode="correlation")
 
         # =========================
         # CONTROLS / DATA
@@ -4261,7 +4311,10 @@ def render_test_widget(test_name):
         # DATA SOURCE TOGGLE
         # =========================
 
-        src = data_source_toggle("pointbiserial", mode="two_sample")
+        if external_data and external_data.get("using_uploaded"):
+            src = external_data
+        else:
+            src = data_source_toggle("pointbiserial", mode="two_sample")
 
         # =========================
         # CONTROLS / DATA
@@ -4460,7 +4513,10 @@ def render_test_widget(test_name):
         # DATA SOURCE TOGGLE
         # =========================
 
-        src = data_source_toggle("regression", mode="correlation")
+        if external_data and external_data.get("using_uploaded"):
+            src = external_data
+        else:
+            src = data_source_toggle("regression", mode="correlation")
 
         # =========================
         # CONTROLS / DATA

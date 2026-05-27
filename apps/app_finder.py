@@ -13,10 +13,17 @@ st.set_page_config(
 )
 
 from features.finder_ui import render_test_finder
+from features.data_workspace import render_data_workspace
 
 
 def main():
-    render_test_finder()
+    if "page" not in st.session_state:
+        st.session_state.page = "finder"
+
+    if st.session_state.page == "workspace":
+        render_data_workspace()
+    else:
+        render_test_finder()
 
 
 if __name__ == "__main__":
