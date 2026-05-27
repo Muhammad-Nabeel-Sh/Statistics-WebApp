@@ -7,6 +7,37 @@ from features.builtin_datasets import (
     get_all_dataset_names,
 )
 from features.widgets import render_test_widget
+from scipy.stats import shapiro, normaltest, kstest
+
+
+def _render_normality_test_results(df, numeric_cols):
+    """Run Shapiro-Wilk on each numeric column and display results."""
+    from core.utils import _apa_table
+    results = []
+    for col in numeric_cols:
+        vals = df[col].dropna()
+        if len(vals) < 3:
+            continue
+        stat, p = shapiro(vals)
+        skew = vals.skew()
+        kurt = vals.kurtosis()
+        verdict = "Normal" if p > 0.05 else "Non-normal"
+        results.append({
+            "Column": col,
+            "n": len(vals),
+            "W": f"{stat:.4f}",
+            "p-value": f"{p:.4f}",
+            "Skew": f"{skew:.3f}",
+            "Kurtosis": f"{kurt:.3f}",
+            "Verdict": verdict,
+        })
+    if results:
+        _apa_table(pd.DataFrame(results), title="Normality Test (Shapiro-Wilk)")
+        n_non = sum(1 for r in results if r["Verdict"] == "Non-normal")
+        if n_non > 0:
+            st.warning(f"{n_non} column(s) deviate from normality (p < .05). Consider non-parametric alternatives.")
+        else:
+            st.success("All columns appear normally distributed (p ≥ .05).")
 
 
 def _build_external_data(df, organization, col_config):
@@ -158,7 +189,7 @@ def render_data_workspace():
     left, right = st.columns([1.1, 2], gap="large")
 
     # ==========================================
-    # LEFT COLUMN — Data management
+    # LEFT COLUMN — Phase 1: Data source
     # ==========================================
     with left:
         st.subheader("1. Data Source")
@@ -182,7 +213,7 @@ def render_data_workspace():
             if uploaded is not None:
                 try:
                     df = pd.read_csv(uploaded) if uploaded.name.endswith(".csv") else pd.read_excel(uploaded)
-                    st.success(f"Loaded **{uploaded.name}** — {len(df)} rows")
+                    st.success(f"Loaded **{uploaded.name}** — {len(df)} rows, {len(df.columns)} cols")
                     dataset_name = uploaded.name
                 except Exception as e:
                     st.error(f"Error: {e}")
@@ -203,7 +234,7 @@ def render_data_workspace():
                         st.caption(f"Compatible: {', '.join(info['test_types'][:4])}{'...' if len(info['test_types']) > 4 else ''}")
                 df = load_builtin_dataset(selected_ds)
                 dataset_name = selected_ds
-                st.success(f"Loaded **{selected_ds}** — {len(df)} rows")
+                st.success(f"Loaded **{selected_ds}** — {len(df)} rows, {len(df.columns)} cols")
 
         if df is None:
             st.info("No data loaded yet. Choose a source above.")
@@ -215,12 +246,28 @@ def render_data_workspace():
         numeric_cols = list(df.select_dtypes(include=["int64", "float64"]).columns)
         cat_cols = list(df.select_dtypes(include=["object", "category", "bool"]).columns)
 
+    # ==========================================
+    # RIGHT COLUMN — Phase 2: Preview + Normality
+    # ==========================================
+    with right:
+        st.subheader("Data Preview")
+        with st.expander("Show data table", expanded=True):
+            st.dataframe(df, use_container_width=True, height=min(350, 35 * (len(df) + 1)))
+
+        if numeric_cols:
+            with st.expander("Normality Test (Shapiro-Wilk)", expanded=False):
+                _render_normality_test_results(df, numeric_cols)
+
+            with st.expander("Descriptive Statistics", expanded=False):
+                st.dataframe(df[numeric_cols].describe(), use_container_width=True)
+
+    # ==========================================
+    # LEFT COLUMN — Phase 3: Data structure + summary + test
+    # ==========================================
+    with left:
         has_numeric = len(numeric_cols) > 0
         has_categorical = len(cat_cols) > 0
 
-        # ──────────────────────────────────────
-        # 2. Data structure
-        # ──────────────────────────────────────
         st.divider()
         st.subheader("2. Data Structure")
 
@@ -298,9 +345,7 @@ def render_data_workspace():
             col = st.selectbox("Categorical variable:", col_opts, key="ws_cat_one")
             col_config["cat_col"] = col
 
-        # ──────────────────────────────────────
-        # 3. Build & show format
-        # ──────────────────────────────────────
+        # ── Build & show format ──
         external_data = _build_external_data(df, organization, col_config)
 
         if external_data is None:
@@ -321,9 +366,7 @@ def render_data_workspace():
         st.info(f"Format: **{fmt_labels.get(fmt, fmt)}**")
         st.session_state.ws_external_data = external_data
 
-        # ──────────────────────────────────────
-        # 4. Data summary
-        # ──────────────────────────────────────
+        # ── Data summary ──
         st.divider()
         st.subheader("3. Data Summary")
 
@@ -373,9 +416,7 @@ def render_data_workspace():
             st.table(freq_df)
             st.caption(f"Total: {freq_df['Count'].sum()}")
 
-        # ──────────────────────────────────────
-        # 5. Test selection
-        # ──────────────────────────────────────
+        # ── Test selection ──
         st.divider()
         st.subheader("4. Select Test")
 
@@ -402,52 +443,36 @@ def render_data_workspace():
             st.caption(f"Uploaded data  \u2192  **{selected_test}**")
 
     # ==========================================
-    # RIGHT COLUMN — Data table + results
+    # RIGHT COLUMN — Phase 4: Results
     # ==========================================
     with right:
-        df = st.session_state.ws_df
-        dataset_name = st.session_state.ws_dataset_name
-        external_data = st.session_state.ws_external_data
-        selected_test = st.session_state.ws_selected_test
+        df_right = st.session_state.ws_df
+        dataset_name_right = st.session_state.ws_dataset_name
+        external_data_right = st.session_state.ws_external_data
+        selected_test_right = st.session_state.ws_selected_test
 
-        if df is None:
-            st.info("Load data in the left panel to begin.")
-            return
-
-        # ── Data table ──
-        st.subheader("Data Preview")
-        with st.expander("Show data table", expanded=True):
-            st.dataframe(df, use_container_width=True, height=min(350, 35 * (len(df) + 1)))
-
-        # ── Quick column stats ──
-        has_num = len(list(df.select_dtypes(include=["int64", "float64"]).columns)) > 0
-        if has_num:
-            with st.expander("Quick column statistics", expanded=False):
-                st.dataframe(df.describe(), use_container_width=True)
-
-        # ── Results ──
-        if selected_test and external_data:
+        if selected_test_right and external_data_right:
             st.divider()
             st.subheader("Results")
 
-            if dataset_name:
-                st.info(f"**{dataset_name}**  \u2192  **{selected_test}**")
+            if dataset_name_right:
+                st.info(f"**{dataset_name_right}**  \u2192  **{selected_test_right}**")
             else:
-                st.info(f"Uploaded data  \u2192  **{selected_test}**")
+                st.info(f"Uploaded data  \u2192  **{selected_test_right}**")
 
-            fmt = external_data.get("_format", "")
+            fmt_right = external_data_right.get("_format", "")
             cat_formats = ("categorical_two", "categorical_one")
 
-            if fmt in cat_formats:
+            if fmt_right in cat_formats:
                 st.warning(
                     "This test uses built-in controls (sliders/number inputs) for educational purposes. "
                     "Your data preview and summary above show the actual contingency table \u2014 "
                     "adjust the values in the test widget below to match if desired.",
                 )
 
-            with st.spinner(f"Running {selected_test}..."):
+            with st.spinner(f"Running {selected_test_right}..."):
                 try:
-                    render_test_widget(selected_test, external_data=external_data)
+                    render_test_widget(selected_test_right, external_data=external_data_right)
                 except Exception as e:
                     st.error(f"Error running test: {e}")
                     import traceback

@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -1004,6 +1005,133 @@ _BUILTIN_DATASETS["Survival — Lung Cancer (Veterans)"] = {
 }
 
 
+# ═══════════════════════════════════════════════════
+# FILE-BASED DATASETS (loaded from datasets/ directory)
+# ═══════════════════════════════════════════════════
+
+_BUILTIN_DATASETS["Diamonds — Price and Attributes"] = {
+    "description": "Prices and physical attributes of ~54,000 round-cut diamonds. Excellent for multiple regression, correlation analysis, and demonstrating large-dataset workflows.",
+    "source": "R ggplot2 package (carat, cut, color, clarity, depth, table, price, x, y, z). Originally from H. Wickham.",
+    "source_url": "https://ggplot2.tidyverse.org/reference/diamonds.html",
+    "file_path": "datasets/diamonds.csv",
+    "test_types": [
+        "Pearson Correlation", "Spearman Rank Correlation", "Kendall's Tau-b",
+        "Simple Linear Regression",
+        "One-way ANOVA", "Kruskal-Wallis Test",
+    ],
+}
+
+_BUILTIN_DATASETS["Old Faithful — Eruption Duration"] = {
+    "description": "Eruption duration (minutes) and waiting time (minutes) for Old Faithful geyser in Yellowstone. Classic bivariate distribution for correlation and regression.",
+    "source": "Azzalini, A. & Bowman, A. W. (1990). A look at some data on the Old Faithful geyser.",
+    "source_url": "https://github.com/mwaskom/seaborn-data/blob/master/geyser.csv",
+    "file_path": "datasets/geyser.csv",
+    "test_types": [
+        "Pearson Correlation", "Spearman Rank Correlation", "Kendall's Tau-b",
+        "Simple Linear Regression",
+        "Student's t-test (Independent)", "Welch's t-test (Independent)", "Mann-Whitney U Test",
+    ],
+}
+
+_BUILTIN_DATASETS["Exercises — Pulse Before and After"] = {
+    "description": "Pulse rates before and after various exercise types. Repeated measures with two kinds of exercise and a control group.",
+    "source": "Buskirk, E. R. et al. (various). Exercise physiology data compiled for teaching.",
+    "source_url": "https://github.com/mwaskom/seaborn-data/blob/master/exercise.csv",
+    "file_path": "datasets/exercise.csv",
+    "test_types": [
+        "Paired t-test", "Wilcoxon Signed-Rank Test (Paired)", "Sign Test (Paired)",
+        "One-way ANOVA", "Kruskal-Wallis Test",
+        "Friedman Test", "Repeated Measures ANOVA (One-way)",
+    ],
+}
+
+_BUILTIN_DATASETS["Titanic — Passenger Survival"] = {
+    "description": "Full Titanic passenger manifest with survival, age, sex, fare, and class. The classic dataset for categorical analysis and logistic regression.",
+    "source": "Hind, P. (1998). Encyclopedia Titanica. Curated by Seaborn.",
+    "source_url": "https://github.com/mwaskom/seaborn-data/blob/master/titanic.csv",
+    "file_path": "datasets/titanic.csv",
+    "test_types": [
+        "Chi-Square Test of Independence",
+        "Student's t-test (Independent)", "Welch's t-test (Independent)", "Mann-Whitney U Test",
+        "Pearson Correlation", "Spearman Rank Correlation",
+        "Cohen's Kappa (Agreement Analysis)", "McNemar's Test",
+    ],
+}
+
+_BUILTIN_DATASETS["MPG — Fuel Economy"] = {
+    "description": "Fuel economy (mpg) for 392 car models from 1970-82, with weight, horsepower, displacement, acceleration, origin, and cylinders. Excellent for multiple regression.",
+    "source": "Quinlan, R. (1993). Combining instance-based and model-based learning. UCI Machine Learning Repository.",
+    "source_url": "https://github.com/mwaskom/seaborn-data/blob/master/mpg.csv",
+    "file_path": "datasets/mpg.csv",
+    "test_types": [
+        "Pearson Correlation", "Spearman Rank Correlation", "Kendall's Tau-b",
+        "Simple Linear Regression",
+        "One-way ANOVA", "Kruskal-Wallis Test",
+        "Student's t-test (Independent)", "Welch's t-test (Independent)", "Mann-Whitney U Test",
+    ],
+}
+
+_BUILTIN_DATASETS["US Arrests — Crime Statistics"] = {
+    "description": "Violent crime rates per 100,000 residents by US state (1973). Four variables: Murder, Assault, UrbanPop, Rape. Classic PCA example.",
+    "source": "McNeil, D. R. (1977). Interactive Data Analysis. Wiley.",
+    "source_url": "https://vincentarelbundock.github.io/Rdatasets/doc/datasets/USArrests.html",
+    "file_path": "datasets/USArrests.csv",
+    "test_types": [
+        "Pearson Correlation", "Spearman Rank Correlation", "Kendall's Tau-b",
+        "One-sample t-test", "One-sample Wilcoxon Signed-Rank Test",
+    ],
+}
+
+_BUILTIN_DATASETS["Planets — Exoplanet Orbits"] = {
+    "description": "Data on exoplanets discovered through various methods up to 2014. Includes orbital period, mass, distance, and discovery year.",
+    "source": "Exoplanet Orbit Database / Exoplanet Data Explorer. Curated by Seaborn.",
+    "source_url": "https://github.com/mwaskom/seaborn-data/blob/master/planets.csv",
+    "file_path": "datasets/planets.csv",
+    "test_types": [
+        "Pearson Correlation", "Spearman Rank Correlation", "Kendall's Tau-b",
+        "Simple Linear Regression",
+        "One-way ANOVA", "Kruskal-Wallis Test",
+    ],
+}
+
+_BUILTIN_DATASETS["Car Crashes — US Accident Data"] = {
+    "description": "Car crash statistics per US state (2010-2012), including accident rate, alcohol-impaired driving, and insurance premiums. Good for correlation and regression.",
+    "source": "National Highway Traffic Safety Administration. Curated by Seaborn.",
+    "source_url": "https://github.com/mwaskom/seaborn-data/blob/master/car_crashes.csv",
+    "file_path": "datasets/car_crashes.csv",
+    "test_types": [
+        "Pearson Correlation", "Spearman Rank Correlation", "Kendall's Tau-b",
+        "Simple Linear Regression",
+        "One-sample t-test", "One-sample Wilcoxon Signed-Rank Test",
+    ],
+}
+
+_BUILTIN_DATASETS["Flights — Airline Passengers"] = {
+    "description": "Monthly totals of international airline passengers (1949-1960). Classic time series dataset useful for trend and seasonal analysis.",
+    "source": "Box, G. E. P., Jenkins, G. M. & Reinsel, G. C. (1994). Time Series Analysis.",
+    "source_url": "https://github.com/mwaskom/seaborn-data/blob/master/flights.csv",
+    "file_path": "datasets/flights.csv",
+    "test_types": [
+        "Pearson Correlation", "Spearman Rank Correlation",
+        "Simple Linear Regression",
+        "Friedman Test", "Repeated Measures ANOVA (One-way)",
+    ],
+}
+
+_BUILTIN_DATASETS["mtcars — Full Motor Trend Data"] = {
+    "description": "Full 1974 Motor Trend US magazine data on 32 car models with 11 variables (mpg, cyl, disp, hp, drat, wt, qsec, vs, am, gear, carb). Multiple regression classic.",
+    "source": "Henderson and Velleman (1981). Building multiple regression models interactively.",
+    "source_url": "https://vincentarelbundock.github.io/Rdatasets/doc/datasets/mtcars.html",
+    "file_path": "datasets/mtcars.csv",
+    "test_types": [
+        "Pearson Correlation", "Spearman Rank Correlation", "Kendall's Tau-b",
+        "Simple Linear Regression",
+        "One-way ANOVA", "Kruskal-Wallis Test",
+        "Student's t-test (Independent)", "Welch's t-test (Independent)", "Mann-Whitney U Test",
+    ],
+}
+
+
 def get_builtin_datasets():
     """Return the dict of built-in datasets."""
     return dict(_BUILTIN_DATASETS)
@@ -1018,11 +1146,19 @@ def get_compatible_datasets(test_name):
     }
 
 
+def _resolve_path(relative_path):
+    """Resolve a path relative to this file's location (features/ → project root)."""
+    base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base, relative_path)
+
+
 def load_builtin_dataset(name):
     """Load a built-in dataset by name. Returns a pandas DataFrame."""
     info = _BUILTIN_DATASETS.get(name)
     if info is None:
         return None
+    if "file_path" in info:
+        return pd.read_csv(_resolve_path(info["file_path"]))
     import io
     return pd.read_csv(io.StringIO(info["csv"]))
 

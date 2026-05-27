@@ -850,21 +850,34 @@ def render_test_widget(test_name, external_data=None):
         st.subheader("Interactive Chi-Square Goodness-of-Fit Test")
 
         # =========================
-        # CONTROLS
+        # DATA SOURCE TOGGLE
         # =========================
 
-        obs1 = st.slider("Observed Category A", 1, 100, 40)
-        obs2 = st.slider("Observed Category B", 1, 100, 30)
-        obs3 = st.slider("Observed Category C", 1, 100, 20)
+        if external_data and external_data.get("using_uploaded"):
+            src = external_data
+        else:
+            src = data_source_toggle("chisq_gof", mode="categorical_one")
 
         # =========================
         # DATA
         # =========================
 
-        observed = np.array([obs1, obs2, obs3])
+        if src["using_uploaded"]:
+            categories = list(src["data"]["categories"])
+            observed = np.array(src["data"]["counts"], dtype=float)
+        else:
+            n_cat = st.slider("Number of Categories", 2, 10, 3, key="chisq_gof_ncat")
+            observed = []
+            cat_labels = []
+            for i in range(n_cat):
+                col_key = f"chisq_gof_cat_{i}"
+                val = st.slider(f"Category {chr(65+i)}", 1, 200, 30 + i * 10, key=col_key)
+                observed.append(val)
+                cat_labels.append(chr(65 + i))
+            observed = np.array(observed, dtype=float)
+            categories = cat_labels
 
         expected = np.mean(observed)
-
         chi2, p = chisquare(observed)
 
         # =========================
@@ -872,7 +885,6 @@ def render_test_widget(test_name, external_data=None):
         # =========================
 
         st.latex(rf"\chi^2 = {chi2:.3f}")
-
         st.latex(rf"\text{{{format_p_value(p)}}}")
 
         # =========================
@@ -880,29 +892,14 @@ def render_test_widget(test_name, external_data=None):
         # =========================
 
         fig = go.Figure()
-
         fig.add_trace(
-            go.Bar(
-                x=["A", "B", "C"],
-                y=observed,
-                name="Observed",
-            )
+            go.Bar(x=categories, y=observed, name="Observed")
         )
-
         fig.add_trace(
-            go.Scatter(
-                x=["A", "B", "C"],
-                y=[expected] * 3,
-                mode="lines",
-                name="Expected",
-            )
+            go.Scatter(x=categories, y=[expected] * len(categories),
+                       mode="lines", name="Expected")
         )
-
-        fig.update_layout(
-            template="plotly_dark",
-            height=550,
-        )
-
+        fig.update_layout(template="plotly_dark", height=550)
         st.plotly_chart(fig, use_container_width=True)
 
         st.divider()
@@ -913,60 +910,25 @@ def render_test_widget(test_name, external_data=None):
         n_gof = np.sum(observed)
         k_gof = len(observed)
         df_gof = k_gof - 1
-        expected_val = expected
         cramer_v_gof = (
             np.sqrt(chi2 / (n_gof * (k_gof - 1))) if n_gof > 0 and k_gof > 1 else 0
         )
 
-        results_data = {
-            "Metric": [
-                "Observed A",
-                "Observed B",
-                "Observed C",
-                "Expected (mean)",
-                "χ²",
-                "df",
-                "p-value",
-                "Cramer's V",
-            ],
-            "Value": [
-                f"{observed[0]}",
-                f"{observed[1]}",
-                f"{observed[2]}",
-                f"{expected_val:.1f}",
-                f"{chi2:.3f}",
-                f"{df_gof}",
-                f"{p:.5f}",
-                f"{cramer_v_gof:.4f}",
-            ],
-        }
-        st.table(pd.DataFrame(results_data))
+        metric_col = ["Category"] + categories + ["Expected (mean)", "χ²", "df", "p-value", "Cramer's V"]
+        val_col = [""] + [f"{int(x)}" for x in observed] + [f"{expected:.1f}", f"{chi2:.3f}", f"{df_gof}", f"{p:.5f}", f"{cramer_v_gof:.4f}"]
+        st.table(pd.DataFrame({"Metric": metric_col, "Value": val_col}))
 
-        categories_gof = ["A", "B", "C"]
         fig2 = go.Figure()
         fig2.add_trace(
-            go.Bar(
-                name="Observed",
-                x=categories_gof,
-                y=observed,
-                marker_color="rgba(54, 162, 235, 0.7)",
-            )
+            go.Bar(name="Observed", x=categories, y=observed,
+                   marker_color="rgba(54, 162, 235, 0.7)")
         )
         fig2.add_trace(
-            go.Bar(
-                name="Expected",
-                x=categories_gof,
-                y=[expected_val] * 3,
-                marker_color="rgba(255, 99, 71, 0.7)",
-            )
+            go.Bar(name="Expected", x=categories, y=[expected] * len(categories),
+                   marker_color="rgba(255, 99, 71, 0.7)")
         )
-        fig2.update_layout(
-            template="plotly_dark",
-            height=400,
-            xaxis_title="Category",
-            yaxis_title="Count",
-            barmode="group",
-        )
+        fig2.update_layout(template="plotly_dark", height=400,
+                           xaxis_title="Category", yaxis_title="Count", barmode="group")
         st.plotly_chart(fig2, use_container_width=True)
 
     # Categorial Tests
@@ -977,24 +939,35 @@ def render_test_widget(test_name, external_data=None):
         st.subheader("Interactive Chi-Square Test of Independence")
 
         # =========================
-        # CONTROLS
+        # DATA SOURCE TOGGLE
         # =========================
 
-        a = st.slider("Cell A", 1, 100, 40, key="chi_square_test_cell_a")
-        b = st.slider("Cell B", 1, 100, 20, key="chi_square_test_cell_b")
-        c = st.slider("Cell C", 1, 100, 10, key="chi_square_test_cell_c")
-        d = st.slider("Cell D", 1, 100, 30, key="chi_square_test_cell_d")
+        if external_data and external_data.get("using_uploaded"):
+            src = external_data
+        else:
+            src = data_source_toggle("chisq_indep", mode="categorical_two")
 
         # =========================
-        # TABLE
+        # DATA
         # =========================
 
-        table = np.array(
-            [
-                [a, b],
-                [c, d],
-            ]
-        )
+        if src["using_uploaded"]:
+            ct = src["data"]["contingency_table"]
+            table = ct.values.astype(float)
+            row_labels = list(ct.index)
+            col_labels = list(ct.columns)
+        else:
+            n_rows = st.slider("Number of Rows", 2, 5, 2, key="chisq_nrows")
+            n_cols = st.slider("Number of Columns", 2, 5, 2, key="chisq_ncols")
+            table = np.zeros((n_rows, n_cols), dtype=float)
+            for r in range(n_rows):
+                for c in range(n_cols):
+                    table[r, c] = st.slider(
+                        f"Row {r+1}, Col {c+1}", 0, 200, 20 + r * 10 + c * 5,
+                        key=f"chisq_cell_{r}_{c}"
+                    )
+            row_labels = [f"R{r+1}" for r in range(n_rows)]
+            col_labels = [f"C{c+1}" for c in range(n_cols)]
 
         chi2, p, dof, expected = chi2_contingency(table)
 
@@ -1003,9 +976,7 @@ def render_test_widget(test_name, external_data=None):
         # =========================
 
         st.latex(rf"\chi^2 = {chi2:.3f}")
-
         st.latex(rf"\text{{Degrees of Freedom}} = {dof}")
-
         st.latex(rf"\text{{{format_p_value(p)}}}")
 
         # =========================
@@ -1013,18 +984,9 @@ def render_test_widget(test_name, external_data=None):
         # =========================
 
         fig = go.Figure(
-            data=go.Heatmap(
-                z=table,
-                text=table,
-                texttemplate="%{text}",
-            )
+            data=go.Heatmap(z=table, text=table.astype(int), texttemplate="%{text}")
         )
-
-        fig.update_layout(
-            template="plotly_dark",
-            height=550,
-        )
-
+        fig.update_layout(template="plotly_dark", height=550)
         st.plotly_chart(fig, use_container_width=True)
 
         st.divider()
@@ -1035,61 +997,25 @@ def render_test_widget(test_name, external_data=None):
         n_cs = np.sum(table)
         cramer_v_cs = (
             np.sqrt(chi2 / (n_cs * min(table.shape[0] - 1, table.shape[1] - 1)))
-            if n_cs > 0
-            else 0
+            if n_cs > 0 else 0
         )
 
-        results_data = {
-            "Metric": [
-                "χ²",
-                "df",
-                "p-value",
-                "Cramer's V",
-                "Cell A (R1,C1)",
-                "Cell B (R1,C2)",
-                "Cell C (R2,C1)",
-                "Cell D (R2,C2)",
-            ],
-            "Value": [
-                f"{chi2:.3f}",
-                f"{dof}",
-                f"{p:.5f}",
-                f"{cramer_v_cs:.4f}",
-                f"{table[0, 0]}",
-                f"{table[0, 1]}",
-                f"{table[1, 0]}",
-                f"{table[1, 1]}",
-            ],
-        }
-        st.table(pd.DataFrame(results_data))
+        st.write(f"**Cramer's V:** {cramer_v_cs:.4f}")
 
-        cells_cs = ["(R1,C1)", "(R1,C2)", "(R2,C1)", "(R2,C2)"]
+        cell_labels = [f"({r},{c})" for r in row_labels for c in col_labels]
         observed_flat = table.flatten()
         expected_flat = expected.flatten()
         fig2 = go.Figure()
         fig2.add_trace(
-            go.Bar(
-                name="Observed",
-                x=cells_cs,
-                y=observed_flat,
-                marker_color="rgba(54, 162, 235, 0.7)",
-            )
+            go.Bar(name="Observed", x=cell_labels, y=observed_flat,
+                   marker_color="rgba(54, 162, 235, 0.7)")
         )
         fig2.add_trace(
-            go.Bar(
-                name="Expected",
-                x=cells_cs,
-                y=expected_flat,
-                marker_color="rgba(255, 99, 71, 0.7)",
-            )
+            go.Bar(name="Expected", x=cell_labels, y=expected_flat,
+                   marker_color="rgba(255, 99, 71, 0.7)")
         )
-        fig2.update_layout(
-            template="plotly_dark",
-            height=400,
-            xaxis_title="Cell",
-            yaxis_title="Count",
-            barmode="group",
-        )
+        fig2.update_layout(template="plotly_dark", height=400,
+                           xaxis_title="Cell", yaxis_title="Count", barmode="group")
         st.plotly_chart(fig2, use_container_width=True)
 
     elif test_name == "McNemar's Test":
@@ -1099,27 +1025,36 @@ def render_test_widget(test_name, external_data=None):
         st.subheader("Interactive McNemar's Test")
 
         # =========================
-        # CONTROLS
+        # DATA SOURCE TOGGLE
         # =========================
 
-        yes_yes = st.slider("Yes → Yes", 0, 100, 40)
-
-        yes_no = st.slider("Yes → No", 0, 100, 10)
-
-        no_yes = st.slider("No → Yes", 0, 100, 30)
-
-        no_no = st.slider("No → No", 0, 100, 20)
+        if external_data and external_data.get("using_uploaded"):
+            src = external_data
+        else:
+            src = data_source_toggle("mcnemar", mode="categorical_two")
 
         # =========================
-        # TABLE
+        # DATA
         # =========================
 
-        table = np.array(
-            [
-                [yes_yes, yes_no],
-                [no_yes, no_no],
-            ]
-        )
+        if src["using_uploaded"]:
+            ct = src["data"]["contingency_table"]
+            if ct.shape != (2, 2):
+                st.error("McNemar's Test requires a 2×2 contingency table. "
+                         "Please select two binary categorical variables.")
+                return
+            table = ct.values.astype(float)
+            row_labels = list(ct.index)
+            col_labels = list(ct.columns)
+        else:
+            st.caption("Enter paired binary outcomes (Before/After or Time 1/Time 2):")
+            yes_yes = st.slider("Yes → Yes", 0, 100, 40, key="mcnemar_yy")
+            yes_no = st.slider("Yes → No", 0, 100, 10, key="mcnemar_yn")
+            no_yes = st.slider("No → Yes", 0, 100, 30, key="mcnemar_ny")
+            no_no = st.slider("No → No", 0, 100, 20, key="mcnemar_nn")
+            table = np.array([[yes_yes, yes_no], [no_yes, no_no]], dtype=float)
+            row_labels = ["Before Yes", "Before No"]
+            col_labels = ["After Yes", "After No"]
 
         result = mcnemar(table)
 
@@ -1128,7 +1063,6 @@ def render_test_widget(test_name, external_data=None):
         # =========================
 
         st.latex(rf"\chi^2 = {result.statistic:.3f}")
-
         st.latex(rf"\text{{{format_p_value(result.pvalue)}}}")
 
         # =========================
@@ -1136,18 +1070,10 @@ def render_test_widget(test_name, external_data=None):
         # =========================
 
         fig = go.Figure(
-            data=go.Heatmap(
-                z=table,
-                text=table,
-                texttemplate="%{text}",
-            )
+            data=go.Heatmap(z=table, text=table.astype(int), texttemplate="%{text}",
+                            x=col_labels, y=row_labels)
         )
-
-        fig.update_layout(
-            template="plotly_dark",
-            height=550,
-        )
-
+        fig.update_layout(template="plotly_dark", height=550)
         st.plotly_chart(fig, use_container_width=True)
 
         st.divider()
@@ -1158,44 +1084,23 @@ def render_test_widget(test_name, external_data=None):
         odds_ratio_mc = b_mc / c_mc if c_mc > 0 else float("inf")
 
         results_data = {
-            "Metric": [
-                "χ²",
-                "p-value",
-                "b (Yes→No)",
-                "c (No→Yes)",
-                "Odds Ratio (b/c)",
-                "",
-                "",
-                "",
-            ],
+            "Metric": ["χ²", "p-value", "b (Yes→No)", "c (No→Yes)", "Odds Ratio (b/c)"],
             "Value": [
-                f"{result.statistic:.3f}",
-                f"{result.pvalue:.5f}",
-                f"{b_mc}",
-                f"{c_mc}",
-                f"{odds_ratio_mc:.3f}" if c_mc > 0 else "∞",
-                "",
-                "",
-                "",
+                f"{result.statistic:.3f}", f"{result.pvalue:.5f}",
+                f"{int(b_mc)}", f"{int(c_mc)}",
+                f"{odds_ratio_mc:.3f}" if c_mc > 0 else "∞"
             ],
         }
         st.table(pd.DataFrame(results_data))
 
         fig2 = go.Figure()
         fig2.add_trace(
-            go.Bar(
-                name="Discordant Pairs",
-                x=["b (Yes→No)", "c (No→Yes)"],
-                y=[b_mc, c_mc],
-                marker_color=["rgba(255, 99, 71, 0.7)", "rgba(54, 162, 235, 0.7)"],
-            )
+            go.Bar(name="Discordant Pairs",
+                   x=["b (Yes→No)", "c (No→Yes)"], y=[b_mc, c_mc],
+                   marker_color=["rgba(255, 99, 71, 0.7)", "rgba(54, 162, 235, 0.7)"])
         )
-        fig2.update_layout(
-            template="plotly_dark",
-            height=400,
-            xaxis_title="Discordant Pair Type",
-            yaxis_title="Count",
-        )
+        fig2.update_layout(template="plotly_dark", height=400,
+                           xaxis_title="Discordant Pair Type", yaxis_title="Count")
         st.plotly_chart(fig2, use_container_width=True)
 
     elif test_name == "Cochran's Q Test":
@@ -5448,20 +5353,41 @@ def render_test_widget(test_name, external_data=None):
         st.subheader("Interactive Agreement Analysis (Cohen's Kappa)")
 
         # =========================
-        # CONTROLS
+        # DATA SOURCE TOGGLE
         # =========================
-        st.write("Enter agreement counts between two raters:")
-        c1, c2 = st.columns(2)
-        with c1:
-            yy = st.number_input("Both say YES", min_value=0, value=40)
-            yn = st.number_input(
-                "Rater 1 says YES, Rater 2 says NO", min_value=0, value=10
-            )
-        with c2:
-            ny = st.number_input(
-                "Rater 1 says NO, Rater 2 says YES", min_value=0, value=5
-            )
-            nn = st.number_input("Both say NO", min_value=0, value=45)
+
+        if external_data and external_data.get("using_uploaded"):
+            src = external_data
+        else:
+            src = data_source_toggle("cohen_kappa", mode="categorical_two")
+
+        # =========================
+        # DATA
+        # =========================
+
+        if src["using_uploaded"]:
+            ct = src["data"]["contingency_table"]
+            if ct.shape != (2, 2):
+                st.error("Cohen's Kappa requires a 2×2 contingency table. "
+                         "Please select two binary categorical variables.")
+                return
+            yy = ct.iloc[0, 0]
+            yn = ct.iloc[0, 1]
+            ny = ct.iloc[1, 0]
+            nn = ct.iloc[1, 1]
+        else:
+            st.write("Enter agreement counts between two raters:")
+            c1, c2 = st.columns(2)
+            with c1:
+                yy = st.number_input("Both say YES", min_value=0, value=40, key="kappa_yy")
+                yn = st.number_input(
+                    "Rater 1 says YES, Rater 2 says NO", min_value=0, value=10, key="kappa_yn"
+                )
+            with c2:
+                ny = st.number_input(
+                    "Rater 1 says NO, Rater 2 says YES", min_value=0, value=5, key="kappa_ny"
+                )
+                nn = st.number_input("Both say NO", min_value=0, value=45, key="kappa_nn")
 
         # =========================
         # CALCULATIONS

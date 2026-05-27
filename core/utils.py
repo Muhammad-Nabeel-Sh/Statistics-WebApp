@@ -1,6 +1,42 @@
 import streamlit as st
 import numpy as np
+import pandas as pd
 from scipy.stats import norm, t, nct
+
+
+def _apa_table(df, title="Table", hide_index=True):
+    """Render a DataFrame as an APA-style formatted table."""
+    st.markdown(f"**{title}**")
+    if isinstance(df, pd.DataFrame):
+        styled = df.style.set_table_attributes(
+            'style="border-collapse: collapse; width: 100%;"'
+        )
+        styled = styled.set_properties(
+            **{
+                "border": "1px solid #555",
+                "padding": "6px",
+                "text-align": "center",
+                "font-size": "14px",
+            }
+        )
+        styled = styled.set_table_styles(
+            [
+                {
+                    "selector": "th",
+                    "props": [
+                        ("background-color", "#1e1e1e"),
+                        ("color", "white"),
+                        ("font-weight", "bold"),
+                        ("border", "1px solid #555"),
+                        ("padding", "8px"),
+                        ("text-align", "center"),
+                    ],
+                }
+            ]
+        )
+        st.dataframe(styled, use_container_width=True, hide_index=hide_index)
+    else:
+        st.table(df)
 
 
 def format_p_value(p, decimals=3):
@@ -276,8 +312,11 @@ def data_source_toggle(key_prefix, mode="one_sample"):
     key_prefix : str
         Unique prefix for widget keys (e.g., "ttest_2samp")
     mode : str
-        "one_sample", "two_sample", "multi_sample", "paired", "repeated", or "correlation"
+        "one_sample", "two_sample", "multi_sample", "paired", "repeated", "correlation",
+        "categorical_one", or "categorical_two"
         - "repeated": for 3+ measurements on same subjects (Friedman test, etc.)
+        - "categorical_one": pick one categorical column -> frequency table (Chi-Square GOF, etc.)
+        - "categorical_two": pick two categorical columns -> contingency table (Chi-Square test, etc.)
 
     Returns
     -------
@@ -446,6 +485,45 @@ def data_source_toggle(key_prefix, mode="one_sample"):
             repeated_df = df[selected_cols].dropna()
             data["measurements"] = [repeated_df[col].values for col in selected_cols]
             data["col_names"] = selected_cols
+
+        elif mode == "categorical_one":
+            cat_options = list(
+                df.select_dtypes(include=["object", "category", "int64"]).columns
+            )
+            col = st.selectbox(
+                "Select Categorical Column",
+                cat_options,
+                key=f"{key_prefix}_cat_col",
+            )
+            counts = df[col].value_counts().sort_index()
+            data["categories"] = list(counts.index)
+            data["counts"] = counts.values
+            data["col"] = col
+
+        elif mode == "categorical_two":
+            cat_options = list(
+                df.select_dtypes(include=["object", "category", "int64"]).columns
+            )
+            layout = st.columns(2)
+            with layout[0]:
+                col_a = st.selectbox(
+                    "Row Variable",
+                    cat_options,
+                    key=f"{key_prefix}_cat_a",
+                )
+            with layout[1]:
+                col_b = st.selectbox(
+                    "Column Variable",
+                    cat_options,
+                    key=f"{key_prefix}_cat_b",
+                )
+            import pandas as pd
+            ct = pd.crosstab(df[col_a], df[col_b])
+            data["contingency_table"] = ct
+            data["col_a"] = col_a
+            data["col_b"] = col_b
+            data["col_a_vals"] = list(ct.index)
+            data["col_b_vals"] = list(ct.columns)
 
         return {"mode": "uploaded", "data": data, "using_uploaded": True}
 

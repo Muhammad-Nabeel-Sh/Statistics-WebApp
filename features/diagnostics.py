@@ -7,6 +7,8 @@ from scipy import stats as sp_stats
 from scipy.special import gammaln, erfinv
 from plotly.subplots import make_subplots
 
+from core.utils import _apa_table
+
 _rng = np.random.default_rng(42)
 
 
@@ -34,9 +36,6 @@ def _section(title):
 def _interpret_card(title, body):
     with st.expander(f"{title}", expanded=False):
         st.markdown(body)
-
-
-def _apa_table(df, title="Table"):
     st.markdown(f"**{title}**")
     if isinstance(df, pd.DataFrame):
         styled = df.style.set_table_attributes(
@@ -3088,10 +3087,290 @@ def _diag_cochran_c():
 
 
 # =========================
+# DATA TRANSFORMATION EXPLORER
+# =========================
+
+
+def _diag_transformation_explorer():
+    _section("Data Transformation Explorer")
+
+    st.markdown("""
+    **Objective:** Explore how common transformations affect the shape and normality of a distribution.
+    Select a source distribution and apply transformations interactively to see how skewness,
+    outliers, and normality test results change.
+    """)
+
+    c1, c2 = st.columns(2)
+    with c1:
+        dist_type = st.selectbox(
+            "Source Distribution",
+            [
+                "Normal",
+                "Right-Skewed (Lognormal)",
+                "Right-Skewed (Gamma)",
+                "Left-Skewed",
+                "Exponential",
+                "Uniform",
+                "Bimodal",
+                "Heavy-tailed (Cauchy)",
+            ],
+            key="tx_dist",
+        )
+    with c2:
+        n = st.slider("Sample Size", 10, 500, 100, key="tx_n")
+        noise_scale = st.slider(
+            "Scale / Spread", 0.2, 3.0, 1.0, 0.1, key="tx_scale"
+        )
+
+    _rng = np.random.default_rng(42)
+    seed_shift = hash(dist_type) % 1000
+    rng = np.random.default_rng(seed_shift)
+
+    if dist_type == "Normal":
+        raw = rng.normal(0, noise_scale, n)
+    elif dist_type == "Right-Skewed (Lognormal)":
+        raw = rng.lognormal(0, noise_scale, n)
+    elif dist_type == "Right-Skewed (Gamma)":
+        raw = rng.gamma(noise_scale * 0.5, 2, n)
+    elif dist_type == "Left-Skewed":
+        raw = -rng.gamma(noise_scale * 1.5, 1.5, n)
+    elif dist_type == "Exponential":
+        raw = rng.exponential(noise_scale, n)
+    elif dist_type == "Uniform":
+        raw = rng.uniform(-noise_scale * 1.732, noise_scale * 1.732, n)
+    elif dist_type == "Bimodal":
+        half = n // 2
+        raw = np.concatenate(
+            [rng.normal(-2, noise_scale * 0.5, half), rng.normal(2, noise_scale * 0.5, n - half)]
+        )
+    else:
+        raw = rng.standard_cauchy(n) * noise_scale * 0.5
+
+    raw = raw[np.isfinite(raw)]
+    if len(raw) < 8:
+        st.warning("Too few valid observations after filtering. Adjust parameters.")
+        return
+
+    st.subheader("Transformation Controls", divider="gray")
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        transform = st.selectbox(
+            "Transformation",
+            [
+                "Box-Cox",
+                "Yeo-Johnson",
+                "Log (natural)",
+                "Log10",
+                "Square Root",
+                "Reciprocal (1/x)",
+                "Square",
+                "Standardize (Z-score)",
+                "Rank (percentile)",
+                "None (original data)",
+            ],
+            key="tx_method",
+        )
+    with c2:
+        shift_val = st.slider(
+            "Shift (add constant before transform)",
+            -5.0,
+            5.0,
+            0.0,
+            0.1,
+            key="tx_shift",
+            help="Adds a constant to all values before applying transformation. Useful when data contains non-positive values for Log/Box-Cox.",
+        )
+    with c3:
+        if transform == "Box-Cox":
+            bc_lambda = st.slider(
+                "Box-Cox λ (manual override)",
+                -3.0,
+                3.0,
+                None,
+                0.1,
+                key="tx_bc_lambda",
+                help="Set to None to let the algorithm find the optimal λ automatically.",
+            )
+            use_auto = st.checkbox("Auto-optimize λ", True, key="tx_bc_auto")
+        else:
+            bc_lambda = None
+            use_auto = False
+
+    raw_shifted = raw + shift_val
+
+    t_name = transform
+    transformed = None
+    transform_note = ""
+    bc_optimal = None
+
+    if transform == "None (original data)":
+        transformed = raw_shifted.copy()
+        t_name = "Original"
+    elif transform == "Log (natural)":
+        if np.any(raw_shifted <= 0):
+            st.error("Log requires positive values. Increase the shift or choose a different transform.")
+            return
+        transformed = np.log(raw_shifted)
+    elif transform == "Log10":
+        if np.any(raw_shifted <= 0):
+            st.error("Log10 requires positive values. Increase the shift or choose a different transform.")
+            return
+        transformed = np.log10(raw_shifted)
+    elif transform == "Square Root":
+        if np.any(raw_shifted < 0):
+            st.error("Square root requires non-negative values. Increase the shift or choose a different transform.")
+            return
+        transformed = np.sqrt(raw_shifted)
+    elif transform == "Reciprocal (1/x)":
+        if np.any(np.abs(raw_shifted) < 1e-10):
+            st.error("Reciprocal requires non-zero values. Increase the shift or choose a different transform.")
+            return
+        transformed = 1.0 / raw_shifted
+    elif transform == "Square":
+        transformed = raw_shifted ** 2
+    elif transform == "Standardize (Z-score)":
+        transformed = (raw_shifted - np.mean(raw_shifted)) / np.std(raw_shifted, ddof=1)
+    elif transform == "Rank (percentile)":
+        transformed = sp_stats.rankdata(raw_shifted) / len(raw_shifted)
+    elif transform == "Box-Cox" or transform == "Yeo-Johnson":
+        if transform == "Box-Cox":
+            if np.any(raw_shifted <= 0):
+                st.error("Box-Cox requires positive values. Increase the shift or choose Yeo-Johnson instead.")
+                return
+            if use_auto:
+                transformed, bc_optimal = sp_stats.boxcox(raw_shifted)
+                bc_optimal = float(bc_optimal)
+                transform_note = f"λ (optimized) = {bc_optimal:.4f}"
+            else:
+                transformed = sp_stats.boxcox(raw_shifted, lmbda=bc_lambda)
+                transform_note = f"λ (manual) = {bc_lambda:.2f}"
+        else:
+            transformed, bc_optimal = sp_stats.yeojohnson(raw_shifted)
+            bc_optimal = float(bc_optimal)
+            transform_note = f"λ (optimized) = {bc_optimal:.4f}"
+
+    if transformed is None:
+        return
+    transformed = transformed[np.isfinite(transformed)]
+    if len(transformed) < 8:
+        st.error("Too few valid values after transformation. Adjust parameters.")
+        return
+
+    # Normality tests on both
+    shapiro_raw = sp_stats.shapiro(raw_shifted)
+    shapiro_trans = sp_stats.shapiro(transformed)
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Sample Size (n)", str(len(transformed)))
+    col2.metric("Shapiro-Wilk p (original)", f"{shapiro_raw.pvalue:.5f}")
+    col3.metric("Shapiro-Wilk p (transformed)", f"{shapiro_trans.pvalue:.5f}")
+
+    if transform_note:
+        st.info(f"**{transform_note}**")
+
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.markdown("**Before Transformation**")
+        fig1 = make_subplots(rows=2, cols=1, subplot_titles=["Histogram", "Q-Q Plot"])
+        fig1.add_trace(
+            go.Histogram(x=raw_shifted, marker_color="#4C78A8", opacity=0.7, histnorm="probability density", name="Original"),
+            row=1, col=1,
+        )
+        mu_r, sig_r = np.mean(raw_shifted), np.std(raw_shifted, ddof=1)
+        xr = np.linspace(mu_r - 4 * sig_r, mu_r + 4 * sig_r, 200)
+        fig1.add_trace(go.Scatter(x=xr, y=sp_stats.norm.pdf(xr, mu_r, sig_r), mode="lines", line=dict(color="#E45756", width=2), name="Normal"), row=1, col=1)
+        sorted_raw = np.sort(raw_shifted)
+        n_raw = len(sorted_raw)
+        theoretical_raw = sp_stats.norm.ppf(np.linspace(0.005, 0.995, n_raw))
+        fig1.add_trace(go.Scatter(x=theoretical_raw, y=sorted_raw, mode="markers", marker=dict(color="#4C78A8", size=4), name="Q-Q"), row=2, col=1)
+        lo, hi = min(theoretical_raw.min(), sorted_raw.min()), max(theoretical_raw.max(), sorted_raw.max())
+        fig1.add_trace(go.Scatter(x=[lo, hi], y=[lo, hi], mode="lines", line=dict(color="#E45756", dash="dash"), showlegend=False), row=2, col=1)
+        fig1.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=30, b=10), showlegend=False)
+        st.plotly_chart(fig1, use_container_width=True)
+
+    with col_b:
+        st.markdown(f"**After Transformation ({t_name})**")
+        fig2 = make_subplots(rows=2, cols=1, subplot_titles=["Histogram", "Q-Q Plot"])
+        fig2.add_trace(
+            go.Histogram(x=transformed, marker_color="#54A24B", opacity=0.7, histnorm="probability density", name="Transformed"),
+            row=1, col=1,
+        )
+        mu_t, sig_t = np.mean(transformed), np.std(transformed, ddof=1)
+        xt = np.linspace(mu_t - 4 * sig_t, mu_t + 4 * sig_t, 200)
+        fig2.add_trace(go.Scatter(x=xt, y=sp_stats.norm.pdf(xt, mu_t, sig_t), mode="lines", line=dict(color="#E45756", width=2), name="Normal"), row=1, col=1)
+        sorted_t = np.sort(transformed)
+        n_t = len(sorted_t)
+        theoretical_t = sp_stats.norm.ppf(np.linspace(0.005, 0.995, n_t))
+        fig2.add_trace(go.Scatter(x=theoretical_t, y=sorted_t, mode="markers", marker=dict(color="#54A24B", size=4), name="Q-Q"), row=2, col=1)
+        lo2, hi2 = min(theoretical_t.min(), sorted_t.min()), max(theoretical_t.max(), sorted_t.max())
+        fig2.add_trace(go.Scatter(x=[lo2, hi2], y=[lo2, hi2], mode="lines", line=dict(color="#E45756", dash="dash"), showlegend=False), row=2, col=1)
+        fig2.update_layout(template="plotly_dark", height=400, margin=dict(l=10, r=10, t=30, b=10), showlegend=False)
+        st.plotly_chart(fig2, use_container_width=True)
+
+    # Summary statistics side-by-side
+    st.subheader("Distribution Comparison", divider="gray")
+    comp_df = pd.DataFrame(
+        {
+            "Metric": ["Mean", "Std Dev", "Skewness", "Kurtosis (excess)", "Shapiro-Wilk p", "Normal?"],
+            "Original": [
+                f"{np.mean(raw_shifted):.4f}",
+                f"{np.std(raw_shifted, ddof=1):.4f}",
+                f"{sp_stats.skew(raw_shifted):.4f}",
+                f"{sp_stats.kurtosis(raw_shifted):.4f}",
+                f"{shapiro_raw.pvalue:.5f}",
+                "Yes" if shapiro_raw.pvalue >= 0.05 else "No",
+            ],
+            f"Transformed ({t_name})": [
+                f"{np.mean(transformed):.4f}",
+                f"{np.std(transformed, ddof=1):.4f}",
+                f"{sp_stats.skew(transformed):.4f}",
+                f"{sp_stats.kurtosis(transformed):.4f}",
+                f"{shapiro_trans.pvalue:.5f}",
+                "Yes" if shapiro_trans.pvalue >= 0.05 else "No",
+            ],
+        }
+    )
+    _apa_table(comp_df, title="Before vs After Transformation")
+
+    with st.expander("When to Use Each Transformation", expanded=False):
+        st.markdown("""
+        | Transformation | Best For | Notes |
+        |---|---|------|
+        | **Log (natural/log10)** | Right-skewed data (ratios, concentrations, counts) | Requires positive values. Compresses high tail. |
+        | **Box-Cox** | General-purpose variance stabilization | Finds optimal λ automatically. Requires positive values. |
+        | **Yeo-Johnson** | Same as Box-Cox, but handles zeros/negatives | Works with any real-valued data. |
+        | **Square Root** | Count data (Poisson-like) | Mild transformation, requires non-negative values. |
+        | **Reciprocal** | Severe right skew (rates, ratios) | Strong transformation. Reverses order for decreasing data. |
+        | **Square** | Left-skewed data | Expands high tail. |
+        | **Z-score** | Standardization for comparability | Does not change distribution shape; only rescales. |
+        | **Rank (percentile)** | Severe outliers, nonparametric | Converts to uniform percentiles, discards magnitude info. |
+        """)
+
+    with st.expander("Practical Guidelines", expanded=False):
+        st.markdown("""
+        - **Start with the distribution:** Examine a histogram and Q-Q plot of your raw data before choosing a transformation.
+        - **Box-Cox is usually the best first try:** It searches over a family of power transformations and selects the one
+        that maximizes normality. The optimal λ is often near 0 (log), 0.5 (sqrt), or 1 (no transform).
+        - **Log transformation is the most common:** It's natural for ratios, fold-changes, and concentration measurements.
+        The results are interpretable on a multiplicative scale.
+        - **Transform then model, but interpret with care:** Regression coefficients on transformed scales need back-transformation
+        for interpretation. Consider GLM with link functions as an alternative.
+        - **Check residuals, not raw data:** In regression, it's the residuals that need to be normal, not the raw variables.
+        Transformation can help achieve normality of residuals even when raw data are skewed.
+        - **Pre-specify your transformation:** Exploratory transformation followed by testing on the same data inflates Type I error.
+        In confirmatory research, pre-register your transformation plan.
+        """)
+
+
+# =========================
 # MAIN RENDER FUNCTION
 # =========================
 
 DIAG_CATEGORIES = {
+    "Data Transformation": [
+        "Data Transformation Explorer",
+    ],
     "Normality Tests": [
         "Shapiro-Wilk Test",
         "Kolmogorov-Smirnov Test",
@@ -3132,6 +3411,7 @@ DIAG_CATEGORIES = {
 _CATEGORY_LIST = list(DIAG_CATEGORIES.keys())
 
 _DIAG_ROUTER = {
+    "Data Transformation Explorer": _diag_transformation_explorer,
     "Shapiro-Wilk Test": _diag_shapiro_wilk,
     "Kolmogorov-Smirnov Test": _diag_kolmogorov_smirnov,
     "Anderson-Darling Test": _diag_anderson_darling,
@@ -3173,6 +3453,10 @@ def render_diagnostics():
         )
 
     cat_descriptions = {
+        "Data Transformation": "Data transformations change the scale of a variable to reduce skewness, "
+            "stabilize variance, make the distribution more normal, or linearize relationships. "
+            "Common transformations include log, square root, reciprocal, and Box-Cox. "
+            "This explorer lets you compare before-and-after effects of each transformation interactively.",
         "Normality Tests": "Normality tests assess whether a sample plausibly came from a normal distribution. "
             "Many parametric procedures (t-tests, ANOVA, linear regression) assume normality of residuals. "
             "These tests vary in sensitivity — the Shapiro-Wilk and Anderson-Darling tests are generally preferred "

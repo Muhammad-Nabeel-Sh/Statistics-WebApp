@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 from scipy import stats
 from scipy.stats import chi2_contingency, fisher_exact
+from core.utils import _apa_table
 import math
 
 _rng = np.random.default_rng(42)
@@ -28,42 +29,6 @@ def _tab_buttons(options, key, default=None):
                 st.session_state[state_key] = opt
                 st.rerun()
     return st.session_state[state_key]
-
-
-def _apa_table(df, title="Table"):
-    """Render a DataFrame as an APA-style formatted table."""
-    st.markdown(f"**{title}**")
-    if isinstance(df, pd.DataFrame):
-        styled = df.style.set_table_attributes(
-            'style="border-collapse: collapse; width: 100%;"'
-        )
-        styled = styled.set_properties(
-            **{
-                "border": "1px solid #555",
-                "padding": "6px",
-                "text-align": "center",
-                "font-size": "14px",
-            }
-        )
-        styled = styled.set_table_styles(
-            [
-                {
-                    "selector": "th",
-                    "props": [
-                        ("background-color", "#1e1e1e"),
-                        ("color", "white"),
-                        ("font-weight", "bold"),
-                        ("border", "1px solid #555"),
-                        ("padding", "8px"),
-                        ("text-align", "center"),
-                    ],
-                }
-            ]
-        )
-    else:
-        styled = df
-    st.dataframe(styled, use_container_width=True)
-    return styled
 
 
 def _heatmap_fig(
