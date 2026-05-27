@@ -35,9 +35,9 @@ Multi-module with `apps/`, `features/`, `core/` split. Each `apps/*.py` is a sta
 ### Features (UI modules)
 | Module | Lines | Export |
 |---|---|---|
-| `features/widgets.py` | ~5490 | `render_test_widget(test_name, external_data=None)` — 40+ test widgets |
+| `features/widgets.py` | ~7015 | `render_test_widget(test_name, external_data=None)` — 55+ test widgets |
 | `features/finder_ui.py` | ~370 | `render_test_finder()` — finder UI + "All Tests" section + Data Import button |
-| `features/data_workspace.py` | ~470 | `render_data_workspace()` — two-column workspace: upload, format selection, test picker, results |
+| `features/data_workspace.py` | ~500 | `render_data_workspace()` — two-column workspace: upload, format selection, test picker, results |
 | `features/builtin_datasets.py` | ~1260 | `get_builtin_datasets()`, `load_builtin_dataset()` — 30 curated datasets (20 embedded, 10 loaded from `datasets/`) |
 | `features/graph_explorer.py` | ~8010 | `render_graph_explorer()` |
 | `features/tabulation.py` | ~3420 | `render_tabulation()` |
