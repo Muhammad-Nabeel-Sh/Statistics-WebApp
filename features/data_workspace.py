@@ -7,6 +7,7 @@ from features.builtin_datasets import (
     get_all_dataset_names,
 )
 from features.widgets import render_test_widget
+from core.models import ExternalData, is_using_external
 from scipy.stats import shapiro, normaltest, kstest
 
 
@@ -41,27 +42,26 @@ def _render_normality_test_results(df, numeric_cols):
 
 
 def _build_external_data(df, organization, col_config):
+    ext = ExternalData.simulated()
     if organization == "Wide format (each group/condition in its own column)":
         cols = col_config["selected_cols"]
         n_cols = len(cols)
 
-        if n_cols == 1:
-            vals = df[cols[0]].dropna().values
-            return {"mode": "uploaded", "data": {"values": vals}, "using_uploaded": True, "_format": "one_sample"}
-
         relation = col_config.get("relation")
         if relation == "Paired (same subjects, different conditions)":
             vals_list = [df[c].dropna().values for c in cols]
-            return {"mode": "uploaded", "data": {"measurements": vals_list, "col_names": list(cols)}, "using_uploaded": True, "_format": "repeated"}
-
-        if relation == "Correlation / Regression (two variables)":
-            return {"mode": "uploaded", "data": {"x": df[cols[0]].dropna().values, "y": df[cols[1]].dropna().values, "col_names": list(cols)}, "using_uploaded": True, "_format": "correlation"}
-
-        vals_list = [df[c].dropna().values for c in cols]
-        if n_cols == 2:
-            return {"mode": "uploaded", "data": {"group1": vals_list[0], "group2": vals_list[1], "group_names": list(cols)}, "using_uploaded": True, "_format": "two_sample"}
+            ext = ExternalData.from_format("repeated", {"measurements": vals_list, "col_names": list(cols)})
+        elif relation == "Correlation / Regression (two variables)":
+            ext = ExternalData.from_format("correlation", {"x": df[cols[0]].dropna().values, "y": df[cols[1]].dropna().values, "col_names": list(cols)})
+        elif n_cols == 1:
+            vals = df[cols[0]].dropna().values
+            ext = ExternalData.from_format("one_sample", {"values": vals})
+        elif n_cols == 2:
+            vals_list = [df[c].dropna().values for c in cols]
+            ext = ExternalData.from_format("two_sample", {"group1": vals_list[0], "group2": vals_list[1], "group_names": list(cols)})
         else:
-            return {"mode": "uploaded", "data": {"groups": vals_list, "group_names": list(cols)}, "using_uploaded": True, "_format": "multi_sample"}
+            vals_list = [df[c].dropna().values for c in cols]
+            ext = ExternalData.from_format("multi_sample", {"groups": vals_list, "group_names": list(cols)})
 
     elif organization == "Long format (one value column + one group column)":
         value_col = col_config["value_col"]
@@ -72,37 +72,27 @@ def _build_external_data(df, organization, col_config):
 
         n_groups = len(vals_list)
         if n_groups == 1:
-            return {"mode": "uploaded", "data": {"values": vals_list[0]}, "using_uploaded": True, "_format": "one_sample"}
+            ext = ExternalData.from_format("one_sample", {"values": vals_list[0]})
         elif n_groups == 2:
-            return {"mode": "uploaded", "data": {"group1": vals_list[0], "group2": vals_list[1], "group_names": [str(g) for g in group_names]}, "using_uploaded": True, "_format": "two_sample"}
+            ext = ExternalData.from_format("two_sample", {"group1": vals_list[0], "group2": vals_list[1], "group_names": [str(g) for g in group_names]})
         else:
-            return {"mode": "uploaded", "data": {"groups": vals_list, "group_names": [str(g) for g in group_names]}, "using_uploaded": True, "_format": "multi_sample"}
+            ext = ExternalData.from_format("multi_sample", {"groups": vals_list, "group_names": [str(g) for g in group_names]})
 
     elif organization == "Correlation / Regression (X and Y variables)":
-        return {"mode": "uploaded", "data": {"x": df[col_config["x_col"]].dropna().values, "y": df[col_config["y_col"]].dropna().values, "col_names": [col_config["x_col"], col_config["y_col"]]}, "using_uploaded": True, "_format": "correlation"}
+        ext = ExternalData.from_format("correlation", {"x": df[col_config["x_col"]].dropna().values, "y": df[col_config["y_col"]].dropna().values, "col_names": [col_config["x_col"], col_config["y_col"]]})
 
     elif organization == "Two categorical variables (contingency table)":
         col_a = col_config["cat_col_a"]
         col_b = col_config["cat_col_b"]
         ct = pd.crosstab(df[col_a], df[col_b])
-        return {
-            "mode": "uploaded", "_format": "categorical_two",
-            "data": {"contingency_table": ct, "col_a": col_a, "col_b": col_b,
-                     "col_a_vals": list(ct.index), "col_b_vals": list(ct.columns)},
-            "using_uploaded": True,
-        }
+        ext = ExternalData.from_format("categorical_two", {"contingency_table": ct, "col_a": col_a, "col_b": col_b, "col_a_vals": list(ct.index), "col_b_vals": list(ct.columns)})
 
     elif organization == "Single categorical variable (frequency table)":
         col = col_config["cat_col"]
         counts = df[col].value_counts().sort_index()
-        return {
-            "mode": "uploaded", "_format": "categorical_one",
-            "data": {"categories": list(counts.index), "counts": counts.values,
-                     "col": col},
-            "using_uploaded": True,
-        }
+        ext = ExternalData.from_format("categorical_one", {"categories": list(counts.index), "counts": counts.values, "col": col})
 
-    return None
+    return ext if ext.using_uploaded else None
 
 
 def _get_compatible_tests(external_data):

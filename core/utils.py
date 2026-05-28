@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm, t, nct
 
+from core.models import ExternalData
+
 
 def _apa_table(df, title="Table", hide_index=True):
     """Render a DataFrame as an APA-style formatted table."""
@@ -339,7 +341,7 @@ def data_source_toggle(key_prefix, mode="one_sample"):
         )
 
     if "Simulated" in source:
-        return {"mode": "simulated", "data": None, "using_uploaded": False}
+        return ExternalData.simulated()
 
     uploaded_file = st.file_uploader(
         "Upload your data (CSV or Excel)",
@@ -351,10 +353,10 @@ def data_source_toggle(key_prefix, mode="one_sample"):
         st.info(
             "Upload a file to use your own data. The test will use simulated data instead."
         )
-        return {"mode": "simulated", "data": None, "using_uploaded": False}
+        return ExternalData.simulated()
+
 
     import pandas as pd
-
     try:
         if uploaded_file.name.endswith(".csv"):
             df = pd.read_csv(uploaded_file)
@@ -400,7 +402,7 @@ def data_source_toggle(key_prefix, mode="one_sample"):
                 st.error(
                     f"Need at least 2 groups in '{group_col}'. Found: {group_names}"
                 )
-                return {"mode": "simulated", "data": None, "using_uploaded": False}
+                return ExternalData.simulated()
 
         elif mode == "multi_sample":
             layout = st.columns(2)
@@ -480,7 +482,7 @@ def data_source_toggle(key_prefix, mode="one_sample"):
                 st.error(
                     f"Friedman Test requires at least 3 repeated measurements. You selected {len(selected_cols)}."
                 )
-                return {"mode": "simulated", "data": None, "using_uploaded": False}
+                return ExternalData.simulated()
 
             repeated_df = df[selected_cols].dropna()
             data["measurements"] = [repeated_df[col].values for col in selected_cols]
@@ -525,11 +527,11 @@ def data_source_toggle(key_prefix, mode="one_sample"):
             data["col_a_vals"] = list(ct.index)
             data["col_b_vals"] = list(ct.columns)
 
-        return {"mode": "uploaded", "data": data, "using_uploaded": True}
+        return ExternalData(mode="uploaded", data=data, using_uploaded=True)
 
     except Exception as e:
         st.error(f"Error loading file: {e}")
-        return {"mode": "simulated", "data": None, "using_uploaded": False}
+        return ExternalData.simulated()
 
 
 def render_footer():
