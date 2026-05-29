@@ -47,12 +47,11 @@ def render_one_sample_wilcoxon_signed_rank_test(external_data=None):
     # CONTROLS
     # =========================
 
-    hypothesized_median = st.slider(
+    hypothesized_median = st.number_input(
         "Hypothesized Median (H₀)",
-        -10.0,
-        10.0,
-        0.0,
-        0.5,
+        value=0.0,
+        step=0.5,
+        format="%.2f",
     )
 
     if src["using_uploaded"]:
@@ -242,7 +241,7 @@ def render_sign_test_one_sample(external_data=None):
     # CONTROLS / DATA
     # =========================
 
-    hypothesized_median = st.slider("Hypothesized Median (H₀)", -10.0, 10.0, 0.0, 0.5)
+    hypothesized_median = st.number_input("Hypothesized Median (H₀)", value=0.0, step=0.5, format="%.2f")
 
     if src["using_uploaded"]:
         values = np.array(src["data"]["values"])

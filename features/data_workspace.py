@@ -272,6 +272,80 @@ def _get_compatible_tests(external_data):
     return compat.get(fmt, [])
 
 
+@st.dialog("Expression Gallery")
+def _expression_gallery_dialog():
+    st.markdown("Browse expressions to use in **Computed Column** or **Transform Column**. Copy one (Ctrl+C) and paste into the expression field.")
+    st.markdown("""
+| Category | Expression | Description |
+|---|---|---|
+| **Arithmetic** | `col * 2` | Double |
+| | `col + 10` | Add constant |
+| | `col / col.max()` | Scale 0–1 |
+| | `col ** 2` | Square |
+| | `col % 2` | Modulo (remainder) |
+| | `1 / col` | Reciprocal |
+| | `col + col.shift(1)` | Add lag-1 value |
+| **Power & Root** | `col ** 3` | Cube |
+| | `np.sqrt(col)` | Square root |
+| | `np.cbrt(col)` | Cube root |
+| | `np.square(col)` | Square (fast) |
+| | `np.power(col, 1.5)` | Power 1.5 |
+| **Log / Exp** | `np.log(col)` | Natural log |
+| | `np.log10(col)` | Log base 10 |
+| | `np.log2(col)` | Log base 2 |
+| | `np.log1p(col)` | Log(1+col), stable for small values |
+| | `np.exp(col)` | Exponential |
+| | `np.exp2(col)` | 2^col |
+| | `np.expm1(col)` | exp(col)-1, stable for small values |
+| | `np.power(10, col)` | 10^col (antilog base 10) |
+| **Trigonometry** | `np.sin(col)` | Sine (radians) |
+| | `np.cos(col)` | Cosine (radians) |
+| | `np.tan(col)` | Tangent (radians) |
+| | `np.deg2rad(col)` | Degrees to radians |
+| | `np.rad2deg(col)` | Radians to degrees |
+| | `np.arcsin(col)` | Arc sine |
+| | `np.arccos(col)` | Arc cosine |
+| | `np.arctan(col)` | Arc tangent |
+| **Rounding** | `np.round(col, 0)` | Round to integer |
+| | `np.floor(col)` | Round down |
+| | `np.ceil(col)` | Round up |
+| | `np.trunc(col)` | Truncate toward zero |
+| | `np.rint(col)` | Round to nearest even |
+| | `col.round(2)` | 2 decimal places |
+| **Cumulative / Lag** | `np.cumsum(col)` | Cumulative sum |
+| | `col.cummax()` | Cumulative max |
+| | `col.cummin()` | Cumulative min |
+| | `col.cumprod()` | Cumulative product |
+| | `col.pct_change()` | % change from previous row |
+| | `col.diff()` | First difference (lag 1) |
+| | `col.shift(1)` | Lag by 1 row |
+| **Statistics** | `(col-col.mean())/col.std()` | Z-score (standardize) |
+| | `col.rank()` | Rank (1=smallest) |
+| | `col / col.sum()` | Proportion of total |
+| | `col - col.mean()` | Deviation from mean |
+| | `col.rolling(3).mean()` | Rolling mean (window 3) |
+| | `col.expanding().mean()` | Expanding mean |
+| | `col.corr(df['b'])` | Correlation with another column |
+| **Conditional** | `np.where(col>0, col, 0)` | Keep positives |
+| | `np.where(col>0, 1, -1)` | Sign indicator (1/-1) |
+| | `np.clip(col, 0, 100)` | Clip to range |
+| | `np.sign(col)` | Sign (-1 / 0 / 1) |
+| | `pd.cut(col, 5, labels=False)` | Bin into 5 equal-width groups |
+| | `pd.qcut(col, 4, labels=False)` | Quartile binning |
+| **Multi-column** | `df['a'] + df['b']` | Sum two columns |
+| | `df['a'] * df['b']` | Multiply two columns |
+| | `df['a'] / df['b']` | Ratio |
+| | `df['a'] - df['b']` | Difference |
+| | `df[['a','b']].mean(axis=1)` | Row-wise mean |
+| | `df[['a','b']].sum(axis=1)` | Row-wise sum |
+| **Special** | `np.abs(col)` | Absolute value |
+| | `np.radians(col)` | Degrees to radians (alt) |
+| | `np.degrees(col)` | Radians to degrees (alt) |
+""")
+    if st.button("Close Gallery"):
+        st.rerun()
+
+
 def render_data_workspace():
     """Main render function for the unified data workspace — two-column layout with AG Grid."""
 
@@ -359,7 +433,196 @@ def render_data_workspace():
         cat_cols = list(df.select_dtypes(include=["object", "category", "bool"]).columns)
 
     # ==========================================
-    # RIGHT COLUMN — Phase 2: Data editor + Cleaning
+    # SIDEBAR — Data Cleaning & Transformation
+    # ==========================================
+    with st.sidebar:
+        st.subheader("Data Cleaning")
+        st.caption(f"Current: **{len(df)}** rows × **{len(df.columns)}** cols")
+
+        undo_col, csv_col, remaining_cols = st.columns(3)
+        with undo_col:
+            if "ws_df_backup" in st.session_state and st.session_state.ws_df_backup is not None:
+                if st.button("Undo", key="ws_undo", type="secondary"):
+                    st.session_state.ws_df = st.session_state.ws_df_backup.copy()
+                    st.rerun()
+        with csv_col:
+            csv_data = df.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                "⤓ CSV", csv_data, f"{dataset_name or 'data'}.csv", "text/csv", key="ws_export_csv",
+            )
+
+        st.markdown(":orange[**Filter Rows**]")
+        if numeric_cols:
+            filt_col = st.selectbox("Numeric column", numeric_cols, key="ws_filt_col")
+            col_vals = df[filt_col].dropna()
+            min_v = float(col_vals.min())
+            max_v = float(col_vals.max())
+            if min_v >= max_v:
+                st.caption(f"Constant value `{min_v}` \u2014 no filter needed.")
+            else:
+                filt_range = st.slider("Range", min_v, max_v, (min_v, max_v), key="ws_filt_range")
+                if st.button("Apply Filter", key="ws_filt_apply", type="secondary"):
+                    st.session_state.ws_df_backup = st.session_state.ws_df.copy()
+                    df = df[(df[filt_col] >= filt_range[0]) & (df[filt_col] <= filt_range[1])].reset_index(drop=True)
+                    st.session_state.ws_df = df
+                    st.rerun()
+        if cat_cols:
+            filt_cat_col = st.selectbox("Categorical column", cat_cols, key="ws_filt_cat_col")
+            all_vals = df[filt_cat_col].dropna().unique().tolist()
+            if all_vals:
+                selected_vals = st.multiselect("Keep values", all_vals, default=all_vals, key="ws_filt_cat_vals")
+                if len(selected_vals) < len(all_vals):
+                    if st.button("Apply", key="ws_filt_cat_apply", type="primary"):
+                        st.session_state.ws_df_backup = st.session_state.ws_df.copy()
+                        df = df[df[filt_cat_col].isin(selected_vals)].reset_index(drop=True)
+                        st.session_state.ws_df = df
+                        st.rerun()
+
+        st.divider()
+        st.markdown(":orange[**Drop Columns**]")
+        drop_cols = st.multiselect("Select columns to remove", df.columns.tolist(), key="ws_drop_cols")
+        if drop_cols:
+            if st.button("Drop", key="ws_drop_apply"):
+                st.session_state.ws_df_backup = st.session_state.ws_df.copy()
+                df = df.drop(columns=drop_cols)
+                st.session_state.ws_df = df
+                st.rerun()
+
+        st.markdown(":orange[**Rename Column**]")
+        rename_col = st.selectbox("Column to rename", [""] + df.columns.tolist(), key="ws_rename_col")
+        if rename_col:
+            new_name = st.text_input("New name", value=rename_col, key="ws_rename_new")
+            if new_name and new_name != rename_col:
+                if st.button("Rename", key="ws_rename_apply", type="primary"):
+                    st.session_state.ws_df_backup = st.session_state.ws_df.copy()
+                    df = df.rename(columns={rename_col: new_name})
+                    st.session_state.ws_df = df
+                    st.rerun()
+
+        st.divider()
+        st.markdown(":orange[**Type Conversion**]")
+        type_col = st.selectbox("Column to convert", [""] + df.columns.tolist(), key="ws_type_col")
+        if type_col:
+            st.caption(f"Current type: `{str(df[type_col].dtype)}`")
+            target_type = st.selectbox(
+                "Convert to", ["", "float", "int", "string", "bool", "datetime", "category"], key="ws_type_target",
+            )
+            if target_type and st.button("Convert", key="ws_type_apply", type="primary"):
+                st.session_state.ws_df_backup = st.session_state.ws_df.copy()
+                try:
+                    if target_type == "float":
+                        df[type_col] = pd.to_numeric(df[type_col], errors="coerce")
+                    elif target_type == "int":
+                        df[type_col] = pd.to_numeric(df[type_col], errors="coerce").astype("Int64")
+                    elif target_type == "string":
+                        df[type_col] = df[type_col].astype(str)
+                    elif target_type == "bool":
+                        df[type_col] = df[type_col].astype(bool)
+                    elif target_type == "datetime":
+                        df[type_col] = pd.to_datetime(df[type_col], errors="coerce")
+                    elif target_type == "category":
+                        df[type_col] = df[type_col].astype("category")
+                    st.session_state.ws_df = df
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Conversion failed: {e}")
+
+        st.divider()
+        st.markdown(":orange[**Duplicate Rows**]")
+        dup_cols = st.multiselect(
+            "Columns to check (empty = all)", df.columns.tolist(), key="ws_dup_cols",
+        )
+        n_dups = df.duplicated(subset=dup_cols or None).sum()
+        st.caption(f"**{n_dups}** duplicate(s)")
+        if n_dups > 0:
+            if st.button("Drop Dups", key="ws_dup_drop", type="primary"):
+                st.session_state.ws_df_backup = st.session_state.ws_df.copy()
+                df = df.drop_duplicates(subset=dup_cols or None).reset_index(drop=True)
+                st.session_state.ws_df = df
+                st.success(f"Removed {n_dups} duplicate(s).")
+                st.rerun()
+
+        st.divider()
+        st.markdown(":orange[**Missing Values**]")
+        missing_method = st.selectbox(
+            "Method",
+            ["Drop NA rows", "Drop all-NA rows", "Fill with column mean", "Fill with 0"], key="ws_na_method",
+        )
+        if st.button("Apply", key="ws_na_apply"):
+            st.session_state.ws_df_backup = st.session_state.ws_df.copy()
+            if "all-NA" in missing_method:
+                prev = len(df)
+                df = df.dropna(how="all").reset_index(drop=True)
+                st.session_state.ws_df = df
+                st.success(f"Dropped {prev - len(df)} rows.")
+                st.rerun()
+            elif "NA" in missing_method:
+                prev = len(df)
+                df = df.dropna().reset_index(drop=True)
+                st.session_state.ws_df = df
+                st.success(f"Dropped {prev - len(df)} rows.")
+                st.rerun()
+            elif "mean" in missing_method:
+                num_df = df.select_dtypes(include=["float64", "int64"])
+                df[num_df.columns] = df[num_df.columns].fillna(num_df.mean())
+                st.session_state.ws_df = df
+                st.success("Filled with means.")
+                st.rerun()
+            else:
+                df = df.fillna(0)
+                st.session_state.ws_df = df
+                st.success("Filled with 0.")
+                st.rerun()
+
+        st.divider()
+        st.markdown(":orange[**Transform Column**]")
+        transform_col = st.selectbox("Column to transform", [""] + numeric_cols, key="ws_transform_col")
+        if transform_col:
+            transform_expr = st.text_input(
+                "Expression (use `col`)", placeholder="np.log(col)", key="ws_transform_expr",
+            )
+            if transform_expr:
+                if st.button("Transform", key="ws_transform_apply", type="primary"):
+                    st.session_state.ws_df_backup = st.session_state.ws_df.copy()
+                    try:
+                        col_vals = df[transform_col].values
+                        result = eval(transform_expr, {"np": np, "pd": pd, "col": col_vals})
+                        df[transform_col] = result
+                        st.session_state.ws_df = df
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Expression error: {e}")
+
+        st.divider()
+        st.markdown(":orange[**Computed Column**]")
+        col_name = st.text_input("New column name", placeholder="log_x", key="ws_comp_name")
+        expression = st.text_input(
+            "Expression (use `col`)", placeholder="np.log(col)", key="ws_comp_expr",
+        )
+        comp_col = st.selectbox("Source column", [""] + numeric_cols, key="ws_comp_source")
+        if st.button("Open Expression Gallery", key="ws_gallery_btn", use_container_width=True):
+            _expression_gallery_dialog()
+        if col_name and expression and comp_col:
+            if st.button("Create", key="ws_comp_apply", type="primary"):
+                st.session_state.ws_df_backup = st.session_state.ws_df.copy()
+                try:
+                    col = df[comp_col].values
+                    result = eval(expression, {"np": np, "pd": pd, "col": col, "df": df})
+                    df[col_name] = result
+                    st.session_state.ws_df = df
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Expression error: {e}")
+
+        st.divider()
+        mapped = _render_categorical_mapping(df)
+        if mapped is not None and isinstance(mapped, pd.DataFrame) and len(mapped.columns) > len(df.columns):
+            st.session_state.ws_df_backup = st.session_state.ws_df.copy()
+            st.session_state.ws_df = mapped
+            st.rerun()
+
+    # ==========================================
+    # RIGHT COLUMN — Phase 2: Data preview, stats, aggregation
     # ==========================================
     with right:
         st.subheader("Data Preview")
@@ -373,254 +636,10 @@ def render_data_workspace():
             except Exception:
                 pass
 
-        with st.expander("Data Cleaning & Transformation", expanded=True):
-            # Row 1: Undo + Export
-            uc, ec = st.columns(2)
-            with uc:
-                if "ws_df_backup" in st.session_state and st.session_state.ws_df_backup is not None:
-                    if st.button("Undo Last Change", key="ws_undo", type="secondary"):
-                        st.session_state.ws_df = st.session_state.ws_df_backup.copy()
-                        st.rerun()
-            with ec:
-                csv_data = df.to_csv(index=False).encode("utf-8")
-                st.download_button(
-                    "Download as CSV", csv_data,
-                    f"{dataset_name or 'data'}.csv", "text/csv",
-                    key="ws_export_csv",
-                )
-
-            st.divider()
-            tc1, tc2 = st.columns(2)
-
-            with tc1:
-                st.markdown("**Filter Rows — Numeric**")
-                if numeric_cols:
-                    filt_col = st.selectbox("Column", numeric_cols, key="ws_filt_col")
-                    col_vals = df[filt_col].dropna()
-                    min_v = float(col_vals.min())
-                    max_v = float(col_vals.max())
-                    if min_v >= max_v:
-                        st.caption(f"Column has constant value `{min_v}` — no filter needed.")
-                    else:
-                        filt_range = st.slider("Range", min_v, max_v, (min_v, max_v), key="ws_filt_range")
-                        if st.button("Apply Filter", key="ws_filt_apply", type="primary"):
-                            st.session_state.ws_df_backup = st.session_state.ws_df.copy()
-                            df = df[(df[filt_col] >= filt_range[0]) & (df[filt_col] <= filt_range[1])].reset_index(drop=True)
-                            st.session_state.ws_df = df
-                            st.rerun()
-
-                st.markdown("**Filter Rows — Categorical**")
-                if cat_cols:
-                    filt_cat_col = st.selectbox("Column", cat_cols, key="ws_filt_cat_col")
-                    all_vals = df[filt_cat_col].dropna().unique().tolist()
-                    if all_vals:
-                        selected_vals = st.multiselect("Keep values", all_vals, default=all_vals, key="ws_filt_cat_vals")
-                        if len(selected_vals) < len(all_vals):
-                            if st.button("Apply", key="ws_filt_cat_apply", type="primary"):
-                                st.session_state.ws_df_backup = st.session_state.ws_df.copy()
-                                df = df[df[filt_cat_col].isin(selected_vals)].reset_index(drop=True)
-                                st.session_state.ws_df = df
-                                st.rerun()
-
-            with tc2:
-                st.markdown("**Drop Columns**")
-                drop_cols = st.multiselect("Select columns to remove", df.columns.tolist(), key="ws_drop_cols")
-                if drop_cols:
-                    if st.button("Apply Drop", key="ws_drop_apply"):
-                        st.session_state.ws_df_backup = st.session_state.ws_df.copy()
-                        df = df.drop(columns=drop_cols)
-                        st.session_state.ws_df = df
-                        st.rerun()
-
-                st.markdown("**Column Rename**")
-                rename_col = st.selectbox("Column", [""] + df.columns.tolist(), key="ws_rename_col")
-                if rename_col:
-                    new_name = st.text_input("New name", value=rename_col, key="ws_rename_new")
-                    if new_name and new_name != rename_col:
-                        if st.button("Rename", key="ws_rename_apply", type="primary"):
-                            st.session_state.ws_df_backup = st.session_state.ws_df.copy()
-                            df = df.rename(columns={rename_col: new_name})
-                            st.session_state.ws_df = df
-                            st.rerun()
-
-            st.divider()
-            st.markdown("**Data Type Conversion**")
-            type_col = st.selectbox("Column to convert", [""] + df.columns.tolist(), key="ws_type_col")
-            if type_col:
-                current_dtype = str(df[type_col].dtype)
-                st.caption(f"Current type: `{current_dtype}`")
-                target_type = st.selectbox(
-                    "Target type",
-                    ["", "numeric (float)", "numeric (int)", "string", "boolean", "datetime", "categorical"],
-                    key="ws_type_target",
-                )
-                if target_type and st.button("Convert", key="ws_type_apply", type="primary"):
-                    st.session_state.ws_df_backup = st.session_state.ws_df.copy()
-                    try:
-                        if target_type == "numeric (float)":
-                            df[type_col] = pd.to_numeric(df[type_col], errors="coerce")
-                        elif target_type == "numeric (int)":
-                            df[type_col] = pd.to_numeric(df[type_col], errors="coerce").astype("Int64")
-                        elif target_type == "string":
-                            df[type_col] = df[type_col].astype(str)
-                        elif target_type == "boolean":
-                            df[type_col] = df[type_col].astype(bool)
-                        elif target_type == "datetime":
-                            df[type_col] = pd.to_datetime(df[type_col], errors="coerce")
-                        elif target_type == "categorical":
-                            df[type_col] = df[type_col].astype("category")
-                        st.session_state.ws_df = df
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Conversion failed: {e}")
-
-            st.divider()
-            st.markdown("**Duplicate Rows**")
-            dup_cols = st.multiselect(
-                "Check columns (empty = all columns)",
-                df.columns.tolist(),
-                key="ws_dup_cols",
-            )
-            dup_subset = dup_cols or None
-            n_dups = df.duplicated(subset=dup_subset).sum()
-            st.caption(f"**{n_dups}** duplicate row(s) found")
-            if n_dups > 0:
-                if st.button("Drop Duplicates", key="ws_dup_drop", type="primary"):
-                    st.session_state.ws_df_backup = st.session_state.ws_df.copy()
-                    df = df.drop_duplicates(subset=dup_subset).reset_index(drop=True)
-                    st.session_state.ws_df = df
-                    st.success(f"Removed {n_dups} duplicate row(s).")
-                    st.rerun()
-
-            st.divider()
-            st.markdown("**Handle Missing Values**")
-            missing_method = st.selectbox("Method", ["Drop rows with any NA", "Drop rows with all NA",
-                                                      "Fill with column mean (numeric)", "Fill with 0"], key="ws_na_method")
-            if st.button("Apply", key="ws_na_apply"):
-                st.session_state.ws_df_backup = st.session_state.ws_df.copy()
-                if missing_method == "Drop rows with any NA":
-                    prev = len(df)
-                    df = df.dropna().reset_index(drop=True)
-                    st.session_state.ws_df = df
-                    st.success(f"Dropped {prev - len(df)} rows with missing values.")
-                    st.rerun()
-                elif missing_method == "Drop rows with all NA":
-                    prev = len(df)
-                    df = df.dropna(how="all").reset_index(drop=True)
-                    st.session_state.ws_df = df
-                    st.success(f"Dropped {prev - len(df)} fully-empty rows.")
-                    st.rerun()
-                elif "mean" in missing_method:
-                    num_df = df.select_dtypes(include=["float64", "int64"])
-                    df[num_df.columns] = df[num_df.columns].fillna(num_df.mean())
-                    st.session_state.ws_df = df
-                    st.success("Filled numeric NAs with column means.")
-                    st.rerun()
-                else:
-                    df = df.fillna(0)
-                    st.session_state.ws_df = df
-                    st.success("Filled all NAs with 0.")
-                    st.rerun()
-
-            st.divider()
-            st.markdown("**Transform Column (in-place)**")
-            transform_col = st.selectbox("Column", [""] + numeric_cols, key="ws_transform_col")
-            if transform_col:
-                transform_expr = st.text_input(
-                    "Expression (use `col`)",
-                    placeholder="e.g. np.log(col), col ** 2, (col - col.mean()) / col.std()",
-                    key="ws_transform_expr",
-                )
-                if transform_expr:
-                    if st.button("Transform", key="ws_transform_apply", type="primary"):
-                        st.session_state.ws_df_backup = st.session_state.ws_df.copy()
-                        try:
-                            col_vals = df[transform_col].values
-                            result = eval(transform_expr, {"np": np, "pd": pd, "col": col_vals})
-                            df[transform_col] = result
-                            st.session_state.ws_df = df
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Expression error: {e}")
-
-            st.divider()
-            st.markdown("**Computed Column**")
-            col_name = st.text_input("New column name", placeholder="e.g. log_x", key="ws_comp_name")
-            expression = st.text_input(
-                "Expression (use `col` for column values)",
-                placeholder="e.g. col * 2 + 1  or  np.log(col)",
-                key="ws_comp_expr",
-            )
-            comp_col = st.selectbox("Source column", [""] + numeric_cols, key="ws_comp_source")
-            with st.expander("Expression Gallery", expanded=False):
-                st.markdown("""
-| Category | Expression | Result |
-|---|---|---|
-| **Arithmetic** | `col * 2` | Double the value |
-| | `col + 10` | Add a constant |
-| | `col / col.max()` | Scale to 0–1 |
-| | `col ** 2` | Square |
-| | `np.power(col, 3)` | Cube |
-| | `col % 2` | Modulo (remainder) |
-| **Log / Exp** | `np.log(col)` | Natural log |
-| | `np.log10(col)` | Log base 10 |
-| | `np.log2(col)` | Log base 2 |
-| | `np.log1p(col)` | Log(1 + col), stable for small values |
-| | `np.exp(col)` | Exponential |
-| | `np.expm1(col)` | exp(col) - 1, stable for small values |
-| **Trigonometry** | `np.sin(col)` | Sine (radians) |
-| | `np.cos(col)` | Cosine (radians) |
-| | `np.tan(col)` | Tangent (radians) |
-| | `np.deg2rad(col)` | Degrees to radians |
-| | `np.rad2deg(col)` | Radians to degrees |
-| **Rounding** | `np.round(col, 0)` | Round to integer |
-| | `np.floor(col)` | Round down |
-| | `np.ceil(col)` | Round up |
-| | `np.trunc(col)` | Truncate toward zero |
-| **Statistics** | `col - col.mean()` | Deviation from mean |
-| | `(col - col.mean()) / col.std()` | Z-score |
-| | `col.rank()` | Rank order (1=smallest) |
-| | `col / col.sum()` | Proportion of total |
-| | `np.cumsum(col)` | Cumulative sum |
-| | `np.diff(col, prepend=0)` | Forward difference (prepend 0) |
-| | `np.percentile(col, 50)` | Median (50th percentile) |
-| **Transform** | `np.abs(col)` | Absolute value |
-| | `np.sqrt(col)` | Square root |
-| | `np.cbrt(col)` | Cube root |
-| | `np.square(col)` | Square (fast) |
-| | `np.sign(col)` | Sign (-1 / 0 / 1) |
-| | `np.clip(col, 0, 100)` | Clip to range |
-| | `np.where(col > 0, col, 0)` | Conditional: keep positives |
-| | `col.astype(int)` | Convert to integer |
-| **Multi-column** | `df['a'] + df['b']` | Sum two columns |
-| | `df['a'] * df['b']` | Multiply two columns |
-| | `df['a'] / df['b']` | Divide two columns |
-| | `df['a'] - df['b']` | Subtract two columns |
-""")
-            if col_name and expression and comp_col:
-                if st.button("Create Column", key="ws_comp_apply", type="primary"):
-                    st.session_state.ws_df_backup = st.session_state.ws_df.copy()
-                    try:
-                        col = df[comp_col].values
-                        result = eval(expression, {"np": np, "pd": pd, "col": col, "df": df})
-                        df[col_name] = result
-                        st.session_state.ws_df = df
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Expression error: {e}")
-
-            st.divider()
-            mapped = _render_categorical_mapping(df)
-            if mapped is not None and isinstance(mapped, pd.DataFrame) and len(mapped.columns) > len(df.columns):
-                st.session_state.ws_df_backup = st.session_state.ws_df.copy()
-                st.session_state.ws_df = mapped
-                st.rerun()
-
         # Normality + Descriptives
         if numeric_cols:
             with st.expander("Normality Test (Shapiro-Wilk)", expanded=False):
                 _render_normality_test_results(df, numeric_cols)
-
             with st.expander("Descriptive Statistics", expanded=False):
                 st.dataframe(df[numeric_cols].describe(), use_container_width=True)
 
@@ -648,7 +667,6 @@ def render_data_workspace():
                     }
                     agg_dict = {c: [func_map[f] for f in agg_funcs] for c in val_cols}
                     agg_result = df.groupby(grp_col).agg(agg_dict)
-                    # Flatten MultiIndex columns
                     agg_result.columns = [f"{col}_{fn}" for col, fn in agg_result.columns]
                     agg_result = agg_result.reset_index()
                     st.dataframe(agg_result, use_container_width=True)
@@ -661,8 +679,8 @@ def render_data_workspace():
         with st.expander("Pivot / Reshape", expanded=False):
             pivot_mode = st.radio("Direction", ["Long → Wide (pivot)", "Wide → Long (melt)"], horizontal=True, key="ws_pivot_mode")
             if pivot_mode == "Long → Wide (pivot)":
-                pi_idx = st.selectbox("Index (row identifier)", df.columns.tolist(), key="ws_pi_idx")
-                pi_col = st.selectbox("Column to pivot (values become headers)", df.columns.tolist(), key="ws_pi_col")
+                pi_idx = st.selectbox("Index", df.columns.tolist(), key="ws_pi_idx")
+                pi_col = st.selectbox("Pivot column", df.columns.tolist(), key="ws_pi_col")
                 pi_val = st.selectbox("Values column", [c for c in df.columns if c not in (pi_idx, pi_col, "")] if pi_idx and pi_col else df.columns.tolist(), key="ws_pi_val")
                 if pi_idx and pi_col and pi_val and st.button("Pivot", key="ws_pivot_apply", type="primary"):
                     st.session_state.ws_df_backup = st.session_state.ws_df.copy()
@@ -674,10 +692,10 @@ def render_data_workspace():
                     except Exception as e:
                         st.error(f"Pivot failed: {e}")
             else:
-                mi_id = st.multiselect("ID columns (stay as-is)", df.columns.tolist(), default=[], key="ws_mi_id")
-                mi_val = st.multiselect("Value columns (to unpivot)", [c for c in df.columns if c not in mi_id], default=[c for c in df.columns[:2] if c not in mi_id], key="ws_mi_val")
-                mi_var = st.text_input("Variable column name", value="variable", key="ws_mi_var")
-                mi_val_name = st.text_input("Value column name", value="value", key="ws_mi_val_name")
+                mi_id = st.multiselect("ID columns", df.columns.tolist(), default=[], key="ws_mi_id")
+                mi_val = st.multiselect("Value columns", [c for c in df.columns if c not in mi_id], default=[c for c in df.columns[:2] if c not in mi_id], key="ws_mi_val")
+                mi_var = st.text_input("Variable name", value="variable", key="ws_mi_var")
+                mi_val_name = st.text_input("Value name", value="value", key="ws_mi_val_name")
                 if mi_val and st.button("Melt", key="ws_melt_apply", type="primary"):
                     st.session_state.ws_df_backup = st.session_state.ws_df.copy()
                     try:

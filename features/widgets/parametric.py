@@ -38,12 +38,11 @@ def render_one_sample_t_test(external_data=None):
     # CONTROLS
     # =========================
 
-    population_mean = st.slider(
+    population_mean = st.number_input(
         "Reference Mean (H₀: μ = μ₀)",
-        -10.0,
-        10.0,
-        0.0,
-        0.1,
+        value=0.0,
+        step=0.1,
+        format="%.2f",
     )
 
     if src["using_uploaded"]:
@@ -247,12 +246,11 @@ def render_one_sample_z_test(external_data=None):
     # CONTROLS
     # =========================
 
-    population_mean = st.slider(
+    population_mean = st.number_input(
         "Population Mean (μ₀)",
-        -10.0,
-        10.0,
-        0.0,
-        0.1,
+        value=0.0,
+        step=0.1,
+        format="%.2f",
     )
 
     known_sigma = st.slider(

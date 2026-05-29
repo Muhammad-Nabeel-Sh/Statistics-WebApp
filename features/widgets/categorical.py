@@ -44,10 +44,10 @@ def render_one_sample_proportion_test_binomial_test(external_data=None):
         successes = int(counts[0])
         n = int(np.sum(counts))
         observed_p = successes / n
-        expected_p = st.slider("Expected Proportion (H₀)", 0.0, 1.0, 0.5, 0.01, key="prop_1samp_expected")
+        expected_p = st.number_input("Expected Proportion (H₀)", min_value=0.0, max_value=1.0, value=0.5, step=0.01, format="%.2f", key="prop_1samp_expected")
         st.info(f"Using first category **'{categories[0]}'** as success ({successes}/{n} = {observed_p:.1%})")
     else:
-        expected_p = st.slider("Expected Proportion", 0.0, 1.0, 0.5, 0.01)
+        expected_p = st.number_input("Expected Proportion", min_value=0.0, max_value=1.0, value=0.5, step=0.01, format="%.2f")
         observed_p = st.slider("Observed Proportion", 0.0, 1.0, 0.7, 0.01)
         n = st.slider("Sample Size", 10, 500, 100)
         successes = int(observed_p * n)
@@ -226,7 +226,7 @@ def render_binomial_test(external_data=None):
             successes_bt = int(counts[0])
             n_bt = int(counts[0]) * 2
     else:
-        expected_p_bt = st.slider("Hypothesized Probability (p₀)", 0.0, 1.0, 0.5, 0.01, key="binom_exact_expected_p")
+        expected_p_bt = st.number_input("Hypothesized Probability (p₀)", min_value=0.0, max_value=1.0, value=0.5, step=0.01, format="%.2f", key="binom_exact_expected_p")
         successes_bt = st.slider("Number of Successes", 0, 100, 15, key="binom_exact_successes")
         n_bt = st.slider("Number of Trials (n)", 1, 200, 30, key="binom_exact_n")
 
@@ -235,7 +235,7 @@ def render_binomial_test(external_data=None):
     # =========================
 
     if src["using_uploaded"]:
-        expected_p_bt = st.slider("Hypothesized Probability (p₀)", 0.0, 1.0, 0.5, 0.01, key="binom_exact_expected_p_uploaded")
+        expected_p_bt = st.number_input("Hypothesized Probability (p₀)", min_value=0.0, max_value=1.0, value=0.5, step=0.01, format="%.2f", key="binom_exact_expected_p_uploaded")
 
     result_bt = binomtest(successes_bt, n_bt, expected_p_bt)
     p_hat_bt = successes_bt / n_bt
