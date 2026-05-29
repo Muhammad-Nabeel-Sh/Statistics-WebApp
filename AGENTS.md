@@ -2,10 +2,11 @@
 
 ## Run
 ```sh
-# Main app (Test Finder + Data Workspace + Factor Analysis + Control Charts)
+# Main app (Test Finder + Factor Analysis + Control Charts)
 streamlit run apps/app_finder.py
 
 # Other standalone apps:
+streamlit run apps/app_data_workspace.py
 streamlit run apps/app_tabulation.py
 streamlit run apps/app_explorer.py
 streamlit run apps/app_distributions.py
@@ -24,7 +25,8 @@ Multi-module with `apps/`, `features/`, `core/` split. Each `apps/*.py` is a sta
 ### Apps (entry points)
 | Module | Lines | Export |
 |---|---|---|
-| `apps/app_finder.py` | ~45 | `main()` — sidebar nav: Test Finder, Data Workspace, Factor Analysis, Control Charts |
+| `apps/app_finder.py` | ~20 | `main()` — sidebar nav: Test Finder, Factor Analysis, Control Charts |
+| `apps/app_data_workspace.py` | ~25 | `main()` — standalone Data Workspace with AG Grid |
 | `apps/app_tabulation.py` | ~30 | `main()` — tabulation standalone |
 | `apps/app_explorer.py` | ~30 | `main()` — graph explorer standalone |
 | `apps/app_distributions.py` | ~30 | `main()` — distributions standalone |
@@ -37,7 +39,7 @@ Multi-module with `apps/`, `features/`, `core/` split. Each `apps/*.py` is a sta
 |---|---|---|
 | `features/widgets.py` | ~7015 | `render_test_widget(test_name, external_data=None)` — 55+ test widgets |
 | `features/finder_ui.py` | ~370 | `render_test_finder()` — finder UI + "All Tests" section + Data Import button |
-| `features/data_workspace.py` | ~500 | `render_data_workspace()` — two-column workspace: upload, format selection, test picker, results |
+| `features/data_workspace.py` | ~500 | `render_data_workspace()` — two-column workspace with AG Grid (filtering, sorting, editing), data cleaning (NA handling, column drop, row filter), categorical→numeric mapping, format selection, test picker, results |
 | `features/builtin_datasets.py` | ~1260 | `get_builtin_datasets()`, `load_builtin_dataset()` — 30 curated datasets (20 embedded, 10 loaded from `datasets/`) |
 | `features/graph_explorer.py` | ~8010 | `render_graph_explorer()` |
 | `features/tabulation.py` | ~3420 | `render_tabulation()` |
@@ -84,6 +86,6 @@ These are the original monolithic modules preserved for reference:
 - `st.info()` / `st.expander()` for educational guidance.
 - Sub-navigation uses 2‑column `_tab_buttons()` helper.
 - `render_post_hoc(groups, param_type="parametric"|"nonparametric", key="prefix")` at end of multi-group widgets.
-- **Data Workspace**: two-column layout (left: data mgmt, right: results). Uses `st.session_state.ws_*` keys for persistence.
+- **Data Workspace** (standalone `app_data_workspace.py`): two-column layout (left: data mgmt, right: AG Grid results). Uses `st.session_state.ws_*` keys. AG Grid provides editable, sortable, filterable data preview with dark theme.
 - **`_build_external_data(df, organization, col_config)`** converts raw data into `external_data` dict matching `data_source_toggle()` return format. Supports modes: `one_sample`, `two_sample`, `multi_sample`, `paired`, `repeated`, `correlation`, `categorical_two`, `categorical_one`.
 - **Cronbach's alpha** in `features/factor_analysis.py` — computed as `(k/(k-1))*(1 - Σs_i²/s_total²)` with item-total statistics (item-rest correlation, α-if-deleted), interpretation scale, and removal suggestions.

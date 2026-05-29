@@ -5,15 +5,6 @@ from features.widgets import render_latex, render_test_widget
 from features.glossary import render_glossary
 
 
-def _check_workspace_nav():
-    """Handle top-right Data Import button navigation."""
-    cols = st.columns([6, 1])
-    with cols[1]:
-        if st.button("📁 Data Import", use_container_width=True, type="primary"):
-            st.session_state.page = "workspace"
-            st.rerun()
-
-
 def _categorize_tests():
     """Categorize tests by design type and parametric/non-parametric."""
     from collections import defaultdict
@@ -201,8 +192,6 @@ def _open_test_directly(test_name):
 
 def render_test_finder():
     """Render the Test Finder UI."""
-
-    _check_workspace_nav()
 
     with st.sidebar:
         render_glossary()

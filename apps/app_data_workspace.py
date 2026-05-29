@@ -1,23 +1,22 @@
 import sys
 import os
 
-# Add parent directory to path so we can import from core/ and features/
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import streamlit as st
 
 st.set_page_config(
-    page_title="Statistical Test Finder",
-    page_icon="🔍",
+    page_title="Data Workspace",
+    page_icon="📊",
     layout="wide",
 )
 
-from features.finder_ui import render_test_finder
+from features.data_workspace import render_data_workspace
 from core.utils import render_footer
 
 
 def main():
-    render_test_finder()
+    render_data_workspace()
     render_footer()
 
 
