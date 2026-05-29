@@ -868,11 +868,26 @@ def _make_chart(df, graph_type, mapping, opts):
     if opts.get("fmt_opacity") is not None:
         fig.update_traces(opacity=opts["fmt_opacity"])
     if opts.get("fmt_line_style") and opts["fmt_line_style"] != "solid":
-        fig.update_traces(line=dict(dash=opts["fmt_line_style"]))
+        fig.update_traces(line=dict(dash=opts["fmt_line_style"]),
+                          selector=dict(type='scatter'))
+        fig.update_traces(line=dict(dash=opts["fmt_line_style"]),
+                          selector=dict(type='scattergl'))
+        fig.update_traces(line=dict(dash=opts["fmt_line_style"]),
+                          selector=dict(type='scatterpolar'))
     if opts.get("fmt_marker_symbol") and opts["fmt_marker_symbol"] != "circle":
-        fig.update_traces(marker=dict(symbol=opts["fmt_marker_symbol"]))
+        fig.update_traces(marker=dict(symbol=opts["fmt_marker_symbol"]),
+                          selector=dict(type='scatter'))
+        fig.update_traces(marker=dict(symbol=opts["fmt_marker_symbol"]),
+                          selector=dict(type='scattergl'))
+        fig.update_traces(marker=dict(symbol=opts["fmt_marker_symbol"]),
+                          selector=dict(type='scatterpolar'))
     if opts.get("fmt_marker_size") is not None:
-        fig.update_traces(marker=dict(size=opts["fmt_marker_size"]))
+        fig.update_traces(marker=dict(size=opts["fmt_marker_size"]),
+                          selector=dict(type='scatter'))
+        fig.update_traces(marker=dict(size=opts["fmt_marker_size"]),
+                          selector=dict(type='scattergl'))
+        fig.update_traces(marker=dict(size=opts["fmt_marker_size"]),
+                          selector=dict(type='scatterpolar'))
 
     # Per-series color overrides
     _apply_series_formatting(fig, opts)
