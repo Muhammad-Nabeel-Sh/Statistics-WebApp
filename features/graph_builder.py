@@ -94,6 +94,42 @@ def _format_ticks(fig, axis, fmt):
     (fig.update_xaxes if axis == "x" else fig.update_yaxes)(tickformat=tickformat, ticksuffix=ticksuffix)
 
 
+def _apply_series_formatting(fig, opts):
+    """Apply per-series formatting overrides (colors)."""
+    colors = opts.get("fmt_series_colors", {})
+    if not colors:
+        return
+    for trace in fig.data:
+        name = trace.name
+        if name in colors:
+            try:
+                c = colors[name]
+                if hasattr(trace, 'marker') and trace.marker is not None:
+                    trace.marker.color = c
+                elif hasattr(trace, 'line') and trace.line is not None:
+                    trace.line.color = c
+            except Exception:
+                pass
+
+
+def _apply_data_labels(fig, opts):
+    """Add data labels to chart traces."""
+    if not opts.get("data_labels"):
+        return
+    position = opts.get("dl_position", "top center")
+    font_size = opts.get("dl_font_size", 11)
+    show = opts.get("dl_show", "value")
+    decimals = opts.get("dl_decimals", 2)
+    template = f"%{{y:.{decimals}f}}" if show == "value" else f"%{{label}}"
+    for trace in fig.data:
+        try:
+            if trace.type in ('bar', 'scatter', 'scattergl', 'line', 'scatterpolar'):
+                trace.update(texttemplate=template, textposition=position,
+                             textfont=dict(size=font_size))
+        except Exception:
+            pass
+
+
 def _aggregate(df, x_col, y_col, agg, color_col=None):
     if agg is None or agg == "None":
         return df
@@ -587,18 +623,48 @@ def _make_chart(df, graph_type, mapping, opts):
 
     # ---- Apply style options ----
     subtitle = opts.get("subtitle", "")
-    full_title = f"{opts.get('title', '')}<br><sup>{subtitle}</sup>" if subtitle else opts.get("title", "")
+    title_text = opts.get("title", "")
+    if opts.get("font_title_bold", True) and title_text:
+        title_text = f"<b>{title_text}</b>"
+    full_title = f"{title_text}<br><sup>{subtitle}</sup>" if subtitle else title_text
 
+    font_title = dict(
+        family=opts.get("font_title_family", "Arial"),
+        size=opts.get("font_title_size", 18),
+        color=opts.get("font_title_color", "#FFFFFF"),
+    )
+    font_axis = dict(
+        family=opts.get("font_axis_family", "Arial"),
+        size=opts.get("font_axis_size", 13),
+        color=opts.get("font_axis_color", "#CCCCCC"),
+    )
+    font_tick = dict(
+        family=opts.get("font_tick_family", "Arial"),
+        size=opts.get("font_tick_size", 11),
+        color=opts.get("font_tick_color", "#AAAAAA"),
+    )
+    font_legend = dict(
+        family=opts.get("font_legend_family", "Arial"),
+        size=opts.get("font_legend_size", 11),
+        color=opts.get("font_legend_color", "#CCCCCC"),
+    )
     fig.update_layout(
-        title=full_title or None,
-        xaxis_title=opts.get("x_title", x_col or ""),
-        yaxis_title=opts.get("y_title", y_col or ""),
+        title=dict(text=full_title or None, font=font_title),
+        xaxis=dict(
+            title=dict(text=opts.get("x_title", x_col or ""), font=font_axis),
+            tickfont=font_tick,
+        ),
+        yaxis=dict(
+            title=dict(text=opts.get("y_title", y_col or ""), font=font_axis),
+            tickfont=font_tick,
+        ),
         template="plotly_dark", height=550,
         margin=dict(l=60, r=30, t=60, b=60),
         hovermode="x unified" if graph_type in ("Line Plot", "Area Chart", "ECDF Plot", "Run Chart") else "closest",
         showlegend=opts.get("legend_position", "top") != "none",
         legend=dict(
-            title=opts.get("legend_title", ""),
+            title=dict(text=opts.get("legend_title", ""), font=font_legend),
+            font=font_legend,
             orientation="h" if opts.get("legend_position") in ("top", "bottom") else "v",
             y=1.12 if opts.get("legend_position") == "top" else -0.15 if opts.get("legend_position") == "bottom" else 1,
             x=0.5 if opts.get("legend_position") in ("top", "bottom") else 1.02,
@@ -630,12 +696,42 @@ def _make_chart(df, graph_type, mapping, opts):
         fig.update_xaxes(zeroline=True, zerolinecolor="rgba(255,255,255,0.3)")
         fig.update_yaxes(zeroline=True, zerolinecolor="rgba(255,255,255,0.3)")
 
+    # Axis options
+    if opts.get("tick_angle"):
+        fig.update_xaxes(tickangle=opts["tick_angle"])
+        fig.update_yaxes(tickangle=opts["tick_angle"])
+    if opts.get("tick_dir") and opts["tick_dir"] != "outside":
+        fig.update_xaxes(ticks=opts["tick_dir"])
+        fig.update_yaxes(ticks=opts["tick_dir"])
+    if not opts.get("show_axis_line", True):
+        fig.update_xaxes(showline=False)
+        fig.update_yaxes(showline=False)
+    else:
+        fig.update_xaxes(showline=True, linewidth=opts.get("axis_line_width", 1), linecolor="rgba(255,255,255,0.2)")
+        fig.update_yaxes(showline=True, linewidth=opts.get("axis_line_width", 1), linecolor="rgba(255,255,255,0.2)")
+
     # ---- Overlays ----
-    if opts.get("error_bars") and y_col and graph_type in ("Scatter Plot", "Line Plot", "Bar Chart"):
+    if opts.get("error_bars") and y_col and graph_type in ("Scatter Plot", "Line Plot", "Bar Chart", "Dot Plot"):
         y_vals = df[y_col].dropna()
         if len(y_vals) > 1:
-            se = y_vals.std() / np.sqrt(len(y_vals))
-            fig.update_traces(error_y=dict(type="data", array=[se] * len(y_vals), visible=True))
+            eb_type = opts.get("eb_type", "SE")
+            if eb_type == "SE":
+                err = y_vals.std() / np.sqrt(len(y_vals))
+            elif eb_type == "SD":
+                err = y_vals.std()
+            else:
+                err = y_vals.std() / np.sqrt(len(y_vals)) * scipy_stats.t.ppf(0.975, len(y_vals) - 1)
+            eb_dir = opts.get("eb_direction", "both")
+            sym = eb_dir == "both"
+            upd = dict(type="data", array=[err] * len(y_vals), visible=True,
+                       symmetric=sym, width=opts.get("eb_cap", 8))
+            if eb_dir == "plus":
+                upd["arrayminus"] = [0] * len(y_vals)
+            elif eb_dir == "minus":
+                upd["array"] = [0] * len(y_vals)
+                upd["arrayminus"] = [err] * len(y_vals)
+            fig.update_traces(error_y=upd, selector=dict(type='bar'))
+            fig.update_traces(error_y=upd, selector=dict(type='scatter'))
 
     if opts.get("regression_line") and graph_type == "Scatter Plot" and x_col and y_col:
         clean = df[[x_col, y_col]].dropna()
@@ -648,14 +744,74 @@ def _make_chart(df, graph_type, mapping, opts):
                                      line=dict(color="red", width=2, dash="dash")))
 
     if opts.get("trend_line") and x_col and y_col:
-        from numpy.polynomial.polynomial import polyfit
         clean = df[[x_col, y_col]].dropna()
         if len(clean) > 3:
-            coeffs = polyfit(clean[x_col], clean[y_col], opts.get("trend_degree", 2))
-            x_smooth = np.linspace(clean[x_col].min(), clean[x_col].max(), 200)
-            fig.add_trace(go.Scatter(x=x_smooth, y=sum(c * x_smooth ** i for i, c in enumerate(coeffs)),
-                                     mode="lines", name=f"Trend (deg {opts.get('trend_degree', 2)})",
-                                     line=dict(color="orange", width=2)))
+            xv, yv = clean[x_col].values, clean[y_col].values
+            ttype = opts.get("trend_type", "Polynomial")
+            x_smooth = np.linspace(xv.min(), xv.max(), 200)
+            y_smooth = None
+            eq_str = ""
+            if ttype == "Polynomial":
+                from numpy.polynomial.polynomial import polyfit
+                deg = opts.get("trend_degree", 2)
+                coeffs = polyfit(xv, yv, deg)
+                y_smooth = sum(c * x_smooth ** i for i, c in enumerate(coeffs))
+                eq_str = f"y = " + " + ".join(f"{c:.3f}x^{i}" if i > 1 else f"{c:.3f}x" if i == 1 else f"{c:.3f}" for i, c in enumerate(reversed(coeffs)) if abs(c) > 1e-10)
+                name = f"Trend (deg {deg})"
+            elif ttype == "Exponential":
+                pos_mask = yv > 0
+                if pos_mask.sum() > 3:
+                    log_y = np.log(yv[pos_mask])
+                    a, b = np.polyfit(xv[pos_mask], log_y, 1)
+                    y_smooth = np.exp(b) * np.exp(a * x_smooth)
+                    eq_str = f"y = {np.exp(b):.3f} * e^({a:.3f}x)"
+                    name = "Exponential trend"
+            elif ttype == "Logarithmic":
+                pos_mask = xv > 0
+                if pos_mask.sum() > 3:
+                    log_x = np.log(xv[pos_mask])
+                    a, b = np.polyfit(log_x, yv[pos_mask], 1)
+                    x_pos = x_smooth[x_smooth > 0]
+                    y_smooth = a * np.log(x_pos) + b
+                    x_smooth = x_pos
+                    eq_str = f"y = {a:.3f} * ln(x) + {b:.3f}"
+                    name = "Logarithmic trend"
+            elif ttype == "Power":
+                pos_mask = (xv > 0) & (yv > 0)
+                if pos_mask.sum() > 3:
+                    log_x = np.log(xv[pos_mask])
+                    log_y = np.log(yv[pos_mask])
+                    a, b = np.polyfit(log_x, log_y, 1)
+                    x_pos = x_smooth[x_smooth > 0]
+                    y_smooth = np.exp(b) * x_pos ** a
+                    x_smooth = x_pos
+                    eq_str = f"y = {np.exp(b):.3f} * x^{a:.3f}"
+                    name = "Power trend"
+
+            if y_smooth is not None:
+                fig.add_trace(go.Scatter(x=x_smooth, y=y_smooth, mode="lines",
+                                         name=name, line=dict(color="orange", width=2)))
+
+                # Confidence band
+                if opts.get("trend_ci"):
+                    residuals = yv - np.interp(xv, x_smooth, y_smooth)
+                    std_err = np.std(residuals)
+                    ci = 1.96 * std_err
+                    fig.add_trace(go.Scatter(
+                        x=np.concatenate([x_smooth, x_smooth[::-1]]),
+                        y=np.concatenate([y_smooth + ci, y_smooth[::-1] - ci]),
+                        fill="toself", fillcolor="rgba(255,165,0,0.15)",
+                        line=dict(color="rgba(255,165,0,0)"), name="95% CI", showlegend=True,
+                    ))
+
+                # Equation annotation
+                if opts.get("trend_eq") and eq_str:
+                    fig.add_annotation(
+                        xref="paper", yref="paper", x=0.98, y=0.05,
+                        text=eq_str, showarrow=False,
+                        font=dict(size=11, color="orange"),
+                        bgcolor="rgba(0,0,0,0.5)", bordercolor="orange", borderwidth=1,
+                    )
 
     if opts.get("ref_line_x") is not None and isinstance(opts["ref_line_x"], (int, float)):
         try:
@@ -707,6 +863,45 @@ def _make_chart(df, graph_type, mapping, opts):
         for trace in fig.data:
             if trace.name in opts["highlight_vals"]:
                 trace.update(marker=dict(size=10, line=dict(width=2, color="yellow")))
+
+    # ---- Global formatting defaults ----
+    if opts.get("fmt_opacity") is not None:
+        fig.update_traces(opacity=opts["fmt_opacity"])
+    if opts.get("fmt_line_style") and opts["fmt_line_style"] != "solid":
+        fig.update_traces(line=dict(dash=opts["fmt_line_style"]))
+    if opts.get("fmt_marker_symbol") and opts["fmt_marker_symbol"] != "circle":
+        fig.update_traces(marker=dict(symbol=opts["fmt_marker_symbol"]))
+    if opts.get("fmt_marker_size") is not None:
+        fig.update_traces(marker=dict(size=opts["fmt_marker_size"]))
+
+    # Per-series color overrides
+    _apply_series_formatting(fig, opts)
+
+    # Data labels
+    _apply_data_labels(fig, opts)
+
+    # Annotation
+    if opts.get("annotation_enable") and opts.get("annotation_text"):
+        try:
+            fig.add_annotation(
+                x=opts.get("annotation_x", 0.5),
+                y=opts.get("annotation_y", 0.5),
+                xref=opts.get("annotation_xref", "paper"),
+                yref=opts.get("annotation_yref", "paper"),
+                text=opts["annotation_text"],
+                showarrow=opts.get("annotation_arrow", True),
+                ax=opts.get("annotation_ax", -40) if opts.get("annotation_arrow") else None,
+                ay=opts.get("annotation_ay", -30) if opts.get("annotation_arrow") else None,
+                arrowhead=opts.get("annotation_arrowhead", 2) if opts.get("annotation_arrow") else None,
+                arrowwidth=opts.get("annotation_arrowwidth", 2) if opts.get("annotation_arrow") else None,
+                arrowcolor=opts.get("annotation_arrowcolor", "#FFD700") if opts.get("annotation_arrow") else None,
+                font=dict(size=opts.get("annotation_fontsize", 14), color=opts.get("annotation_fontcolor", "#FFFFFF")),
+                bgcolor=opts.get("annotation_bgcolor", "#333333"),
+                bordercolor=opts.get("annotation_border", "#FFD700"),
+                borderwidth=1,
+            )
+        except Exception:
+            pass
 
     return fig
 
@@ -896,6 +1091,12 @@ def render_graph_builder():
         opts["show_grid"] = st.toggle("Gridlines", True, key="gb_grid")
         opts["zero_baseline"] = st.toggle("Zero baseline", False, key="gb_zero")
 
+        with st.expander("Axis Options", expanded=False):
+            opts["tick_angle"] = st.slider("Tick label angle", -90, 90, 0, key="gb_tick_angle")
+            opts["tick_dir"] = st.selectbox("Tick direction", ["outside", "inside", "cross"], key="gb_tick_dir")
+            opts["show_axis_line"] = st.toggle("Show axis line", True, key="gb_axis_line")
+            opts["axis_line_width"] = st.slider("Axis line width", 1, 5, 1, key="gb_axis_line_width")
+
     # ---- COLUMN 2: Titles, Axis, Colors ----
     with c2:
         st.markdown("### Labels")
@@ -922,10 +1123,19 @@ def render_graph_builder():
     with c3:
         st.markdown("### Overlays")
         opts["regression_line"] = st.checkbox("Regression line", graph_type == "Scatter Plot", key="gb_reg")
-        opts["trend_line"] = st.checkbox("Polynomial trend", False, key="gb_trend")
+        opts["trend_line"] = st.checkbox("Trend line", False, key="gb_trend")
         if opts["trend_line"]:
-            opts["trend_degree"] = st.slider("Degree", 1, 6, 2, key="gb_trend_deg")
-        opts["error_bars"] = st.checkbox("Error bars (SE)", False, key="gb_err")
+            opts["trend_type"] = st.selectbox("Fit type", ["Polynomial", "Exponential", "Logarithmic", "Power"],
+                                              key="gb_trend_type")
+            if opts["trend_type"] == "Polynomial":
+                opts["trend_degree"] = st.slider("Degree", 1, 6, 2, key="gb_trend_deg")
+            opts["trend_eq"] = st.checkbox("Show equation", False, key="gb_trend_eq")
+            opts["trend_ci"] = st.checkbox("Confidence band (95%)", False, key="gb_trend_ci")
+        opts["error_bars"] = st.checkbox("Error bars", False, key="gb_err")
+        if opts["error_bars"]:
+            opts["eb_type"] = st.selectbox("Error type", ["SE", "SD", "95% CI"], key="gb_eb_type")
+            opts["eb_direction"] = st.selectbox("Direction", ["both", "plus", "minus"], key="gb_eb_dir")
+            opts["eb_cap"] = st.slider("Cap width", 0, 20, 8, key="gb_eb_cap")
         opts["ref_line_x"] = st.number_input("Reference line X", value=None, key="gb_ref_x")
         opts["ref_line_y"] = st.number_input("Reference line Y", value=None, key="gb_ref_y")
         opts["mean_line"] = st.checkbox("Mean line", False, key="gb_mean")
@@ -992,6 +1202,92 @@ def render_graph_builder():
         # Time Series / Run Chart
         elif graph_type in ("Time Series Plot", "Run Chart"):
             opts["show_markers"] = st.checkbox("Show markers", False, key="gb_ts_markers")
+
+    # ==================== FORMATTING & DATA LABELS ====================
+    with st.expander("3. Formatting & Data Labels", expanded=False):
+        fmt_c1, fmt_c2 = st.columns(2)
+
+        with fmt_c1:
+            st.markdown("### Default Formatting")
+            opts["fmt_opacity"] = st.slider("Opacity", 0.0, 1.0, 1.0, 0.05, key="gb_fmt_opacity")
+            opts["fmt_line_style"] = st.selectbox(
+                "Line style", ["solid", "dash", "dot", "dashdot"], key="gb_fmt_line")
+            opts["fmt_marker_symbol"] = st.selectbox(
+                "Marker symbol",
+                ["circle", "square", "diamond", "triangle", "cross", "x", "star"],
+                key="gb_fmt_marker")
+            opts["fmt_marker_size"] = st.slider("Marker size", 2, 20, 6, key="gb_fmt_marker_size")
+
+            st.markdown("### Per-Series Colors")
+            color_col = mapping.get("color")
+            if color_col and color_col in df.columns:
+                series_names = df[color_col].unique().tolist()
+                opts["fmt_series_colors"] = {}
+                for sname in series_names:
+                    opts["fmt_series_colors"][sname] = st.color_picker(
+                        sname, value=None, key=f"gb_fmt_color_{sname}")
+            else:
+                st.info("Assign a **Color / Group** variable above to customize individual series.")
+
+            st.markdown("### Annotation")
+            opts["annotation_enable"] = st.checkbox("Add annotation", False, key="gb_anno_enable")
+            if opts["annotation_enable"]:
+                opts["annotation_text"] = st.text_input("Text", key="gb_anno_text")
+                ao_c1, ao_c2 = st.columns(2)
+                with ao_c1:
+                    opts["annotation_x"] = st.number_input("X position", value=0.5, key="gb_anno_x")
+                    opts["annotation_xref"] = st.selectbox("X reference", ["paper", "data"], key="gb_anno_xref")
+                with ao_c2:
+                    opts["annotation_y"] = st.number_input("Y position", value=0.5, key="gb_anno_y")
+                    opts["annotation_yref"] = st.selectbox("Y reference", ["paper", "data"], key="gb_anno_yref")
+                opts["annotation_arrow"] = st.checkbox("Show arrow", True, key="gb_anno_arrow")
+                if opts["annotation_arrow"]:
+                    ao3_c1, ao3_c2 = st.columns(2)
+                    with ao3_c1:
+                        opts["annotation_ax"] = st.number_input("Arrow X offset", value=-40, key="gb_anno_ax")
+                    with ao3_c2:
+                        opts["annotation_ay"] = st.number_input("Arrow Y offset", value=-30, key="gb_anno_ay")
+                    opts["annotation_arrowhead"] = st.slider("Arrow head", 0, 8, 2, key="gb_anno_arrowhead")
+                    opts["annotation_arrowwidth"] = st.slider("Arrow width", 1, 5, 2, key="gb_anno_arrowwidth")
+                    opts["annotation_arrowcolor"] = st.color_picker("Arrow color", "#FFD700", key="gb_anno_arrowcolor")
+                opts["annotation_fontsize"] = st.slider("Font size", 8, 24, 14, key="gb_anno_fontsize")
+                opts["annotation_fontcolor"] = st.color_picker("Font color", "#FFFFFF", key="gb_anno_fontcolor")
+                opts["annotation_bgcolor"] = st.color_picker("Background", "#333333", key="gb_anno_bgcolor")
+                opts["annotation_border"] = st.color_picker("Border", "#FFD700", key="gb_anno_bordercolor")
+
+        with fmt_c2:
+            st.markdown("### Data Labels")
+            opts["data_labels"] = st.checkbox("Show data labels on chart", False, key="gb_dl_enable")
+            if opts["data_labels"]:
+                opts["dl_position"] = st.selectbox(
+                    "Label position",
+                    ["top center", "top left", "top right",
+                     "middle center", "middle left", "middle right",
+                     "bottom center", "bottom left", "bottom right"],
+                    key="gb_dl_pos")
+                opts["dl_font_size"] = st.slider("Font size", 8, 24, 11, key="gb_dl_font")
+                opts["dl_show"] = st.selectbox("Show", ["value", "label"], key="gb_dl_show")
+                opts["dl_decimals"] = st.slider("Decimal places", 0, 6, 2, key="gb_dl_dec")
+
+            st.markdown("### Font")
+            FONTS = ["Arial", "Helvetica", "Times New Roman", "Courier New", "Verdana",
+                     "Georgia", "Palatino", "Garamond", "Bookman", "Comic Sans MS"]
+            opts["font_title_family"] = st.selectbox("Title font", FONTS, index=0, key="gb_font_title_family")
+            opts["font_title_size"] = st.slider("Title size", 10, 36, 18, key="gb_font_title_size")
+            tl, tr = st.columns(2)
+            with tl:
+                opts["font_title_color"] = st.color_picker("Title color", "#FFFFFF", key="gb_font_title_color")
+            with tr:
+                opts["font_title_bold"] = st.checkbox("Title bold", True, key="gb_font_title_bold")
+            opts["font_axis_family"] = st.selectbox("Axis label font", FONTS, index=0, key="gb_font_axis_family")
+            opts["font_axis_size"] = st.slider("Axis label size", 8, 24, 13, key="gb_font_axis_size")
+            opts["font_axis_color"] = st.color_picker("Axis label color", "#CCCCCC", key="gb_font_axis_color")
+            opts["font_tick_family"] = st.selectbox("Tick label font", FONTS, index=0, key="gb_font_tick_family")
+            opts["font_tick_size"] = st.slider("Tick label size", 8, 20, 11, key="gb_font_tick_size")
+            opts["font_tick_color"] = st.color_picker("Tick label color", "#AAAAAA", key="gb_font_tick_color")
+            opts["font_legend_family"] = st.selectbox("Legend font", FONTS, index=0, key="gb_font_legend_family")
+            opts["font_legend_size"] = st.slider("Legend size", 8, 20, 11, key="gb_font_legend_size")
+            opts["font_legend_color"] = st.color_picker("Legend color", "#CCCCCC", key="gb_font_legend_color")
 
     # ==================== BUILD & DISPLAY CHART ====================
     fig = _make_chart(df, graph_type, mapping, opts)
