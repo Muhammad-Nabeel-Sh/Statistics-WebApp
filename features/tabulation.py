@@ -1874,6 +1874,7 @@ def educational_modules():
             "Odds Ratio / Risk Ratio Explorer",
             "Conditional Probability Explorer",
             "Bayesian Updating Table",
+            "Wide vs Long / Tidy Data",
         ],
         "edu_mod",
     )
@@ -1890,6 +1891,8 @@ def educational_modules():
         _cond_prob_explorer()
     elif module == "Bayesian Updating Table":
         _bayesian_updater()
+    elif module == "Wide vs Long / Tidy Data":
+        _wide_long_explorer()
 
 
 def _freq_explorer():
@@ -2467,6 +2470,336 @@ def _bayesian_updater():
         - **Key insight**: even with good sensitivity/specificity, low prevalence means
           many positives are false positives (the "base rate fallacy")
         """)
+
+
+# =====================
+# 7b. WIDE vs LONG / TIDY DATA
+# =====================
+
+
+def _wide_long_explorer():
+    st.markdown("### Wide vs Long Format & Tidy Data")
+    st.info("""
+    This module explains four fundamental data-shape concepts that every data analyst must understand:
+    **wide format**, **long format**, **pivoting/unpivoting**, and **transposing** — all unified under
+    the **Tidy Data** philosophy.
+    """)
+
+    topic = _tab_buttons(
+        [
+            "Tidy Data Principles",
+            "Wide vs Long Format",
+            "Pivoting (Long → Wide)",
+            "Melting / Unpivoting (Wide → Long)",
+            "Transposing",
+            "Putting It All Together",
+        ],
+        "wld_topic",
+    )
+
+    # --- TIDY DATA PRINCIPLES ---
+    if topic == "Tidy Data Principles":
+        st.markdown("#### What is Tidy Data?")
+        st.info("""
+        **Tidy Data** is a standard way of structuring datasets proposed by Hadley Wickham (2014).
+        A dataset is **tidy** when it satisfies three rules:
+
+        1. **Each variable** is a column
+        2. **Each observation** is a row
+        3. **Each value** is a single cell
+
+        The opposite is **messy data** — where variables may be spread across columns,
+        observations may be split across rows, or values may be crammed into cells.
+        """)
+        st.markdown("##### Tidy Example")
+        tidy = pd.DataFrame(
+            {
+                "Subject": ["A", "A", "B", "B", "C", "C"],
+                "Condition": ["Pre", "Post", "Pre", "Post", "Pre", "Post"],
+                "Score": [85, 92, 78, 88, 91, 97],
+            }
+        )
+        st.dataframe(tidy, use_container_width=True)
+        st.caption(" Tidy: each variable (Subject, Condition, Score) is a column; each observation is one row.")
+
+        st.markdown("##### Messy Example (same data)")
+        messy = pd.DataFrame(
+            {
+                "Subject": ["A", "B", "C"],
+                "Pre": [85, 78, 91],
+                "Post": [92, 88, 97],
+            }
+        )
+        st.dataframe(messy, use_container_width=True)
+        st.caption(" Messy: the Condition variable is spread across two columns (Pre, Post) instead of being in one column.")
+
+        with st.expander(" Why Tidy Data Matters", expanded=True):
+            st.info("""
+            **Tidy data** is the input format required by most statistical libraries (statsmodels,
+            scikit-learn, seaborn, plotly.express, etc.). When your data is tidy:
+
+            - You can directly pass column names to `y`, `x`, `hue`, `color`, etc.
+            - Aggregation `groupby()` works naturally
+            - Plotting libraries automatically create legends and facets
+            - Statistical tests accept formulas like `Score ~ Condition`
+
+            **Rule of thumb**: if you find yourself writing loops over column names to do an
+            analysis, your data is probably not tidy.
+            """)
+
+    # --- WIDE VS LONG FORMAT ---
+    elif topic == "Wide vs Long Format":
+        st.markdown("#### Wide vs Long Format")
+        st.info("""
+        **Wide format** (also called unstacked) has one row per subject and separate columns for
+        repeated measures. **Long format** (also called stacked) has one row per observation,
+        with an index column identifying the subject and a column identifying the measurement
+        occasion.
+
+        Wide is easier for humans to read; Long is required by most statistical software.
+        """)
+
+        c1, c2 = st.columns(2)
+        wide_df = pd.DataFrame(
+            {"Subject": ["A", "B", "C", "D"], "T1_Score": [85, 78, 91, 88], "T2_Score": [92, 88, 97, 84], "T3_Score": [89, 85, 95, 90]}
+        )
+        long_df = wide_df.melt(id_vars=["Subject"], var_name="Timepoint", value_name="Score")
+        with c1:
+            st.markdown("**Wide Format**")
+            st.dataframe(wide_df, use_container_width=True)
+            st.caption("1 row per subject, scores in separate columns")
+        with c2:
+            st.markdown("**Long Format**")
+            st.dataframe(long_df, use_container_width=True)
+            st.caption("1 row per measurement, Subject & Timepoint identify each observation")
+
+        with st.expander(" Comparison Table", expanded=True):
+            comp = pd.DataFrame(
+                {
+                    "Aspect": ["Readability", "Statistical modeling", "Plotting (ggplot/plotly)", "Repeated measures", "Memory efficiency", "Common file format"],
+                    "Wide": ["Easier for human review", "Needs manual reshaping", "Requires melting first", "Implicit (column position)", "More compact (fewer rows)", "Excel, CSV for reporting"],
+                    "Long": ["Harder to scan", "Built-in support (formulas)", "Native support (hue, facet)", "Explicit (column values)", "More rows, fewer columns", "CSV for analysis, databases"],
+                }
+            )
+            _apa_table(comp, "Wide vs Long — When to Use Each", hide_index=True)
+
+    # --- PIVOTING (LONG → WIDE) ---
+    elif topic == "Pivoting (Long → Wide)":
+        st.markdown("#### Pivoting: Long → Wide")
+        st.info("""
+        **Pivoting** converts data from long to wide format. Each unique value in a "key" column
+        becomes a new column, and values from a "value" column fill the cells.
+
+        In pandas: `df.pivot(index=..., columns=..., values=...)` or `df.pivot_table(...)`.
+        """)
+
+        base = pd.DataFrame(
+            {"Subject": ["A", "A", "A", "B", "B", "B", "C", "C", "C"],
+             "Visit": ["Week 1", "Week 2", "Week 3", "Week 1", "Week 2", "Week 3", "Week 1", "Week 2", "Week 3"],
+             "BP": [120, 118, 115, 130, 128, 125, 140, 138, 135]}
+        )
+        st.markdown("##### Starting Data (Long Format)")
+        st.dataframe(base, use_container_width=True)
+
+        pivoted = base.pivot(index="Subject", columns="Visit", values="BP")
+        st.markdown("##### After `pivot(index='Subject', columns='Visit', values='BP')` — Wide Format")
+        st.dataframe(pivoted, use_container_width=True)
+
+        with st.expander(" How Pivoting Works", expanded=True):
+            st.info("""
+            **Three arguments to `pivot()`:**
+            1. **`index`** — the column whose unique values become row labels (e.g., Subject)
+            2. **`columns`** — the column whose unique values become **new column names** (e.g., Visit)
+            3. **`values`** — the column whose values fill the cells
+
+            **Aggregation note**: `pivot()` requires exactly one value per cell. If your data has
+            duplicates (e.g., multiple measurements per Subject×Visit), use `pivot_table()` with
+            an `aggfunc` (like `mean`, `sum`, etc.).
+
+            **In R**: `tidyr::pivot_wider()`. **In Excel**: PivotTable with rows in index,
+            columns in header, values in body.
+            """)
+
+        st.markdown("##### Try it yourself")
+        sel_sub = st.multiselect("Select subjects to include", ["A", "B", "C"], default=["A", "B", "C"], key="wl_sel_sub")
+        filt = base[base["Subject"].isin(sel_sub)]
+        if not filt.empty:
+            st.dataframe(filt.pivot(index="Subject", columns="Visit", values="BP"), use_container_width=True)
+
+    # --- MELTING / UNPIVOTING (WIDE → LONG) ---
+    elif topic == "Melting / Unpivoting (Wide → Long)":
+        st.markdown("#### Melting / Unpivoting: Wide → Long")
+        st.info("""
+        **Melting** (also called unpivoting or stacking) converts data from wide to long format.
+        You specify which columns are **identifier variables** (id_vars) that stay as columns,
+        and all other columns are **melted** into a key-value pair.
+
+        In pandas: `df.melt(id_vars=[...], var_name='...', value_name='...')`.
+        """)
+
+        wide = pd.DataFrame(
+            {"Country": ["USA", "UK", "Japan", "Canada"],
+             "2019": [21.4, 18.2, 15.3, 17.8],
+             "2020": [19.8, 16.5, 14.1, 16.2],
+             "2021": [22.1, 19.0, 16.8, 18.5]}
+        )
+        st.markdown("##### Starting Data (Wide Format)")
+        st.dataframe(wide, use_container_width=True)
+        st.caption("Year columns (2019, 2020, 2021) each contain the same variable — GDP growth rate")
+
+        melted = wide.melt(id_vars=["Country"], var_name="Year", value_name="GDP_Growth")
+        st.markdown("##### After `melt(id_vars=['Country'], var_name='Year', value_name='GDP_Growth')` — Long Format")
+        st.dataframe(melted, use_container_width=True)
+
+        with st.expander(" How Melting Works", expanded=True):
+            st.info("""
+            **Two key arguments to `melt()`:**
+            1. **`id_vars`** — columns that stay as-is (identifiers like Subject, Country, ID)
+            2. **`var_name`** — what to call the new column that holds the old column names
+            3. **`value_name`** — what to call the new column that holds the values
+
+            Every non-id column becomes a row in the output. This is why melting is sometimes
+            called "unpivoting" — you're taking the headers and turning them into data.
+
+            **In R**: `tidyr::pivot_longer()`. **In Excel**: Power Query → Unpivot Columns.
+            """)
+
+        st.markdown("##### Visual: Which columns to melt?")
+        vis = pd.DataFrame(
+            {"Column": ["Country"] + [str(y) for y in range(2019, 2022)],
+             "Role": ["id_var (stays)"] + ["melt into rows"] * 3}
+        )
+        st.dataframe(vis, use_container_width=True)
+
+    # --- TRANSPOSING ---
+    elif topic == "Transposing":
+        st.markdown("#### Transposing")
+        st.info("""
+        **Transposing** swaps rows and columns. The first row becomes the first column, the
+        second row becomes the second column, and so on. Unlike pivoting/melting, transposing
+        ignores data types — it is a purely geometric operation.
+
+        In pandas: `df.T` or `df.transpose()`.
+        """)
+
+        c1, c2 = st.columns(2)
+        orig = pd.DataFrame(
+            {"Metric": ["Mean", "SD", "Min", "Max"],
+             "Group_A": [85.3, 6.2, 72, 98],
+             "Group_B": [78.1, 8.5, 61, 95],
+             "Group_C": [91.7, 5.8, 80, 100]}
+        )
+        with c1:
+            st.markdown("**Original** (rows = statistics)")
+            st.dataframe(orig, use_container_width=True)
+        with c2:
+            st.markdown("**Transposed** (columns become rows)")
+            transposed = orig.T
+            transposed.columns = transposed.iloc[0]
+            transposed = transposed.iloc[1:]
+            transposed.insert(0, "Group", transposed.index)
+            transposed.index = range(len(transposed))
+            st.dataframe(transposed, use_container_width=True)
+
+        with st.expander(" When to Transpose", expanded=True):
+            st.info("""
+            **Good use cases for transposing:**
+            - Converting summary statistics tables (metrics × groups → groups × metrics)
+            - Flipping confusion matrices (predicted vs actual)
+            - Preparing data for specific plotting or export requirements
+            - Matrix algebra operations
+
+            **When NOT to transpose:**
+            - Your data is already in a standard analytical format
+            - You're trying to "fix" messy data (use melt or pivot instead)
+            - Column types are mixed (transposing coerces all to string)
+
+            **Key warning**: transposing a DataFrame converts all columns to the same dtype
+            (usually object/string). It is a layout operation, not a reshaping operation.
+            """)
+
+        st.markdown("##### Interactive: Transpose a small matrix")
+        rows = st.selectbox("Rows", [2, 3, 4], index=1, key="wl_trans_rows")
+        cols = st.selectbox("Columns", [2, 3, 4], index=2, key="wl_trans_cols")
+        mat = pd.DataFrame(
+            np.random.randint(0, 100, (int(rows), int(cols))),
+            columns=[f"Col_{c+1}" for c in range(int(cols))],
+            index=[f"Row_{r+1}" for r in range(int(rows))],
+        )
+        c3, c4 = st.columns(2)
+        with c3:
+            st.markdown("**Original Matrix**")
+            st.dataframe(mat, use_container_width=True)
+        with c4:
+            st.markdown("**Transposed**")
+            st.dataframe(mat.T, use_container_width=True)
+
+    # --- PUTTING IT ALL TOGETHER ---
+    elif topic == "Putting It All Together":
+        st.markdown("#### Putting It All Together")
+        st.info("""
+        These four operations are the fundamental data-shape transformations. Together they
+        let you move between any tabular layout.
+        """)
+
+        st.markdown("##### Decision Flowchart")
+        flowchart = pd.DataFrame(
+            {
+                "You have...": ["One row per subject, repeated measures in columns",
+                               "One row per observation, categorical time column",
+                               "Variables as rows, observations as columns",
+                               "Summary table (e.g., means per group)"],
+                "You want...": ["Long format for analysis / plotting",
+                               "Wide format for report / comparison",
+                               "Standard data format (observations as rows)",
+                               "Different orientation for publication"],
+                "Operation": ["**Melt / Unpivot** → `df.melt()`",
+                             "**Pivot** → `df.pivot()`",
+                             "**Transpose** → `df.T`",
+                             "**Transpose** → `df.T`"],
+            }
+        )
+        _apa_table(flowchart, "Which Operation to Use?", hide_index=True)
+
+        st.markdown("##### Full Workflow Demo")
+        st.info("""
+        Watch how the same dataset flows through all four operations.
+        """)
+
+        demo_df = pd.DataFrame(
+            {"ID": [1, 2, 3],
+             "Pre_Score": [80, 75, 90],
+             "Post_Score": [88, 82, 95]}
+        )
+        st.markdown("**1. Original (Wide)**")
+        st.dataframe(demo_df, use_container_width=True)
+
+        st.markdown("**2. Melt → Long**")
+        melted = demo_df.melt(id_vars=["ID"], var_name="Timepoint", value_name="Score")
+        st.dataframe(melted, use_container_width=True)
+
+        st.markdown("**3. Pivot back → Wide**")
+        st.dataframe(melted.pivot(index="ID", columns="Timepoint", values="Score"), use_container_width=True)
+
+        st.markdown("**4. Transpose**")
+        st.dataframe(demo_df.T, use_container_width=True)
+
+        with st.expander(" Glossary of Key Terms", expanded=True):
+            st.info("""
+            | Term | Definition |
+            |------|-----------|
+            | **Tidy Data** | Each variable is a column, each observation is a row, each value is a cell |
+            | **Wide Format** | One row per subject, repeated measures in separate columns |
+            | **Long Format** | One row per measurement, with columns identifying subject and condition |
+            | **Pivoting** | Long → Wide: turning unique values in a column into new column headers |
+            | **Melting / Unpivoting** | Wide → Long: collapsing multiple columns into key-value pairs |
+            | **Transposing** | Swapping rows ↔ columns (geometric, not semantic) |
+            | **id_vars** | Columns that remain as identifiers during melting |
+            | **Key-Value Pair** | The (old column name, cell value) pair created by melting |
+            | **`pivot_table`** | Like `pivot` but handles duplicates via aggregation (mean, sum, etc.) |
+            """)
+
+        st.caption("Reference: Wickham, H. (2014). Tidy Data. *Journal of Statistical Software*, 59(10), 1–23.")
 
 
 # =====================

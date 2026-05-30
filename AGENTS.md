@@ -15,6 +15,7 @@ streamlit run apps/app_diagnostics.py
 streamlit run apps/app_examples.py
 streamlit run apps/app_factor.py
 streamlit run apps/app_spc.py
+streamlit run apps/app_designs.py
 ```
 No tests, no linter, no type checker. Verification = `python -c "import ast; ast.parse(open('f').read()); from f import func"`.
 
@@ -33,6 +34,7 @@ Multi-module with `apps/`, `features/`, `core/` split. Each `apps/*.py` is a sta
 | `apps/app_power.py` | ~30 | `main()` — power calculator standalone |
 | `apps/app_diagnostics.py` | ~30 | `main()` — diagnostics standalone |
 | `apps/app_examples.py` | ~30 | `main()` — solved examples standalone |
+| `apps/app_designs.py` | ~25 | `main()` — study design reference with wizard, bias matrix, bias checklist |
 
 ### Features (UI modules)
 | Module | Lines | Export |
@@ -50,6 +52,7 @@ Multi-module with `apps/`, `features/`, `core/` split. Each `apps/*.py` is a sta
 | `features/factor_analysis.py` | ~690 | `render_factor_analysis()` — PCA/FA with rotation, KMO, scree plot, score plot, Cronbach's alpha, loads Iris/Penguins from `datasets/` |
 | `features/control_charts.py` | ~680 | `render_control_charts()` — X̄-R charts, capability (Cp/Cpk), Shewhart rules |
 | `features/solved_examples.py` | ~200 | `render_solved_examples()` |
+| `features/study_designs.py` | ~530 | `render_study_designs()` — 14-design reference, Design Wizard, Bias Matrix, Bias Checklist |
 
 ### Core (shared utilities)
 | Module | Lines | Export |

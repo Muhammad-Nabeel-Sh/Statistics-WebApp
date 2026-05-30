@@ -346,6 +346,415 @@ def _expression_gallery_dialog():
         st.rerun()
 
 
+def _display_ps_results(title, params_df, stat_name, stat_val, df_val, p_val, ci_lower, ci_upper, es_name, es_val, interpretation=""):
+    """Display a nicely formatted result card for the Parameter Solver."""
+    from scipy.stats import t as t_dist
+    st.success(f"**{title}** — Results")
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.markdown("**Parameters**")
+        st.table(params_df)
+    with col_b:
+        results_data = {
+            stat_name: f"{stat_val:.4f}",
+            "df": f"{df_val:.4f}" if df_val == int(df_val) else f"{df_val:.2f}",
+            "p-value": f"{p_val:.4f}" if p_val >= 0.0001 else "p < .0001",
+            "95% CI": f"[{ci_lower:.4f}, {ci_upper:.4f}]",
+            es_name: f"{es_val:.4f}",
+        }
+        st.markdown("**Results**")
+        st.table(pd.DataFrame([results_data]).T.rename(columns={0: "Value"}))
+    if interpretation:
+        st.caption(interpretation)
+
+
+def _render_summarized_data_inputs():
+    """Show input forms for summary statistics with two modes: Data Generator and Parameter Solver."""
+    st.markdown(":orange[**Enter summary statistics from published research:**]")
+
+    approach = st.radio(
+        "Mode",
+        ["Data Generator (synthetic data)", "Parameter Solver (exact formulas)"],
+        horizontal=True,
+        key="ws_summary_approach",
+    )
+
+    if "Data Generator" in approach:
+        # ======================================================================
+        # MODE 1: Data Generator — generate synthetic data matching summary stats
+        # ======================================================================
+        summary_type = st.selectbox(
+            "Summary type",
+            ["", "One-sample (n, Mean, SD)", "Two independent samples (n, M, SD each)",
+             "Paired (n, mean difference, SD of differences)",
+             "One proportion (n, k)", "Two proportions (n1, k1, n2, k2)",
+             "Correlation (n, r)"],
+            key="ws_summary_type",
+        )
+
+        if not summary_type:
+            st.info("Select a summary type above to enter parameters.")
+            return False
+
+        _rng = np.random.default_rng(42)
+
+        if "One-sample (n" in summary_type:
+            n = st.number_input("Sample size (n)", 3, 100000, 30, 1, key="ws_dg_ss_n")
+            mean = st.number_input("Mean", value=0.0, key="ws_dg_ss_mean", format="%.4f")
+            sd = st.number_input("SD", 0.001, 1000000.0, 1.0, key="ws_dg_ss_sd", format="%.4f")
+            if st.button("Generate Data & Run Test", key="ws_dg_ss_gen", type="primary"):
+                data = _rng.normal(0, 1, int(n))
+                data = (data - data.mean()) / data.std() * float(sd) + float(mean)
+                df = pd.DataFrame({"Value": data})
+                ext = ExternalData.from_format("one_sample", {"values": data})
+                st.session_state.ws_df = df
+                st.session_state.ws_df_backup = df.copy()
+                st.session_state.ws_external_data = ext
+                st.session_state.ws_dataset_name = f"Summarized: One-sample (n={int(n)}, m={mean:.3g}, sd={sd:.3g})"
+                st.session_state.ws_source_key = f"dg:one_sample:{int(n)}:{mean}:{sd}"
+                st.session_state.ws_using_summarized = True
+                st.rerun()
+
+        elif "Two independent" in summary_type:
+            col1, col2 = st.columns(2)
+            with col1:
+                n1 = st.number_input("n₁", 3, 100000, 25, 1, key="ws_dg_ts_n1")
+                m1 = st.number_input("Mean₁", value=0.0, key="ws_dg_ts_m1", format="%.4f")
+                s1 = st.number_input("SD₁", 0.001, 1000000.0, 1.0, key="ws_dg_ts_s1", format="%.4f")
+                g1_name = st.text_input("Group₁ label", "Group 1", key="ws_dg_ts_g1")
+            with col2:
+                n2 = st.number_input("n₂", 3, 100000, 25, 1, key="ws_dg_ts_n2")
+                m2 = st.number_input("Mean₂", value=1.0, key="ws_dg_ts_m2", format="%.4f")
+                s2 = st.number_input("SD₂", 0.001, 1000000.0, 1.0, key="ws_dg_ts_s2", format="%.4f")
+                g2_name = st.text_input("Group₂ label", "Group 2", key="ws_dg_ts_g2")
+            if st.button("Generate Data & Run Test", key="ws_dg_ts_gen", type="primary"):
+                g1 = _rng.normal(0, 1, int(n1))
+                g1 = (g1 - g1.mean()) / g1.std() * float(s1) + float(m1)
+                g2 = _rng.normal(0, 1, int(n2))
+                g2 = (g2 - g2.mean()) / g2.std() * float(s2) + float(m2)
+                df = pd.DataFrame({g1_name: np.append(g1, [np.nan] * (max(len(g1), len(g2)) - len(g1))),
+                                   g2_name: np.append(g2, [np.nan] * (max(len(g1), len(g2)) - len(g2)))})
+                df = df.dropna(how="all").reset_index(drop=True)
+                ext = ExternalData.from_format("two_sample", {
+                    "group1": g1, "group2": g2,
+                    "group_names": [g1_name or "Group 1", g2_name or "Group 2"],
+                })
+                st.session_state.ws_df = df
+                st.session_state.ws_df_backup = df.copy()
+                st.session_state.ws_external_data = ext
+                st.session_state.ws_dataset_name = f"Summarized: Two-sample ({g1_name}: n={int(n1)}, m={m1:.3g}, sd={s1:.3g} | {g2_name}: n={int(n2)}, m={m2:.3g}, sd={s2:.3g})"
+                st.session_state.ws_source_key = f"dg:two_sample:{int(n1)}:{m1}:{s1}:{int(n2)}:{m2}:{s2}"
+                st.session_state.ws_using_summarized = True
+                st.rerun()
+
+        elif "Paired" in summary_type:
+            n = st.number_input("Sample size (n)", 3, 100000, 30, 1, key="ws_dg_pd_n")
+            mean_diff = st.number_input("Mean difference", value=5.0, key="ws_dg_pd_mdiff", format="%.4f")
+            sd_diff = st.number_input("SD of differences", 0.001, 1000000.0, 10.0, key="ws_dg_pd_sddiff", format="%.4f")
+            pre_mean = st.number_input("Pre-test mean (for display)", value=50.0, key="ws_dg_pd_pre", format="%.4f")
+            pre_sd = st.number_input("Pre-test SD (for display)", 0.001, 1000000.0, 15.0, key="ws_dg_pd_presd", format="%.4f")
+            if st.button("Generate Data & Run Test", key="ws_dg_pd_gen", type="primary"):
+                pre = _rng.normal(0, 1, int(n))
+                pre = (pre - pre.mean()) / pre.std() * float(pre_sd) + float(pre_mean)
+                diff = _rng.normal(0, 1, int(n))
+                diff = (diff - diff.mean()) / diff.std() * float(sd_diff) + float(mean_diff)
+                post = pre + diff
+                df = pd.DataFrame({"Pre": pre, "Post": post})
+                ext = ExternalData.from_format("paired", {"values1": pre, "values2": post})
+                st.session_state.ws_df = df
+                st.session_state.ws_df_backup = df.copy()
+                st.session_state.ws_external_data = ext
+                st.session_state.ws_dataset_name = f"Summarized: Paired (n={int(n)}, diff={mean_diff:.3g}, sd_diff={sd_diff:.3g})"
+                st.session_state.ws_source_key = f"dg:paired:{int(n)}:{mean_diff}:{sd_diff}"
+                st.session_state.ws_using_summarized = True
+                st.rerun()
+
+        elif "One proportion" in summary_type:
+            n = st.number_input("Total observations (n)", 1, 100000, 50, 1, key="ws_dg_op_n")
+            k = st.number_input("Number of successes (k)", 0, 100000, 20, 1, key="ws_dg_op_k")
+            if k > n:
+                st.error("k cannot exceed n.")
+                return False
+            prop = k / n
+            st.info(f"Proportion = {prop:.4f} ({k}/{n})")
+            if st.button("Generate Data & Run Test", key="ws_dg_op_gen", type="primary"):
+                values = np.array([1] * int(k) + [0] * (int(n) - int(k)))
+                _rng.shuffle(values)
+                df = pd.DataFrame({"Outcome": values})
+                ext = ExternalData.from_format("one_sample", {"values": values})
+                st.session_state.ws_df = df
+                st.session_state.ws_df_backup = df.copy()
+                st.session_state.ws_external_data = ext
+                st.session_state.ws_dataset_name = f"Summarized: One proportion (n={int(n)}, k={int(k)}, p={prop:.4f})"
+                st.session_state.ws_source_key = f"dg:one_prop:{int(n)}:{int(k)}"
+                st.session_state.ws_using_summarized = True
+                st.rerun()
+
+        elif "Two proportions" in summary_type:
+            col1, col2 = st.columns(2)
+            with col1:
+                n1 = st.number_input("n₁", 1, 100000, 50, 1, key="ws_dg_tp_n1")
+                k1 = st.number_input("Successes₁ (k₁)", 0, 100000, 20, 1, key="ws_dg_tp_k1")
+            with col2:
+                n2 = st.number_input("n₂", 1, 100000, 50, 1, key="ws_dg_tp_n2")
+                k2 = st.number_input("Successes₂ (k₂)", 0, 100000, 10, 1, key="ws_dg_tp_k2")
+            if k1 > n1 or k2 > n2:
+                st.error("k cannot exceed n for either group.")
+                return False
+            p1, p2 = k1 / n1, k2 / n2
+            st.info(f"p₁ = {p1:.4f} ({k1}/{n1})  |  p₂ = {p2:.4f} ({k2}/{n2})")
+            if st.button("Generate Data & Run Test", key="ws_dg_tp_gen", type="primary"):
+                ct = pd.DataFrame(
+                    {"Success": [int(k1), int(k2)], "Failure": [int(n1) - int(k1), int(n2) - int(k2)]},
+                    index=["Group 1", "Group 2"],
+                )
+                df = ct.copy()
+                ext = ExternalData.from_format("categorical_two", {
+                    "contingency_table": ct, "col_a": "Group", "col_b": "Outcome",
+                    "col_a_vals": ["Group 1", "Group 2"], "col_b_vals": ["Success", "Failure"],
+                })
+                st.session_state.ws_df = df
+                st.session_state.ws_df_backup = df.copy()
+                st.session_state.ws_external_data = ext
+                st.session_state.ws_dataset_name = f"Summarized: Two proportions (n₁={int(n1)}, p₁={p1:.3g} | n₂={int(n2)}, p₂={p2:.3g})"
+                st.session_state.ws_source_key = f"dg:two_prop:{int(n1)}:{int(k1)}:{int(n2)}:{int(k2)}"
+                st.session_state.ws_using_summarized = True
+                st.rerun()
+
+        elif "Correlation" in summary_type:
+            n = st.number_input("Sample size (n)", 3, 100000, 50, 1, key="ws_dg_cr_n")
+            r_val = st.slider("Pearson r", -1.0, 1.0, 0.5, 0.01, key="ws_dg_cr_r")
+            x_label = st.text_input("X variable label", "X", key="ws_dg_cr_xlabel")
+            y_label = st.text_input("Y variable label", "Y", key="ws_dg_cr_ylabel")
+            if st.button("Generate Data & Run Test", key="ws_dg_cr_gen", type="primary"):
+                x = _rng.normal(0, 1, int(n))
+                y = float(r_val) * x + np.sqrt(1 - float(r_val) ** 2) * _rng.normal(0, 1, int(n))
+                df = pd.DataFrame({x_label or "X": x, y_label or "Y": y})
+                ext = ExternalData.from_format("correlation", {
+                    "x": x, "y": y,
+                    "col_names": [x_label or "X", y_label or "Y"],
+                })
+                st.session_state.ws_df = df
+                st.session_state.ws_df_backup = df.copy()
+                st.session_state.ws_external_data = ext
+                st.session_state.ws_dataset_name = f"Summarized: Correlation (n={int(n)}, r={r_val:.3g})"
+                st.session_state.ws_source_key = f"dg:correlation:{int(n)}:{r_val}"
+                st.session_state.ws_using_summarized = True
+                st.rerun()
+
+    else:
+        # ======================================================================
+        # MODE 2: Parameter Solver — exact formula computation, no data needed
+        # ======================================================================
+        from scipy.stats import t as t_dist, norm as norm_dist
+
+        ps_test = st.selectbox(
+            "Test type",
+            ["", "One-sample t-test", "Two independent samples t-test (Welch)",
+             "Two independent samples t-test (pooled)", "Paired t-test",
+             "One proportion z-test", "Two proportions z-test",
+             "Correlation t-test"],
+            key="ws_ps_test",
+        )
+
+        if not ps_test:
+            st.info("Select a test type above to enter parameters and compute exact results.")
+            return False
+
+        # ---- One-sample t-test ----
+        if ps_test == "One-sample t-test":
+            n = st.number_input("Sample size (n)", 3, 100000, 30, 1, key="ws_ps_os_n")
+            mean = st.number_input("Sample mean", value=0.0, key="ws_ps_os_mean", format="%.4f")
+            sd = st.number_input("Sample SD", 0.001, 1000000.0, 1.0, key="ws_ps_os_sd", format="%.4f")
+            mu0 = st.number_input("Null hypothesis μ₀", value=0.0, key="ws_ps_os_mu0", format="%.4f")
+            if st.button("Compute", key="ws_ps_os_btn", type="primary"):
+                se = float(sd) / np.sqrt(int(n))
+                t_stat = (float(mean) - float(mu0)) / se
+                df_val = int(n) - 1
+                p_val = 2 * t_dist.sf(abs(t_stat), df_val)
+                ci_lo = float(mean) - t_dist.ppf(0.975, df_val) * se
+                ci_hi = float(mean) + t_dist.ppf(0.975, df_val) * se
+                d_val = (float(mean) - float(mu0)) / float(sd)
+                params_df = pd.DataFrame({"Parameter": ["n", "Mean", "SD", "μ₀"],
+                                           "Value": [int(n), f"{mean:.4f}", f"{sd:.4f}", f"{mu0:.4f}"]})
+                _display_ps_results(
+                    "One-sample t-test", params_df,
+                    "t", t_stat, df_val, p_val, ci_lo, ci_hi,
+                    "Cohen's d", d_val,
+                    f"H₀: μ = {mu0}  |  t({df_val}) = {t_stat:.4f}, p = {'{:.4f}'.format(p_val) if p_val >= 0.0001 else '< .0001'}"
+                )
+
+        # ---- Two independent t-test (Welch) ----
+        elif ps_test == "Two independent samples t-test (Welch)":
+            col1, col2 = st.columns(2)
+            with col1:
+                n1 = st.number_input("n₁", 3, 100000, 25, 1, key="ws_ps_tsw_n1")
+                m1 = st.number_input("Mean₁", value=0.0, key="ws_ps_tsw_m1", format="%.4f")
+                s1 = st.number_input("SD₁", 0.001, 1000000.0, 1.0, key="ws_ps_tsw_s1", format="%.4f")
+                g1_name = st.text_input("Group₁ label", "Group 1", key="ws_ps_tsw_g1")
+            with col2:
+                n2 = st.number_input("n₂", 3, 100000, 25, 1, key="ws_ps_tsw_n2")
+                m2 = st.number_input("Mean₂", value=1.0, key="ws_ps_tsw_m2", format="%.4f")
+                s2 = st.number_input("SD₂", 0.001, 1000000.0, 1.0, key="ws_ps_tsw_s2", format="%.4f")
+                g2_name = st.text_input("Group₂ label", "Group 2", key="ws_ps_tsw_g2")
+            if st.button("Compute", key="ws_ps_tsw_btn", type="primary"):
+                v1, v2 = float(s1)**2 / int(n1), float(s2)**2 / int(n2)
+                t_stat = (float(m1) - float(m2)) / np.sqrt(v1 + v2)
+                num = (v1 + v2)**2
+                den = v1**2 / (int(n1) - 1) + v2**2 / (int(n2) - 1)
+                df_val = num / den if den > 0 else 1
+                p_val = 2 * t_dist.sf(abs(t_stat), df_val)
+                se_diff = np.sqrt(v1 + v2)
+                ci_lo = (float(m1) - float(m2)) - t_dist.ppf(0.975, df_val) * se_diff
+                ci_hi = (float(m1) - float(m2)) + t_dist.ppf(0.975, df_val) * se_diff
+                params_df = pd.DataFrame({"Group": [g1_name or "Group 1", g2_name or "Group 2"],
+                                           "n": [int(n1), int(n2)], "Mean": [f"{m1:.4f}", f"{m2:.4f}"],
+                                           "SD": [f"{s1:.4f}", f"{s2:.4f}"]})
+                _display_ps_results(
+                    "Two-sample t-test (Welch)", params_df,
+                    "t", t_stat, df_val, p_val, ci_lo, ci_hi,
+                    "Mean diff", float(m1) - float(m2),
+                    f"Welch df = {df_val:.2f}  |  t({df_val:.2f}) = {t_stat:.4f}"
+                )
+
+        # ---- Two independent t-test (pooled) ----
+        elif ps_test == "Two independent samples t-test (pooled)":
+            col1, col2 = st.columns(2)
+            with col1:
+                n1 = st.number_input("n₁", 3, 100000, 25, 1, key="ws_ps_tsp_n1")
+                m1 = st.number_input("Mean₁", value=0.0, key="ws_ps_tsp_m1", format="%.4f")
+                s1 = st.number_input("SD₁", 0.001, 1000000.0, 1.0, key="ws_ps_tsp_s1", format="%.4f")
+                g1_name = st.text_input("Group₁ label", "Group 1", key="ws_ps_tsp_g1")
+            with col2:
+                n2 = st.number_input("n₂", 3, 100000, 25, 1, key="ws_ps_tsp_n2")
+                m2 = st.number_input("Mean₂", value=1.0, key="ws_ps_tsp_m2", format="%.4f")
+                s2 = st.number_input("SD₂", 0.001, 1000000.0, 1.0, key="ws_ps_tsp_s2", format="%.4f")
+                g2_name = st.text_input("Group₂ label", "Group 2", key="ws_ps_tsp_g2")
+            if st.button("Compute", key="ws_ps_tsp_btn", type="primary"):
+                sp2 = ((int(n1) - 1) * float(s1)**2 + (int(n2) - 1) * float(s2)**2) / (int(n1) + int(n2) - 2)
+                sp = np.sqrt(sp2)
+                se_diff = sp * np.sqrt(1/int(n1) + 1/int(n2))
+                t_stat = (float(m1) - float(m2)) / se_diff
+                df_val = int(n1) + int(n2) - 2
+                p_val = 2 * t_dist.sf(abs(t_stat), df_val)
+                ci_lo = (float(m1) - float(m2)) - t_dist.ppf(0.975, df_val) * se_diff
+                ci_hi = (float(m1) - float(m2)) + t_dist.ppf(0.975, df_val) * se_diff
+                d_val = (float(m1) - float(m2)) / sp
+                params_df = pd.DataFrame({"Group": [g1_name or "Group 1", g2_name or "Group 2"],
+                                           "n": [int(n1), int(n2)], "Mean": [f"{m1:.4f}", f"{m2:.4f}"],
+                                           "SD": [f"{s1:.4f}", f"{s2:.4f}"]})
+                _display_ps_results(
+                    "Two-sample t-test (pooled)", params_df,
+                    "t", t_stat, df_val, p_val, ci_lo, ci_hi,
+                    "Cohen's d", d_val,
+                    f"Pooled SD = {sp:.4f}  |  t({df_val}) = {t_stat:.4f}"
+                )
+
+        # ---- Paired t-test ----
+        elif ps_test == "Paired t-test":
+            n = st.number_input("Sample size (n)", 3, 100000, 30, 1, key="ws_ps_pd_n")
+            mean_diff = st.number_input("Mean difference", value=5.0, key="ws_ps_pd_mdiff", format="%.4f")
+            sd_diff = st.number_input("SD of differences", 0.001, 1000000.0, 10.0, key="ws_ps_pd_sddiff", format="%.4f")
+            if st.button("Compute", key="ws_ps_pd_btn", type="primary"):
+                se = float(sd_diff) / np.sqrt(int(n))
+                t_stat = float(mean_diff) / se
+                df_val = int(n) - 1
+                p_val = 2 * t_dist.sf(abs(t_stat), df_val)
+                ci_lo = float(mean_diff) - t_dist.ppf(0.975, df_val) * se
+                ci_hi = float(mean_diff) + t_dist.ppf(0.975, df_val) * se
+                d_val = float(mean_diff) / float(sd_diff)
+                params_df = pd.DataFrame({"Parameter": ["n", "Mean diff", "SD diff"],
+                                           "Value": [int(n), f"{mean_diff:.4f}", f"{sd_diff:.4f}"]})
+                _display_ps_results(
+                    "Paired t-test", params_df,
+                    "t", t_stat, df_val, p_val, ci_lo, ci_hi,
+                    "Cohen's d_z", d_val,
+                    f"H₀: μ_diff = 0  |  t({df_val}) = {t_stat:.4f}"
+                )
+
+        # ---- One proportion z-test ----
+        elif ps_test == "One proportion z-test":
+            n = st.number_input("Total observations (n)", 1, 100000, 50, 1, key="ws_ps_op_n")
+            k = st.number_input("Number of successes (k)", 0, 100000, 20, 1, key="ws_ps_op_k")
+            p0 = st.number_input("Null hypothesis proportion (p₀)", 0.001, 0.999, 0.5, key="ws_ps_op_p0", format="%.4f")
+            if k > n:
+                st.error("k cannot exceed n.")
+                return False
+            p_hat = k / n
+            st.info(f"Observed proportion = {p_hat:.4f} ({k}/{n})")
+            if st.button("Compute", key="ws_ps_op_btn", type="primary"):
+                se0 = np.sqrt(float(p0) * (1 - float(p0)) / int(n))
+                z_stat = (float(p_hat) - float(p0)) / se0 if se0 > 0 else 0.0
+                p_val = 2 * norm_dist.sf(abs(z_stat))
+                se_obs = np.sqrt(p_hat * (1 - p_hat) / int(n)) if p_hat > 0 and p_hat < 1 else 0
+                ci_lo = p_hat - norm_dist.ppf(0.975) * se_obs
+                ci_hi = p_hat + norm_dist.ppf(0.975) * se_obs
+                params_df = pd.DataFrame({"Parameter": ["n", "Successes (k)", "p̂", "p₀"],
+                                           "Value": [int(n), int(k), f"{p_hat:.4f}", f"{p0:.4f}"]})
+                _display_ps_results(
+                    "One-proportion z-test", params_df,
+                    "z", z_stat, 1, p_val, ci_lo, ci_hi,
+                    "p̂ - p₀", p_hat - float(p0),
+                    f"H₀: p = {p0}  |  z = {z_stat:.4f}, p = {'{:.4f}'.format(p_val) if p_val >= 0.0001 else '< .0001'}"
+                )
+
+        # ---- Two proportions z-test ----
+        elif ps_test == "Two proportions z-test":
+            col1, col2 = st.columns(2)
+            with col1:
+                n1 = st.number_input("n₁", 1, 100000, 50, 1, key="ws_ps_tp_n1")
+                k1 = st.number_input("Successes₁ (k₁)", 0, 100000, 20, 1, key="ws_ps_tp_k1")
+            with col2:
+                n2 = st.number_input("n₂", 1, 100000, 50, 1, key="ws_ps_tp_n2")
+                k2 = st.number_input("Successes₂ (k₂)", 0, 100000, 10, 1, key="ws_ps_tp_k2")
+            if k1 > n1 or k2 > n2:
+                st.error("k cannot exceed n for either group.")
+                return False
+            p1, p2 = k1 / n1, k2 / n2
+            p_bar = (k1 + k2) / (n1 + n2)
+            st.info(f"p₁ = {p1:.4f} ({k1}/{n1})  |  p₂ = {p2:.4f} ({k2}/{n2})  |  p̄ = {p_bar:.4f}")
+            if st.button("Compute", key="ws_ps_tp_btn", type="primary"):
+                se_pooled = np.sqrt(p_bar * (1 - p_bar) * (1/int(n1) + 1/int(n2)))
+                z_stat = (float(p1) - float(p2)) / se_pooled if se_pooled > 0 else 0.0
+                p_val = 2 * norm_dist.sf(abs(z_stat))
+                se_diff = np.sqrt(float(p1)*(1-float(p1))/int(n1) + float(p2)*(1-float(p2))/int(n2))
+                ci_lo = (float(p1) - float(p2)) - norm_dist.ppf(0.975) * se_diff
+                ci_hi = (float(p1) - float(p2)) + norm_dist.ppf(0.975) * se_diff
+                params_df = pd.DataFrame({"Group": ["Group 1", "Group 2"],
+                                           "n": [int(n1), int(n2)], "Successes": [int(k1), int(k2)],
+                                           "p̂": [f"{p1:.4f}", f"{p2:.4f}"]})
+                _display_ps_results(
+                    "Two-proportion z-test", params_df,
+                    "z", z_stat, 1, p_val, ci_lo, ci_hi,
+                    "p₁ - p₂", float(p1) - float(p2),
+                    f"Pooled p̄ = {p_bar:.4f}  |  z = {z_stat:.4f}"
+                )
+
+        # ---- Correlation t-test ----
+        elif ps_test == "Correlation t-test":
+            n = st.number_input("Sample size (n)", 3, 100000, 50, 1, key="ws_ps_cr_n")
+            r_val = st.slider("Pearson r", -1.0, 1.0, 0.5, 0.01, key="ws_ps_cr_r")
+            if st.button("Compute", key="ws_ps_cr_btn", type="primary"):
+                t_stat = float(r_val) * np.sqrt((int(n) - 2) / (1 - float(r_val)**2)) if float(r_val)**2 < 1 else 0.0
+                df_val = int(n) - 2
+                p_val = 2 * t_dist.sf(abs(t_stat), df_val)
+                z_r = np.arctanh(float(r_val))
+                se_z = 1 / np.sqrt(int(n) - 3)
+                z_crit = norm_dist.ppf(0.975)
+                ci_lo = np.tanh(z_r - z_crit * se_z)
+                ci_hi = np.tanh(z_r + z_crit * se_z)
+                params_df = pd.DataFrame({"Parameter": ["n", "r"],
+                                           "Value": [int(n), f"{r_val:.4f}"]})
+                _display_ps_results(
+                    "Correlation t-test", params_df,
+                    "t", t_stat, df_val, p_val, ci_lo, ci_hi,
+                    "r", float(r_val),
+                    f"H₀: ρ = 0  |  t({df_val}) = {t_stat:.4f}"
+                )
+
+    return True
+
+
 def render_data_workspace():
     """Main render function for the unified data workspace — two-column layout with AG Grid."""
 
@@ -357,6 +766,8 @@ def render_data_workspace():
         st.session_state.ws_external_data = None
     if "ws_selected_test" not in st.session_state:
         st.session_state.ws_selected_test = ""
+    if "ws_using_summarized" not in st.session_state:
+        st.session_state.ws_using_summarized = False
 
     st.title("Data Workspace")
     st.caption("Import, explore, clean, and analyze data — with interactive editing and filtering.")
@@ -371,10 +782,17 @@ def render_data_workspace():
 
         src_mode = st.radio(
             "Choose a data source",
-            ["Upload", "Built-in"],
+            ["Upload", "Built-in", "Summarized Data"],
             horizontal=True,
             key="ws_src_mode",
         )
+
+        # Clear summary flags when switching away from Summarized Data
+        if "Summarized" not in src_mode and st.session_state.get("ws_using_summarized"):
+            st.session_state.ws_using_summarized = False
+            st.session_state.ws_df = None
+            st.session_state.ws_external_data = None
+            st.session_state.ws_selected_test = ""
 
         new_df = None
         new_name = None
@@ -392,7 +810,7 @@ def render_data_workspace():
                 except Exception as e:
                     st.error(f"Error: {e}")
                     new_df = None
-        else:
+        elif "Built-in" in src_mode:
             all_ds = get_all_dataset_names()
             selected_ds = st.selectbox(
                 "Choose a built-in dataset",
@@ -408,6 +826,9 @@ def render_data_workspace():
                         st.caption(f"Compatible: {', '.join(info['test_types'][:4])}{'...' if len(info['test_types']) > 4 else ''}")
                 new_df = load_builtin_dataset(selected_ds)
                 new_name = selected_ds
+        else:
+            # Summarized Data — show input forms
+            _render_summarized_data_inputs()
 
         # Build a source key to detect when user picks a different dataset
         new_source_key = f"{src_mode}:{new_name or ''}"
@@ -415,6 +836,7 @@ def render_data_workspace():
 
         if new_df is not None and new_source_key != prev_source_key:
             # Fresh data load — store and initialize
+            st.session_state.ws_using_summarized = False
             st.session_state.ws_df = new_df
             st.session_state.ws_df_backup = new_df.copy()
             st.session_state.ws_dataset_name = new_name
@@ -422,7 +844,8 @@ def render_data_workspace():
             st.success(f"Loaded **{new_name}** — {len(new_df)} rows, {len(new_df.columns)} cols")
 
         if st.session_state.ws_df is None:
-            st.info("No data loaded yet. Choose a source above.")
+            if "Summarized" not in src_mode:
+                st.info("No data loaded yet. Choose a source above.")
             return
 
         # Always work from session state downstream
@@ -451,175 +874,181 @@ def render_data_workspace():
                 "⤓ CSV", csv_data, f"{dataset_name or 'data'}.csv", "text/csv", key="ws_export_csv",
             )
 
-        st.markdown(":orange[**Filter Rows**]")
-        if numeric_cols:
-            filt_col = st.selectbox("Numeric column", numeric_cols, key="ws_filt_col")
-            col_vals = df[filt_col].dropna()
-            min_v = float(col_vals.min())
-            max_v = float(col_vals.max())
-            if min_v >= max_v:
-                st.caption(f"Constant value `{min_v}` \u2014 no filter needed.")
-            else:
-                filt_range = st.slider("Range", min_v, max_v, (min_v, max_v), key="ws_filt_range")
-                if st.button("Apply Filter", key="ws_filt_apply", type="secondary"):
+        ws_using_summarized = st.session_state.get("ws_using_summarized", False)
+
+        if ws_using_summarized:
+            st.info("Data cleaning is disabled for summarized data. "
+                    "Modify the summary parameters above to adjust.")
+        else:
+            st.markdown(":orange[**Filter Rows**]")
+            if numeric_cols:
+                filt_col = st.selectbox("Numeric column", numeric_cols, key="ws_filt_col")
+                col_vals = df[filt_col].dropna()
+                min_v = float(col_vals.min())
+                max_v = float(col_vals.max())
+                if min_v >= max_v:
+                    st.caption(f"Constant value `{min_v}` \u2014 no filter needed.")
+                else:
+                    filt_range = st.slider("Range", min_v, max_v, (min_v, max_v), key="ws_filt_range")
+                    if st.button("Apply Filter", key="ws_filt_apply", type="secondary"):
+                        st.session_state.ws_df_backup = st.session_state.ws_df.copy()
+                        df = df[(df[filt_col] >= filt_range[0]) & (df[filt_col] <= filt_range[1])].reset_index(drop=True)
+                        st.session_state.ws_df = df
+                        st.rerun()
+            if cat_cols:
+                filt_cat_col = st.selectbox("Categorical column", cat_cols, key="ws_filt_cat_col")
+                all_vals = df[filt_cat_col].dropna().unique().tolist()
+                if all_vals:
+                    selected_vals = st.multiselect("Keep values", all_vals, default=all_vals, key="ws_filt_cat_vals")
+                    if len(selected_vals) < len(all_vals):
+                        if st.button("Apply", key="ws_filt_cat_apply", type="primary"):
+                            st.session_state.ws_df_backup = st.session_state.ws_df.copy()
+                            df = df[df[filt_cat_col].isin(selected_vals)].reset_index(drop=True)
+                            st.session_state.ws_df = df
+                            st.rerun()
+
+            st.divider()
+            st.markdown(":orange[**Drop Columns**]")
+            drop_cols = st.multiselect("Select columns to remove", df.columns.tolist(), key="ws_drop_cols")
+            if drop_cols:
+                if st.button("Drop", key="ws_drop_apply"):
                     st.session_state.ws_df_backup = st.session_state.ws_df.copy()
-                    df = df[(df[filt_col] >= filt_range[0]) & (df[filt_col] <= filt_range[1])].reset_index(drop=True)
+                    df = df.drop(columns=drop_cols)
                     st.session_state.ws_df = df
                     st.rerun()
-        if cat_cols:
-            filt_cat_col = st.selectbox("Categorical column", cat_cols, key="ws_filt_cat_col")
-            all_vals = df[filt_cat_col].dropna().unique().tolist()
-            if all_vals:
-                selected_vals = st.multiselect("Keep values", all_vals, default=all_vals, key="ws_filt_cat_vals")
-                if len(selected_vals) < len(all_vals):
-                    if st.button("Apply", key="ws_filt_cat_apply", type="primary"):
+
+            st.markdown(":orange[**Rename Column**]")
+            rename_col = st.selectbox("Column to rename", [""] + df.columns.tolist(), key="ws_rename_col")
+            if rename_col:
+                new_name = st.text_input("New name", value=rename_col, key="ws_rename_new")
+                if new_name and new_name != rename_col:
+                    if st.button("Rename", key="ws_rename_apply", type="primary"):
                         st.session_state.ws_df_backup = st.session_state.ws_df.copy()
-                        df = df[df[filt_cat_col].isin(selected_vals)].reset_index(drop=True)
+                        df = df.rename(columns={rename_col: new_name})
                         st.session_state.ws_df = df
                         st.rerun()
 
-        st.divider()
-        st.markdown(":orange[**Drop Columns**]")
-        drop_cols = st.multiselect("Select columns to remove", df.columns.tolist(), key="ws_drop_cols")
-        if drop_cols:
-            if st.button("Drop", key="ws_drop_apply"):
-                st.session_state.ws_df_backup = st.session_state.ws_df.copy()
-                df = df.drop(columns=drop_cols)
-                st.session_state.ws_df = df
-                st.rerun()
-
-        st.markdown(":orange[**Rename Column**]")
-        rename_col = st.selectbox("Column to rename", [""] + df.columns.tolist(), key="ws_rename_col")
-        if rename_col:
-            new_name = st.text_input("New name", value=rename_col, key="ws_rename_new")
-            if new_name and new_name != rename_col:
-                if st.button("Rename", key="ws_rename_apply", type="primary"):
-                    st.session_state.ws_df_backup = st.session_state.ws_df.copy()
-                    df = df.rename(columns={rename_col: new_name})
-                    st.session_state.ws_df = df
-                    st.rerun()
-
-        st.divider()
-        st.markdown(":orange[**Type Conversion**]")
-        type_col = st.selectbox("Column to convert", [""] + df.columns.tolist(), key="ws_type_col")
-        if type_col:
-            st.caption(f"Current type: `{str(df[type_col].dtype)}`")
-            target_type = st.selectbox(
-                "Convert to", ["", "float", "int", "string", "bool", "datetime", "category"], key="ws_type_target",
-            )
-            if target_type and st.button("Convert", key="ws_type_apply", type="primary"):
-                st.session_state.ws_df_backup = st.session_state.ws_df.copy()
-                try:
-                    if target_type == "float":
-                        df[type_col] = pd.to_numeric(df[type_col], errors="coerce")
-                    elif target_type == "int":
-                        df[type_col] = pd.to_numeric(df[type_col], errors="coerce").astype("Int64")
-                    elif target_type == "string":
-                        df[type_col] = df[type_col].astype(str)
-                    elif target_type == "bool":
-                        df[type_col] = df[type_col].astype(bool)
-                    elif target_type == "datetime":
-                        df[type_col] = pd.to_datetime(df[type_col], errors="coerce")
-                    elif target_type == "category":
-                        df[type_col] = df[type_col].astype("category")
-                    st.session_state.ws_df = df
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Conversion failed: {e}")
-
-        st.divider()
-        st.markdown(":orange[**Duplicate Rows**]")
-        dup_cols = st.multiselect(
-            "Columns to check (empty = all)", df.columns.tolist(), key="ws_dup_cols",
-        )
-        n_dups = df.duplicated(subset=dup_cols or None).sum()
-        st.caption(f"**{n_dups}** duplicate(s)")
-        if n_dups > 0:
-            if st.button("Drop Dups", key="ws_dup_drop", type="primary"):
-                st.session_state.ws_df_backup = st.session_state.ws_df.copy()
-                df = df.drop_duplicates(subset=dup_cols or None).reset_index(drop=True)
-                st.session_state.ws_df = df
-                st.success(f"Removed {n_dups} duplicate(s).")
-                st.rerun()
-
-        st.divider()
-        st.markdown(":orange[**Missing Values**]")
-        missing_method = st.selectbox(
-            "Method",
-            ["Drop NA rows", "Drop all-NA rows", "Fill with column mean", "Fill with 0"], key="ws_na_method",
-        )
-        if st.button("Apply", key="ws_na_apply"):
-            st.session_state.ws_df_backup = st.session_state.ws_df.copy()
-            if "all-NA" in missing_method:
-                prev = len(df)
-                df = df.dropna(how="all").reset_index(drop=True)
-                st.session_state.ws_df = df
-                st.success(f"Dropped {prev - len(df)} rows.")
-                st.rerun()
-            elif "NA" in missing_method:
-                prev = len(df)
-                df = df.dropna().reset_index(drop=True)
-                st.session_state.ws_df = df
-                st.success(f"Dropped {prev - len(df)} rows.")
-                st.rerun()
-            elif "mean" in missing_method:
-                num_df = df.select_dtypes(include=["float64", "int64"])
-                df[num_df.columns] = df[num_df.columns].fillna(num_df.mean())
-                st.session_state.ws_df = df
-                st.success("Filled with means.")
-                st.rerun()
-            else:
-                df = df.fillna(0)
-                st.session_state.ws_df = df
-                st.success("Filled with 0.")
-                st.rerun()
-
-        st.divider()
-        st.markdown(":orange[**Transform Column**]")
-        transform_col = st.selectbox("Column to transform", [""] + numeric_cols, key="ws_transform_col")
-        if transform_col:
-            transform_expr = st.text_input(
-                "Expression (use `col`)", placeholder="np.log(col)", key="ws_transform_expr",
-            )
-            if transform_expr:
-                if st.button("Transform", key="ws_transform_apply", type="primary"):
+            st.divider()
+            st.markdown(":orange[**Type Conversion**]")
+            type_col = st.selectbox("Column to convert", [""] + df.columns.tolist(), key="ws_type_col")
+            if type_col:
+                st.caption(f"Current type: `{str(df[type_col].dtype)}`")
+                target_type = st.selectbox(
+                    "Convert to", ["", "float", "int", "string", "bool", "datetime", "category"], key="ws_type_target",
+                )
+                if target_type and st.button("Convert", key="ws_type_apply", type="primary"):
                     st.session_state.ws_df_backup = st.session_state.ws_df.copy()
                     try:
-                        col_vals = df[transform_col].values
-                        result = eval(transform_expr, {"np": np, "pd": pd, "col": col_vals})
-                        df[transform_col] = result
+                        if target_type == "float":
+                            df[type_col] = pd.to_numeric(df[type_col], errors="coerce")
+                        elif target_type == "int":
+                            df[type_col] = pd.to_numeric(df[type_col], errors="coerce").astype("Int64")
+                        elif target_type == "string":
+                            df[type_col] = df[type_col].astype(str)
+                        elif target_type == "bool":
+                            df[type_col] = df[type_col].astype(bool)
+                        elif target_type == "datetime":
+                            df[type_col] = pd.to_datetime(df[type_col], errors="coerce")
+                        elif target_type == "category":
+                            df[type_col] = df[type_col].astype("category")
+                        st.session_state.ws_df = df
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Conversion failed: {e}")
+
+            st.divider()
+            st.markdown(":orange[**Duplicate Rows**]")
+            dup_cols = st.multiselect(
+                "Columns to check (empty = all)", df.columns.tolist(), key="ws_dup_cols",
+            )
+            n_dups = df.duplicated(subset=dup_cols or None).sum()
+            st.caption(f"**{n_dups}** duplicate(s)")
+            if n_dups > 0:
+                if st.button("Drop Dups", key="ws_dup_drop", type="primary"):
+                    st.session_state.ws_df_backup = st.session_state.ws_df.copy()
+                    df = df.drop_duplicates(subset=dup_cols or None).reset_index(drop=True)
+                    st.session_state.ws_df = df
+                    st.success(f"Removed {n_dups} duplicate(s).")
+                    st.rerun()
+
+            st.divider()
+            st.markdown(":orange[**Missing Values**]")
+            missing_method = st.selectbox(
+                "Method",
+                ["Drop NA rows", "Drop all-NA rows", "Fill with column mean", "Fill with 0"], key="ws_na_method",
+            )
+            if st.button("Apply", key="ws_na_apply"):
+                st.session_state.ws_df_backup = st.session_state.ws_df.copy()
+                if "all-NA" in missing_method:
+                    prev = len(df)
+                    df = df.dropna(how="all").reset_index(drop=True)
+                    st.session_state.ws_df = df
+                    st.success(f"Dropped {prev - len(df)} rows.")
+                    st.rerun()
+                elif "NA" in missing_method:
+                    prev = len(df)
+                    df = df.dropna().reset_index(drop=True)
+                    st.session_state.ws_df = df
+                    st.success(f"Dropped {prev - len(df)} rows.")
+                    st.rerun()
+                elif "mean" in missing_method:
+                    num_df = df.select_dtypes(include=["float64", "int64"])
+                    df[num_df.columns] = df[num_df.columns].fillna(num_df.mean())
+                    st.session_state.ws_df = df
+                    st.success("Filled with means.")
+                    st.rerun()
+                else:
+                    df = df.fillna(0)
+                    st.session_state.ws_df = df
+                    st.success("Filled with 0.")
+                    st.rerun()
+
+            st.divider()
+            st.markdown(":orange[**Transform Column**]")
+            transform_col = st.selectbox("Column to transform", [""] + numeric_cols, key="ws_transform_col")
+            if transform_col:
+                transform_expr = st.text_input(
+                    "Expression (use `col`)", placeholder="np.log(col)", key="ws_transform_expr",
+                )
+                if transform_expr:
+                    if st.button("Transform", key="ws_transform_apply", type="primary"):
+                        st.session_state.ws_df_backup = st.session_state.ws_df.copy()
+                        try:
+                            col_vals = df[transform_col].values
+                            result = eval(transform_expr, {"np": np, "pd": pd, "col": col_vals})
+                            df[transform_col] = result
+                            st.session_state.ws_df = df
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Expression error: {e}")
+
+            st.divider()
+            st.markdown(":orange[**Computed Column**]")
+            col_name = st.text_input("New column name", placeholder="log_x", key="ws_comp_name")
+            expression = st.text_input(
+                "Expression (use `col`)", placeholder="np.log(col)", key="ws_comp_expr",
+            )
+            comp_col = st.selectbox("Source column", [""] + numeric_cols, key="ws_comp_source")
+            if st.button("Open Expression Gallery", key="ws_gallery_btn", use_container_width=True):
+                _expression_gallery_dialog()
+            if col_name and expression and comp_col:
+                if st.button("Create", key="ws_comp_apply", type="primary"):
+                    st.session_state.ws_df_backup = st.session_state.ws_df.copy()
+                    try:
+                        col = df[comp_col].values
+                        result = eval(expression, {"np": np, "pd": pd, "col": col, "df": df})
+                        df[col_name] = result
                         st.session_state.ws_df = df
                         st.rerun()
                     except Exception as e:
                         st.error(f"Expression error: {e}")
 
-        st.divider()
-        st.markdown(":orange[**Computed Column**]")
-        col_name = st.text_input("New column name", placeholder="log_x", key="ws_comp_name")
-        expression = st.text_input(
-            "Expression (use `col`)", placeholder="np.log(col)", key="ws_comp_expr",
-        )
-        comp_col = st.selectbox("Source column", [""] + numeric_cols, key="ws_comp_source")
-        if st.button("Open Expression Gallery", key="ws_gallery_btn", use_container_width=True):
-            _expression_gallery_dialog()
-        if col_name and expression and comp_col:
-            if st.button("Create", key="ws_comp_apply", type="primary"):
+            st.divider()
+            mapped = _render_categorical_mapping(df)
+            if mapped is not None and isinstance(mapped, pd.DataFrame) and len(mapped.columns) > len(df.columns):
                 st.session_state.ws_df_backup = st.session_state.ws_df.copy()
-                try:
-                    col = df[comp_col].values
-                    result = eval(expression, {"np": np, "pd": pd, "col": col, "df": df})
-                    df[col_name] = result
-                    st.session_state.ws_df = df
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Expression error: {e}")
-
-        st.divider()
-        mapped = _render_categorical_mapping(df)
-        if mapped is not None and isinstance(mapped, pd.DataFrame) and len(mapped.columns) > len(df.columns):
-            st.session_state.ws_df_backup = st.session_state.ws_df.copy()
-            st.session_state.ws_df = mapped
-            st.rerun()
+                st.session_state.ws_df = mapped
+                st.rerun()
 
     # ==========================================
     # RIGHT COLUMN — Phase 2: Data preview, stats, aggregation
@@ -715,100 +1144,119 @@ def render_data_workspace():
         st.divider()
         st.subheader("2. Data Structure")
 
-        org_options = []
-        if has_numeric:
-            org_options += [
-                "Wide format (each group/condition in its own column)",
-                "Long format (one value column + one group column)",
-            ]
-            if len(numeric_cols) >= 2:
-                org_options.append("Correlation / Regression (X and Y variables)")
-        if has_categorical:
-            if len(cat_cols) >= 2:
-                org_options.append("Two categorical variables (contingency table)")
-            org_options.append("Single categorical variable (frequency table)")
+        using_summarized = st.session_state.get("ws_using_summarized", False)
 
-        if not org_options:
-            st.error("Dataset has no usable columns.")
-            return
-
-        organization = st.radio("Choose the structure:", org_options, key="ws_org")
-
-        col_config = {}
-
-        if "Wide format" in organization:
-            selected_cols = st.multiselect(
-                "Select columns (each = one group/condition):",
-                numeric_cols,
-                default=numeric_cols[:min(3, len(numeric_cols))],
-                key="ws_wide_cols",
-            )
-            if len(selected_cols) < 1:
-                st.warning("Select at least one column.")
-                return
-            col_config["selected_cols"] = selected_cols
-            if len(selected_cols) >= 2:
-                opts = [
-                    "Independent groups (different subjects per column)",
-                    "Paired (same subjects, different conditions)",
+        if using_summarized:
+            summary_fmt_labels = {
+                "one_sample": "One-sample", "two_sample": "Two-sample (independent)",
+                "paired": "Paired / Dependent",
+                "correlation": "Correlation / Regression",
+                "categorical_two": "Contingency table (two categorical variables)",
+                "categorical_one": "Frequency table (single categorical variable)",
+            }
+            ext = st.session_state.ws_external_data
+            sfmt = ext.get("_format", "") if ext else ""
+            st.info(f"Using Summarized Data — format: **{summary_fmt_labels.get(sfmt, sfmt)}**")
+            organization = None
+            col_config = {}
+            external_data = ext
+        else:
+            org_options = []
+            if has_numeric:
+                org_options += [
+                    "Wide format (each group/condition in its own column)",
+                    "Long format (one value column + one group column)",
                 ]
-                if len(selected_cols) == 2:
-                    opts.append("Correlation / Regression (two variables)")
-                col_config["relation"] = st.radio("Relationship:", opts, key="ws_relation")
+                if len(numeric_cols) >= 2:
+                    org_options.append("Correlation / Regression (X and Y variables)")
+            if has_categorical:
+                if len(cat_cols) >= 2:
+                    org_options.append("Two categorical variables (contingency table)")
+                org_options.append("Single categorical variable (frequency table)")
 
-        elif "Long format" in organization:
-            if not has_categorical:
-                st.warning("No group column detected. Use 'Wide format' instead.")
+            if not org_options:
+                st.error("Dataset has no usable columns.")
                 return
-            val_col = st.selectbox("Value column (numeric):", numeric_cols, key="ws_val")
-            grp_col = st.selectbox("Group column (labels):", cat_cols, key="ws_grp")
-            col_config["value_col"] = val_col
-            col_config["group_col"] = grp_col
-            st.caption(f"**{df[grp_col].nunique()}** group(s): {', '.join(str(g) for g in df[grp_col].unique())}")
 
-        elif "Correlation / Regression" in organization:
-            if len(numeric_cols) < 2:
-                st.error("Need at least 2 numeric columns.")
+            organization = st.radio("Choose the structure:", org_options, key="ws_org")
+
+            col_config = {}
+
+            if "Wide format" in organization:
+                selected_cols = st.multiselect(
+                    "Select columns (each = one group/condition):",
+                    numeric_cols,
+                    default=numeric_cols[:min(3, len(numeric_cols))],
+                    key="ws_wide_cols",
+                )
+                if len(selected_cols) < 1:
+                    st.warning("Select at least one column.")
+                    return
+                col_config["selected_cols"] = selected_cols
+                if len(selected_cols) >= 2:
+                    opts = [
+                        "Independent groups (different subjects per column)",
+                        "Paired (same subjects, different conditions)",
+                    ]
+                    if len(selected_cols) == 2:
+                        opts.append("Correlation / Regression (two variables)")
+                    col_config["relation"] = st.radio("Relationship:", opts, key="ws_relation")
+
+            elif "Long format" in organization:
+                if not has_categorical:
+                    st.warning("No group column detected. Use 'Wide format' instead.")
+                    return
+                val_col = st.selectbox("Value column (numeric):", numeric_cols, key="ws_val")
+                grp_col = st.selectbox("Group column (labels):", cat_cols, key="ws_grp")
+                col_config["value_col"] = val_col
+                col_config["group_col"] = grp_col
+                st.caption(f"**{df[grp_col].nunique()}** group(s): {', '.join(str(g) for g in df[grp_col].unique())}")
+
+            elif "Correlation / Regression" in organization:
+                if len(numeric_cols) < 2:
+                    st.error("Need at least 2 numeric columns.")
+                    return
+                x_col = st.selectbox("X (predictor):", numeric_cols, key="ws_x")
+                y_opts = [c for c in numeric_cols if c != x_col]
+                y_col = st.selectbox("Y (outcome):", y_opts or numeric_cols, index=0, key="ws_y")
+                col_config["x_col"] = x_col
+                col_config["y_col"] = y_col
+
+            elif "Two categorical variables" in organization:
+                opts = cat_cols if len(cat_cols) >= 2 else numeric_cols
+                col_a = st.selectbox("First variable (rows):", opts, key="ws_cat_a")
+                col_b_opts = [c for c in opts if c != col_a]
+                col_b = st.selectbox("Second variable (columns):", col_b_opts or opts, key="ws_cat_b")
+                col_config["cat_col_a"] = col_a
+                col_config["cat_col_b"] = col_b
+
+            elif "Single categorical variable" in organization:
+                col_opts = cat_cols if has_categorical else numeric_cols
+                col = st.selectbox("Categorical variable:", col_opts, key="ws_cat_one")
+                col_config["cat_col"] = col
+
+            # Build & show format
+            external_data = _build_external_data(df, organization, col_config)
+
+            if external_data is None:
+                st.error("Could not determine data format. Try a different structure.")
                 return
-            x_col = st.selectbox("X (predictor):", numeric_cols, key="ws_x")
-            y_opts = [c for c in numeric_cols if c != x_col]
-            y_col = st.selectbox("Y (outcome):", y_opts or numeric_cols, index=0, key="ws_y")
-            col_config["x_col"] = x_col
-            col_config["y_col"] = y_col
 
-        elif "Two categorical variables" in organization:
-            opts = cat_cols if len(cat_cols) >= 2 else numeric_cols
-            col_a = st.selectbox("First variable (rows):", opts, key="ws_cat_a")
-            col_b_opts = [c for c in opts if c != col_a]
-            col_b = st.selectbox("Second variable (columns):", col_b_opts or opts, key="ws_cat_b")
-            col_config["cat_col_a"] = col_a
-            col_config["cat_col_b"] = col_b
-
-        elif "Single categorical variable" in organization:
-            col_opts = cat_cols if has_categorical else numeric_cols
-            col = st.selectbox("Categorical variable:", col_opts, key="ws_cat_one")
-            col_config["cat_col"] = col
-
-        # Build & show format
-        external_data = _build_external_data(df, organization, col_config)
-
-        if external_data is None:
-            st.error("Could not determine data format. Try a different structure.")
-            return
+            fmt = external_data.get("_format", "")
+            fmt_labels = {
+                "one_sample": "One-sample",
+                "two_sample": "Two-sample (independent)",
+                "multi_sample": "Multi-sample (3+ groups)",
+                "paired": "Paired / Dependent",
+                "repeated": "Repeated measures (3+ conditions)",
+                "correlation": "Correlation / Regression",
+                "categorical_two": "Contingency table (two categorical variables)",
+                "categorical_one": "Frequency table (single categorical variable)",
+            }
+            st.info(f"Format: **{fmt_labels.get(fmt, fmt)}**")
+            st.session_state.ws_external_data = external_data
 
         fmt = external_data.get("_format", "")
-        fmt_labels = {
-            "one_sample": "One-sample",
-            "two_sample": "Two-sample (independent)",
-            "multi_sample": "Multi-sample (3+ groups)",
-            "paired": "Paired / Dependent",
-            "repeated": "Repeated measures (3+ conditions)",
-            "correlation": "Correlation / Regression",
-            "categorical_two": "Contingency table (two categorical variables)",
-            "categorical_one": "Frequency table (single categorical variable)",
-        }
-        st.info(f"Format: **{fmt_labels.get(fmt, fmt)}**")
-        st.session_state.ws_external_data = external_data
 
         # Data summary
         st.divider()
@@ -882,7 +1330,10 @@ def render_data_workspace():
         st.session_state.ws_selected_test = selected_test
 
         if dataset_name:
-            st.caption(f"   **{dataset_name}**  \u2192  **{selected_test}**")
+            if using_summarized:
+                st.caption(f"   **{dataset_name}**")
+            else:
+                st.caption(f"   **{dataset_name}**  \u2192  **{selected_test}**")
         else:
             st.caption(f"Uploaded data  \u2192  **{selected_test}**")
 

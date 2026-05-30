@@ -1,0 +1,1251 @@
+[
+  {
+    "name": "Randomized Controlled Trial (RCT)",
+    "icon": "🧪",
+    "evidence_pyramid": 1,
+    "aliases": [
+      "Randomized Trial",
+      "Clinical Trial",
+      "Experimental Study",
+      "Parallel-Group RCT"
+    ],
+    "sections": {
+      "definition": "An **RCT** is a prospective experimental study in which participants are randomly allocated to two or more intervention groups (including a control). Randomization ensures that, on average, known and unknown confounders are balanced across groups, making the RCT the gold standard for causal inference.\n\nKey features: prospective design, random allocation, pre-specified outcomes, and (ideally) blinding of participants, providers, and outcome assessors.",
+      "when_to_use": "Use an RCT when you want to **establish causality** — Does drug X cause a reduction in outcome Y? RCTs are appropriate when:\n\n- You can ethically assign the intervention\n- You have sufficient sample size and follow-up time\n- You can maintain allocation concealment and blinding\n- The research question is about efficacy (does it work under ideal conditions?) rather than effectiveness (does it work in the real world?)",
+      "causal_inference": "RCTs sit at the **top of the evidence pyramid** (Level 1) for intervention questions. Randomization eliminates confounding by indication — the key threat in observational studies — because allocation is independent of patient characteristics.\n\nHowever, RCTs answer **efficacy** questions, not necessarily **effectiveness** questions. Careful eligibility criteria may limit generalizability (external validity). The answer to 'can this work?' may differ from 'does this work in practice?'",
+      "assumptions": [
+        "Random allocation achieves balance between groups (sealed envelopes, central randomization)",
+        "Blinding is feasible and maintained",
+        "Sufficient sample size to detect clinically meaningful effect",
+        "Follow-up is complete or loss to follow-up is minimal and non-differential",
+        "The control condition is appropriate (placebo, standard of care, active comparator)",
+        "Protocol deviations are minimal and balanced across arms"
+      ],
+      "bias_profile": {
+        "selection_bias": {
+          "risk": "Low",
+          "detail": "Randomization eliminates selection bias if allocation concealment is maintained"
+        },
+        "information_bias": {
+          "risk": "Low",
+          "detail": "Blinding prevents differential misclassification of outcomes"
+        },
+        "confounding": {
+          "risk": "Low",
+          "detail": "Randomization balances confounders in expectation; large samples achieve balance in practice"
+        },
+        "performance_bias": {
+          "risk": "Moderate",
+          "detail": "Blinding of participants and providers prevents co-intervention differences; open-label designs are vulnerable"
+        },
+        "detection_bias": {
+          "risk": "Moderate",
+          "detail": "Blinded outcome assessment is critical for subjective endpoints; objective endpoints (mortality) are less vulnerable"
+        },
+        "attrition_bias": {
+          "risk": "High",
+          "detail": "Loss to follow-up is the most common threat; differential attrition between arms can severely bias results"
+        },
+        "reporting_bias": {
+          "risk": "Moderate",
+          "detail": "Selective outcome reporting is common despite trial registration; pre-registration helps but is not always enforced"
+        },
+        "lead_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable; lead time is a screening concept, not an RCT concern"
+        },
+        "length_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable; length time applies to screening designs"
+        }
+      },
+      "worked_example": "## Scenario\nA pharmaceutical company develops a new drug, **Nebuvastatin**, for lowering LDL cholesterol. They design a Phase III RCT to test efficacy against placebo.\n\n## Design\n- **Population**: Adults 40–75 with LDL > 130 mg/dL, no prior statin use\n- **Intervention**: Nebuvastatin 20 mg daily (n = 400)\n- **Control**: Matching placebo (n = 400)\n- **Primary endpoint**: Change in LDL from baseline at 12 weeks\n- **Randomization**: 1:1, block randomization, stratified by site\n- **Blinding**: Double-blind (participant, provider, outcome assessor)\n\n## Steps\n1. Screening and enrollment: 950 screened → 800 eligible and consenting\n2. Baseline assessment: lipids, liver function, creatinine, medical history\n3. Randomization via centralized web-based system\n4. Follow-up visits at weeks 2, 4, 8, 12 with pill counts and adverse event monitoring\n5. Primary analysis: ANCOVA with baseline LDL as covariate, ITT population\n\n## Results\nNebuvastatin reduced LDL by −48 mg/dL (95% CI: −52 to −44) vs −5 mg/dL (−9 to −1) for placebo, p < 0.001. NNT = 4 for achieving LDL < 100 mg/dL. No significant differences in adverse events.\n\n## Interpretation\nThe ITT analysis preserves randomization and provides a conservative estimate of efficacy. Per-protocol analysis shows slightly larger effects, but ITT is primary because it reflects real-world effectiveness of *assignment* rather than *receipt*.",
+      "reporting_guideline": {
+        "name": "CONSORT 2010",
+        "url": "http://www.consort-statement.org/",
+        "key_items": [
+          "How participants were allocated to interventions (random sequence generation, allocation concealment)",
+          "Blinding status of participants, personnel, and outcome assessors",
+          "Sample size determination and stopping rules",
+          "Flow diagram: enrolled, randomized, treated, completed, analyzed",
+          "Primary and secondary outcomes clearly distinguished",
+          "Trial registration number and registry name",
+          "Funding source and role of funder"
+        ]
+      },
+      "pitfalls": [
+        "**Inadequate allocation concealment**: Using alternation, date of birth, or open randomization list destroys the benefits of randomization",
+        "**Sample size too small**: Underpowered RCTs are both futile and unethical — they expose participants to risk without producing reliable evidence",
+        "**Per-protocol analysis as primary**: Per-protocol comparisons break randomization and introduce selection bias; ITT must be the primary analysis",
+        "**Multiple primary endpoints**: Increases Type I error; if multiple primary endpoints are necessary, adjust for multiplicity",
+        "**Stopping early for benefit**: Trials stopped early for apparent benefit often overestimate treatment effects; use pre-specified stopping rules"
+      ],
+      "statistical_considerations": "**Primary analysis**: Intention-to-treat (ITT) is the gold standard. Per-protocol (PP) and as-treated analyses are supplementary.\n\n**Effect measures**: Continuous outcomes → mean difference or standardized mean difference (Cohen's d). Binary outcomes → risk ratio (RR), odds ratio (OR), or absolute risk reduction (ARR) with NNT.\n\n**Subgroup analysis**: Pre-specified only, with interaction tests — not separate p-values within subgroups. Adjustment for multiplicity (e.g., Bonferroni, Hochberg) when multiple subgroups are tested.\n\n**Interim analyses**: Require pre-specified stopping boundaries (Haybittle-Peto, O'Brien-Fleming, or alpha-spending functions).\n\n**Sample size**: Based on the primary endpoint with clinically meaningful effect size, 80–90% power, and two-sided α = 0.05. Account for anticipated attrition (typically 10–20%).",
+      "software_notes": "**Data structure**: One row per participant. Columns: `id`, `arm`, `baseline_lipids`, `week2_lipids`, `week4_lipids`, `week12_lipids`, `adverse_events`, `completed`.\n\n**Tidy format for repeated measures**: `id`, `arm`, `visit`, `ldl`, `ae_count`.\n\n**Key packages**: `statsmodels` (ANCOVA, logistic regression), `scipy.stats` (t-tests), `lifelines` or `survival` (time-to-event), `scikit-learn` (propensity scores for sensitivity analyses).\n\n**Recommended analysis code pattern**:\n```python\nimport statsmodels.api as sm\nimport statsmodels.formula.api as smf\n\n# ANCOVA with baseline adjustment\nmodel = smf.ols('ldl_change ~ arm + baseline_ldl + site', data=df).fit()\nsm.stats.anova_lm(model, typ=2)\n\n# Binary outcome\nmodel_logit = smf.logit('outcome ~ arm + baseline_ldl', data=df).fit()\nprint(model_logit.summary())\n```",
+      "further_reading": [
+        "Schulz KF, Altman DG, Moher D (2010). CONSORT 2010 Statement: updated guidelines for reporting parallel group randomised trials. BMJ, 340, c332.",
+        "Altman DG et al. (2001). The revised CONSORT statement for reporting randomized trials: explanation and elaboration. Annals of Internal Medicine, 134(8), 663–694.",
+        "Collins R, MacMahon S (2001). Reliable assessment of the effects of treatment on mortality and major morbidity, I: clinical trials. Lancet, 357(9253), 373–380.",
+        "Friedman LM, Furberg CD, DeMets DL, Reboussin DM, Granger CB (2015). *Fundamentals of Clinical Trials*, 5th ed. Springer."
+      ]
+    }
+  },
+  {
+    "name": "Prospective Cohort Study",
+    "icon": "🔭",
+    "evidence_pyramid": 2,
+    "aliases": [
+      "Cohort Study",
+      "Longitudinal Study",
+      "Follow-up Study",
+      "Incidence Study"
+    ],
+    "sections": {
+      "definition": "A **prospective cohort** study follows a group of individuals forward in time, measuring exposures at baseline and tracking outcomes as they occur. Participants are classified by exposure status (exposed vs unexposed) and compared on subsequent outcome rates.\n\nCohorts may be **closed** (fixed membership, no new entries) or **open** (dynamic population with ongoing enrollment).",
+      "when_to_use": "Use a prospective cohort when:\n\n- An RCT is unethical or impractical (e.g., studying smoking and lung cancer)\n- You need to establish **temporal sequence** (exposure precedes outcome)\n- The outcome is common enough to observe within a reasonable follow-up period\n- You have the resources to maintain long-term follow-up\n- You want to study **multiple outcomes** from a single exposure",
+      "causal_inference": "Prospective cohorts provide **stronger evidence** than retrospective designs because exposure is measured before the outcome, eliminating recall bias and establishing temporal sequence. However, confounding by indication remains a major threat — exposed and unexposed groups differ in ways beyond the exposure itself.\n\nEvidence level: **Level 2** for intervention questions, **Level 1** for prognosis/natural history. Prospective cohorts rank below RCTs but above retrospective designs in the evidence hierarchy.",
+      "assumptions": [
+        "Exposure can be measured reliably at baseline",
+        "Adequate sample size to observe sufficient outcome events",
+        "Follow-up is sufficiently long and complete for the outcome to occur",
+        "Loss to follow-up is non-differential between exposure groups",
+        "Confounding variables are measured and can be adjusted for",
+        "Exposure status is stable over follow-up (or changes are documented)"
+      ],
+      "bias_profile": {
+        "selection_bias": {
+          "risk": "Moderate",
+          "detail": "Volunteer bias — those who agree to participate may differ from those who decline; healthy worker effect in occupational cohorts"
+        },
+        "information_bias": {
+          "risk": "Low",
+          "detail": "Exposure measured before outcome, so differential misclassification is unlikely"
+        },
+        "confounding": {
+          "risk": "High",
+          "detail": "Confounding by indication is the dominant threat; exposed and unexposed differ systematically"
+        },
+        "performance_bias": {
+          "risk": "N/A",
+          "detail": "Not a controlled experiment; no intervention to standardize"
+        },
+        "detection_bias": {
+          "risk": "Moderate",
+          "detail": "Outcome surveillance may be more intense in exposed group if the exposure is known"
+        },
+        "attrition_bias": {
+          "risk": "High",
+          "detail": "Loss to follow-up over years of observation; differential attrition is very common"
+        },
+        "reporting_bias": {
+          "risk": "Low",
+          "detail": "Pre-registered cohorts with published protocols reduce selective reporting"
+        },
+        "lead_time_bias": {
+          "risk": "N/A",
+          "detail": "Applies to screening studies, not general cohorts"
+        },
+        "length_time_bias": {
+          "risk": "N/A",
+          "detail": "Applies to screening studies"
+        }
+      },
+      "worked_example": "## Scenario\nResearchers at a university want to determine whether **shift work** increases the risk of **type 2 diabetes** over 10 years.\n\n## Design\n- **Population**: 50,000 nurses aged 30–55, free of diabetes at baseline\n- **Exposure**: Night shift work (≥3 night shifts/month) vs day work\n- **Primary outcome**: Incident type 2 diabetes (fasting glucose ≥126 mg/dL or physician diagnosis)\n- **Follow-up**: 10 years with health questionnaires every 2 years\n- **Confounders measured**: Age, BMI, physical activity, diet quality, family history, socioeconomic status\n\n## Steps\n1. Baseline questionnaire: work schedule, health status, lifestyle, medical history\n2. Biennial follow-up: work schedule changes, new diagnoses, medications, lifestyle\n3. Annual linkage to diabetes registries for cases lost to follow-up\n4. Cox proportional hazards regression for time to diabetes diagnosis\n\n## Results\nAfter adjusting for age, BMI, family history, and lifestyle, nurses working ≥3 night shifts/month had a **HR = 1.36** (95% CI: 1.18–1.56) for incident diabetes compared to day workers. The association showed a dose-response: HR = 1.17 for 3–5 years, 1.42 for 6–9 years, and 1.58 for ≥10 years of shift work.\n\n## Interpretation\nThe prospective design ensures temporal sequence and captures detailed exposure data. The dose-response gradient strengthens causal inference. Residual confounding by unmeasured variables (e.g., sleep quality, circadian disruption) cannot be fully excluded.",
+      "reporting_guideline": {
+        "name": "STROBE",
+        "url": "https://www.strobe-statement.org/",
+        "key_items": [
+          "Study design specified in title/abstract (e.g., 'prospective cohort')",
+          "Eligibility criteria and sources of participants",
+          "How exposures and outcomes were defined and measured",
+          "Efforts to address potential sources of bias",
+          "Number of participants at each stage (eligibility, enrollment, follow-up, analysis)",
+          "Loss to follow-up and reasons for loss",
+          "Confounders adjusted for and methods of adjustment"
+        ]
+      },
+      "pitfalls": [
+        "**Insufficient follow-up time**: If the outcome has a long induction period, the cohort may end before enough events accrue",
+        "**Loss to follow-up bias**: If 20%+ of participants are lost and loss differs by exposure, results may be severely biased",
+        "**Healthy worker effect**: Occupational cohorts are healthier than the general population; using an internal comparison group is essential",
+        "**Exposure misclassification**: If shift work status changes over time, time-varying exposure models are needed, not baseline-only analysis",
+        "**Residual confounding**: Measured confounders can be adjusted for, but unmeasured confounders (e.g., personality type, genetic predisposition) remain"
+      ],
+      "statistical_considerations": "**Primary analysis**: Cox proportional hazards regression — hazard ratio (HR) with 95% CI. Kaplan-Meier curves for cumulative incidence.\n\n**Effect measures**: Incidence rate ratio (IRR), risk ratio (RR), hazard ratio (HR), or odds ratio (OR) depending on study design and analysis approach.\n\n**Confounding control**: Multivariable regression, propensity scores, or inverse probability weighting. Directed acyclic graphs (DAGs) should inform covariate selection.\n\n**Sample size**: Based on expected event rate in the unexposed group, minimum detectable effect size, desired power, and anticipated loss to follow-up. Schoenfeld formula for Cox regression.\n\n**Competing risks**: If death is a competing risk (not just censoring), use the Fine-Gray subdistribution hazard model or cause-specific hazards.",
+      "software_notes": "**Data structure**: One row per participant. Time-to-event format: `id`, `exposure`, `time_to_event`, `event_status`, `covariates`.\n\n**Tidy long format** for time-varying exposures: `id`, `start_time`, `end_time`, `exposure_status`, `event`.\n\n**Key packages**: `lifelines` (Cox PH, Kaplan-Meier, Aalen-Johansen), `statsmodels` (logistic regression for binary outcomes), `scikit-learn` (propensity scores).\n\n**Recommended analysis code**:\n```python\nfrom lifelines import CoxPHFitter\n\ndf['duration'] = df['event_time']  # in years\ncph = CoxPHFitter()\ncph.fit(df, duration_col='duration', event_col='event', formula='exposure + age + bmi + smoking')\ncph.print_summary()\n```",
+      "further_reading": [
+        "Rothman KJ, Greenland S, Lash TL (2008). *Modern Epidemiology*, 3rd ed. Lippincott Williams & Wilkins.",
+        "Vandenbroucke JP et al. (2007). Strengthening the reporting of observational studies in epidemiology (STROBE): explanation and elaboration. *PLoS Medicine*, 4(10), e297.",
+        "Hernán MA, Robins JM (2020). *Causal Inference: What If*. Chapman & Hall/CRC.",
+        "Manson JE et al. (2006). Walking compared with vigorous physical activity and risk of type 2 diabetes in women. *JAMA*, 296(3), 309–315."
+      ]
+    }
+  },
+  {
+    "name": "Retrospective Cohort Study",
+    "icon": "🔙",
+    "evidence_pyramid": 3,
+    "aliases": [
+      "Historical Cohort",
+      "Non-concurrent Cohort",
+      "Backward Cohort"
+    ],
+    "sections": {
+      "definition": "A **retrospective cohort** study uses existing records to identify a cohort in the past and follow them forward to the present. Exposure and outcome have already occurred; the researcher reconstructs the timeline from medical records, registries, or administrative databases.\n\nThe key advantage is efficiency: outcomes are already known, so follow-up is instantaneous. The key disadvantage is reliance on pre-existing data quality.",
+      "when_to_use": "Use a retrospective cohort when:\n\n- The outcome has a long latency period (e.g., cancer latency of 10–20 years)\n- Prospective follow-up is impractical or too expensive\n- High-quality historical records exist (e.g., occupational exposure registries, electronic health records)\n- You need results quickly for public health decision-making\n- You want to study rare exposures using existing databases",
+      "causal_inference": "Retrospective cohorts can establish temporal sequence (exposure was documented before the outcome) but are limited by the **quality and completeness** of historical records. Confounding control is restricted to variables that were recorded. Evidence level: **Level 3**.\n\nThe key distinction from case-control: in a retrospective cohort, the **cohort** is defined first (by exposure), and outcomes are later determined. In a case-control study, **cases** are defined first.",
+      "assumptions": [
+        "Accurate historical records exist for both exposure and outcome",
+        "Records are sufficiently complete for key confounders",
+        "The cohort can be reliably assembled from archived data",
+        "Exposure definition can be applied consistently across the historical period",
+        "Loss to follow-up (e.g., moved, died of other causes) can be ascertained from records"
+      ],
+      "bias_profile": {
+        "selection_bias": {
+          "risk": "Moderate",
+          "detail": "The cohort is defined by available records, which may exclude certain groups systematically"
+        },
+        "information_bias": {
+          "risk": "High",
+          "detail": "Data was collected for clinical/administrative purposes, not research; exposure and covariate measurement may be inconsistent"
+        },
+        "confounding": {
+          "risk": "High",
+          "detail": "Only confounders documented in the historical record can be adjusted for"
+        },
+        "performance_bias": {
+          "risk": "N/A",
+          "detail": "Not an intervention study"
+        },
+        "detection_bias": {
+          "risk": "High",
+          "detail": "Outcome surveillance depends on clinical practice patterns; if exposed patients were monitored more closely, detection bias arises"
+        },
+        "attrition_bias": {
+          "risk": "Moderate",
+          "detail": "Follow-up loss occurs when patients move or change healthcare systems; may or may not be differential"
+        },
+        "reporting_bias": {
+          "risk": "Low",
+          "detail": "Pre-registration is uncommon, but the research question is usually clear from the database design"
+        },
+        "lead_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable outside screening"
+        },
+        "length_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        }
+      },
+      "worked_example": "## Scenario\nResearchers want to determine whether **occupational asbestos exposure** (1970–1985) is associated with **lung cancer mortality** through 2020.\n\n## Design\n- **Cohort**: 5,000 male workers at a shipyard (1970–1985 employment records)\n- **Exposure**: Asbestos exposure based on job classification (high/medium/low) from industrial hygiene records\n- **Comparison**: Age-matched general population rates (external) + unexposed office workers (internal)\n- **Outcome**: Lung cancer mortality from death certificates and cancer registry linkage\n- **Follow-up**: 1970–2020 (up to 50 years)\n\n## Steps\n1. Extract employee roster from archived personnel files\n2. Classify exposure based on job title, department, and duration\n3. Link to National Death Index and cancer registry for outcomes\n4. Calculate standardized mortality ratios (SMR) vs general population\n5. Cox regression for internal comparison by exposure level\n\n## Results\nHigh-exposure workers had SMR = 3.8 (95% CI: 3.1–4.6) compared to the general population. Internal comparison: HR = 2.9 (95% CI: 2.1–4.0) for high vs low exposure, adjusting for age and smoking (where smoking data was available for 60% of the cohort).\n\n## Interpretation\nThe strong association and clear dose-response support a causal relationship. However, smoking data was missing for 40% of workers, and residual confounding by smoking is a concern. Sensitivity analyses (E-value) show that an unmeasured confounder would need an association of RR > 3.5 with both exposure and outcome to explain the result.",
+      "reporting_guideline": {
+        "name": "STROBE",
+        "url": "https://www.strobe-statement.org/",
+        "key_items": [
+          "Describe how the cohort was assembled from existing records",
+          "Report completeness of data for key variables",
+          "Explain how missing data was handled",
+          "Describe the source and validation of outcome ascertainment",
+          "Discuss potential biases due to reliance on administrative/clinical data",
+          "Report the time period of data collection and follow-up"
+        ]
+      },
+      "pitfalls": [
+        "**Missing confounder data**: Key confounders (smoking, BMI) are often poorly documented in medical records; sensitivity analyses are essential",
+        "**Surveillance bias**: If exposed workers underwent more frequent medical screening, outcomes may be detected earlier or more completely",
+        "**Immortal time bias**: Defining exposure based on survival to a certain point (e.g., employment duration) introduces immortal time if not handled properly",
+        "**Changes in diagnostic criteria**: Over a 30-year follow-up, diagnostic criteria for the outcome may change; consistency of outcome definition must be verified",
+        "**Incomplete outcome ascertainment**: If participants move out of the registry catchment area, outcomes are missed; linkage to national databases helps"
+      ],
+      "statistical_considerations": "**Primary analysis**: Standardized mortality ratio (SMR) for external comparisons; Cox regression for internal comparisons.\n\n**Immortal time bias**: Use time-dependent exposure definitions or start follow-up at the time exposure is documented, not at cohort entry.\n\n**Missing data**: Multiple imputation (MICE) if missingness is at least MAR. Sensitivity analyses using E-values for unmeasured confounding.\n\n**Competing risks**: In occupational cohorts with long follow-up, competing mortality (cardiovascular disease, other cancers) is substantial. Use cause-specific hazards or Fine-Gray models.\n\n**Sample size**: Retrospective cohorts are usually limited by available records; power is based on expected number of events given the cohort size and expected rates.",
+      "software_notes": "**Data structure**: One row per participant. `id`, `exposure_level`, `exposure_duration`, `age_at_entry`, `sex`, `smoking_status`, `follow_up_years`, `lung_cancer_death`, `age_at_death`.\n\n**Key packages**: `lifelines` (Cox regression), `statsmodels` (logistic regression, missing data).\n\n**Sensitivity analysis for unmeasured confounding**:\n```python\nimport numpy as np\ndef e_value(observed_rr):\n    return observed_rr + np.sqrt(observed_rr * (observed_rr - 1))\n```",
+      "further_reading": [
+        "Hernán MA, Robins JM (2020). *Causal Inference: What If*. Chapman & Hall/CRC.",
+        "Vandenbroucke JP et al. (2007). STROBE: explanation and elaboration. *PLoS Medicine*, 4(10), e297.",
+        "Suissa S (2008). Immortal time bias in pharmacoepidemiology. *American Journal of Epidemiology*, 167(4), 492–499.",
+        "VanderWeele TJ, Ding P (2017). Sensitivity analysis in observational research: introducing the E-value. *Annals of Internal Medicine*, 167(4), 268–274."
+      ]
+    }
+  },
+  {
+    "name": "Case-Control Study",
+    "icon": "⚖️",
+    "evidence_pyramid": 3,
+    "aliases": [
+      "Case-Referent Study",
+      "Case-Comparison Study"
+    ],
+    "sections": {
+      "definition": "A **case-control** study identifies individuals with the outcome of interest (cases) and a comparable group without the outcome (controls), then looks back to compare exposure histories between the two groups.\n\nCase-control studies are **retrospective by design** — they start with the outcome and look backward for exposures. They are efficient for rare diseases and outcomes with long latency periods.",
+      "when_to_use": "Use a case-control study when:\n\n- The **outcome is rare** (cohort studies would require prohibitively large samples)\n- The **disease has a long latency** (e.g., cancer with 10+ year induction period)\n- You need **rapid results** at low cost\n- The population is well-defined (e.g., a cancer registry catchment area)\n- You want to study **multiple exposures** for a single outcome",
+      "causal_inference": "Case-control studies can provide moderate evidence for causality (Level 3), but are **highly vulnerable to bias**. The main strengths are efficiency and the ability to study rare diseases. The main weaknesses are **recall bias** (cases remember exposures differently than controls) and **selection bias** (controls may not represent the exposure distribution of the source population).\n\nThe key validity requirement: controls must be sampled from the same population that produced the cases (the **study base** principle).",
+      "assumptions": [
+        "Cases are representative of all cases in the source population",
+        "Controls are representative of the exposure distribution in the source population",
+        "Exposure can be measured accurately in retrospect",
+        "Recall accuracy is similar (or adjusted for) between cases and controls",
+        "The study base is well-defined and controls are sampled from it"
+      ],
+      "bias_profile": {
+        "selection_bias": {
+          "risk": "High",
+          "detail": "Control selection is the most critical and difficult aspect; poorly selected controls invalidate the study"
+        },
+        "information_bias": {
+          "risk": "High",
+          "detail": "Recall bias: cases search their memory for exposures more thoroughly than controls"
+        },
+        "confounding": {
+          "risk": "High",
+          "detail": "Confounders must be measured and adjusted for; matching alone does not eliminate confounding"
+        },
+        "performance_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable — no intervention"
+        },
+        "detection_bias": {
+          "risk": "High",
+          "detail": "How cases are identified (screening vs clinical presentation) affects the type of cases included"
+        },
+        "attrition_bias": {
+          "risk": "N/A",
+          "detail": "No follow-up period; single data collection point"
+        },
+        "reporting_bias": {
+          "risk": "Moderate",
+          "detail": "Selective reporting of exposure-outcome associations is possible; pre-registration is less common than in trials"
+        },
+        "lead_time_bias": {
+          "risk": "Moderate",
+          "detail": "If cases are identified through screening, they may include more early-stage cases with different exposure profiles"
+        },
+        "length_time_bias": {
+          "risk": "High",
+          "detail": "Screening-detected cases over-represent indolent disease; case-control studies of screening effectiveness are particularly vulnerable"
+        }
+      },
+      "worked_example": "## Scenario\nResearchers hypothesize that **human papillomavirus (HPV) infection** increases the risk of **oral squamous cell carcinoma**.\n\n## Design\n- **Cases**: 300 patients diagnosed with oral SCC at a tertiary hospital (2015–2020)\n- **Controls**: 300 patients from the same hospital's general medicine clinic, matched on age (±3 years) and sex\n- **Exposure**: HPV DNA detected in oral rinse samples (collected at diagnosis for cases; at study entry for controls)\n- **Matching**: 1:1 by age and sex\n\n## Steps\n1. Identify all incident oral SCC cases from pathology records\n2. Recruit controls from same hospital, frequency-matched by age/sex\n3. Collect oral rinse samples and questionnaire data (smoking, alcohol, sexual history)\n4. HPV DNA testing using PCR in a blinded laboratory\n5. Conditional logistic regression accounting for the matched design\n\n## Results\nHPV DNA was detected in 22% of cases vs 5% of controls. **OR = 5.4** (95% CI: 3.1–9.4) after adjusting for smoking and alcohol, p < 0.001. HPV-16 was the most common subtype (60% of HPV-positive cases).\n\n## Interpretation\nThe strong association is consistent with the established causal role of HPV in oropharyngeal cancer. Matching controlled for age and sex; multivariable adjustment addressed smoking and alcohol. The main concern is residual confounding by sexual behavior (not fully captured in the questionnaire).",
+      "reporting_guideline": {
+        "name": "STROBE",
+        "url": "https://www.strobe-statement.org/",
+        "key_items": [
+          "Case definition and source (incident vs prevalent cases)",
+          "Control selection method (population-based, hospital-based, friend/relative)",
+          "Matching criteria and ratio",
+          "Methods for exposure ascertainment and blinding of assessors",
+          "Response rates and reasons for non-participation",
+          "How the study design handles potential biases (recall, selection)"
+        ]
+      },
+      "pitfalls": [
+        "**Inappropriate control group**: Hospital controls may have higher exposure prevalence than the general population (e.g., more smokers), biasing the OR toward the null",
+        "**Recall bias**: Cases systematically recall exposures differently; using objective exposure data (biomarkers, medical records) mitigates this",
+        "**Incident vs prevalent cases**: Using prevalent cases (survivors) biases toward exposures associated with better survival, not just occurrence",
+        "**Overmatching**: Matching on a variable related to exposure but not disease reduces efficiency and may introduce bias",
+        "**Self-selection bias**: If cases or controls refuse participation differentially based on exposure, selection bias results"
+      ],
+      "statistical_considerations": "**Primary analysis**: Unconditional or conditional logistic regression depending on matching. Unmatched → OR with 95% CI. Matched → conditional OR.\n\n**Effect measure**: Odds ratio (OR). For rare diseases, OR ≈ risk ratio. For common outcomes, OR overstates the RR — use log-binomial regression or Poisson with robust variance.\n\n**Sample size**: Depends on expected exposure prevalence in controls, minimum detectable OR, power, and case-control ratio. Increasing the control-to-case ratio beyond 4:1 yields diminishing returns.\n\n**Matching analysis**: Conditional logistic regression for matched designs. Matching factors should NOT be included as covariates — they are already accounted for in the conditioning.\n\n**Attributable fraction**: If the OR is causal, population attributable fraction (PAF) = p_e×(OR−1)/(1+p_e×(OR−1)) where p_e is exposure prevalence in the population.",
+      "software_notes": "**Data structure**: One row per participant. `id`, `case_status` (1/0), `exposure`, `matched_set_id`, `covariates`.\n\n**Matched (conditional) logistic regression**:\n```python\nimport statsmodels.api as sm\nimport statsmodels.formula.api as smf\n\n# Conditional logistic regression\nmodel = smf.glm('case_status ~ exposure + smoking + matched_set_id',\n                data=df, family=sm.families.Binomial()).fit()\n```\n\n**Unmatched logistic regression**:\n```python\nmodel = smf.logit('case_status ~ exposure + age + sex + smoking', data=df).fit()\nprint(model.summary())\nprint(f\"OR = {np.exp(model.params['exposure']):.2f}\")\n```",
+      "further_reading": [
+        "Breslow NE, Day NE (1980). *Statistical Methods in Cancer Research, Vol 1: The Analysis of Case-Control Studies*. IARC Scientific Publications.",
+        "Rothman KJ, Greenland S, Lash TL (2008). *Modern Epidemiology*, 3rd ed. Chapters 8–9. Lippincott Williams & Wilkins.",
+        "Wacholder S, McLaughlin JK, Silverman DT, Mandel JS (1992). Selection of controls in case-control studies. *American Journal of Epidemiology*, 135(9), 1019–1050.",
+        "Schlesselman JJ (1982). *Case-Control Studies: Design, Conduct, Analysis*. Oxford University Press."
+      ]
+    }
+  },
+  {
+    "name": "Nested Case-Control Study",
+    "icon": "🪆",
+    "evidence_pyramid": 3,
+    "aliases": [
+      "Case-Control Nested in a Cohort",
+      "Case-Cohort",
+      "Case-Control Within a Cohort"
+    ],
+    "sections": {
+      "definition": "A **nested case-control** study is a case-control study embedded within an established cohort. Cases arise from the cohort, and controls are sampled from cohort members who remain at risk at the time each case is diagnosed (incidence density sampling).\n\nThis design combines the efficiency of case-control studies with the rigor of a cohort study. Biospecimens and data collected at cohort baseline are available without recall bias.",
+      "when_to_use": "Use a nested case-control when:\n\n- You have an **existing cohort** with stored biospecimens (e.g., biobank)\n- The exposure is **expensive to measure** (e.g., metabolomics, genetic sequencing) — measuring it in the full cohort would be cost-prohibitive\n- You want **cohort-quality exposure data** without recall bias\n- The outcome has accumulated within the cohort and you need results efficiently",
+      "causal_inference": "Nested case-control studies provide **stronger evidence** than traditional case-control studies because:\n\n- Exposure data is collected **before** the outcome (from cohort baseline)\n- Controls are sampled from the **same source population** that produced the cases\n- Recall bias is eliminated (exposure data is prospective)\n- If incidence density sampling is used, the OR directly estimates the incidence rate ratio\n\nEvidence level: **Level 3**, but approaching Level 2 quality for biomarker studies.",
+      "assumptions": [
+        "The cohort is well-defined with complete follow-up for outcome ascertainment",
+        "Biospecimens or exposure data are available at baseline for both cases and controls",
+        "Incidence density sampling (or risk-set sampling) is used for control selection",
+        "Laboratory assays are performed blinded to case-control status",
+        "The sampling fraction for controls is known to enable proper variance estimation"
+      ],
+      "bias_profile": {
+        "selection_bias": {
+          "risk": "Low",
+          "detail": "Controls are randomly sampled from the cohort risk set; selection bias is minimal with proper incidence density sampling"
+        },
+        "information_bias": {
+          "risk": "Low",
+          "detail": "Exposure data (biospecimens, baseline surveys) collected before outcome — no recall bias"
+        },
+        "confounding": {
+          "risk": "Moderate",
+          "detail": "Same confounding concerns as the parent cohort; measured confounders can be adjusted for"
+        },
+        "performance_bias": {
+          "risk": "N/A",
+          "detail": "No intervention"
+        },
+        "detection_bias": {
+          "risk": "Low",
+          "detail": "Outcome ascertainment from cohort follow-up; cases and controls from same surveillance system"
+        },
+        "attrition_bias": {
+          "risk": "Low",
+          "detail": "Controls are sampled from those still under follow-up; attrition is handled by the risk-set design"
+        },
+        "reporting_bias": {
+          "risk": "Low",
+          "detail": "Nested studies are typically hypothesis-driven with pre-specified assays and endpoints"
+        },
+        "lead_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        },
+        "length_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        }
+      },
+      "worked_example": "## Scenario\nResearchers want to test whether **plasma vitamin D levels** (measured in 1990) are associated with **incident colorectal cancer** through 2020, using the Nurses' Health Study cohort (N = 120,000).\n\n## Design\n- **Parent cohort**: Nurses' Health Study with archived plasma samples since 1990\n- **Cases**: 800 women who developed colorectal cancer between 1990–2020\n- **Controls**: 800 women selected from those at risk at the time each case was diagnosed (incidence density sampling), matched on age, smoking, and BMI\n- **Exposure**: Plasma 25-hydroxyvitamin D levels measured from stored samples\n\n## Steps\n1. Identify all incident colorectal cancer cases through biennial questionnaires and registry linkage\n2. For each case, select one control from the same risk set (alive, no prior cancer, same age ±1 year)\n3. Retrieve archived plasma samples and measure 25(OH)D in batches (cases and controls in same batch)\n4. Conditional logistic regression with quintiles of vitamin D\n\n## Results\nThe highest quintile of vitamin D (≥35 ng/mL) was associated with a **40% lower risk** of colorectal cancer compared to the lowest quintile (<15 ng/mL): **OR = 0.60** (95% CI: 0.44–0.81), p-trend = 0.001.\n\n## Interpretation\nThe prospective biomarker measurement eliminates recall bias and reverse causation. The dose-response trend strengthens causal inference. Residual confounding by physical activity and diet (imperfectly measured) is possible but unlikely to fully explain the strong inverse association.",
+      "reporting_guideline": {
+        "name": "STROBE (with extensions for nested studies)",
+        "url": "https://www.strobe-statement.org/",
+        "key_items": [
+          "Description of the parent cohort and sampling frame",
+          "Case definition and ascertainment methods",
+          "Control sampling method (incidence density, risk-set, or cumulative sampling)",
+          "Blinding of laboratory or exposure assessment personnel",
+          "Matching factors and rationale",
+          "Number of cases and controls, including those with missing biospecimens"
+        ]
+      },
+      "pitfalls": [
+        "**Control sampling method**: Cumulative sampling (selecting controls from those who never develop the disease) can bias the OR if the outcome is common; incidence density sampling is preferred",
+        "**Biospecimen quality**: Long-term storage may degrade biomarkers; document storage conditions, freeze-thaw cycles, and assay reproducibility",
+        "**Case definition changes**: Over decades of follow-up, diagnostic criteria may evolve; verify that case definitions are consistent across the study period",
+        "**Processing batch effects**: Cases and controls must be assayed in the same batch, or batches must be randomized; otherwise, laboratory drift may cause differential misclassification",
+        "**Loss of biological material**: Some samples may be depleted or degraded; report the proportion of cases/controls with available samples and compare characteristics with those missing"
+      ],
+      "statistical_considerations": "**Primary analysis**: Conditional logistic regression, conditioning on matched sets. OR directly estimates the incidence rate ratio under incidence density sampling.\n\n**Effect measures**: Odds ratio with 95% CI; p-trend across exposure categories.\n\n**Sample size**: Determined by the number of available cases in the cohort. Power can be increased by increasing the control-to-case ratio (up to 4:1).\n\n**Multiple testing**: When testing multiple biomarkers, adjust for false discovery rate (Benjamini-Hochberg) or use Bonferroni correction.\n\n**Dose-response**: Test for linear trend using the median value of each exposure category as a continuous variable in the model.",
+      "software_notes": "**Data structure**: `case_id`, `matched_set`, `case_status`, `vitamin_d`, `age`, `bmi`, `smoking`.\n\n**Conditional logistic regression**:\n```python\nimport statsmodels.api as sm\nimport statsmodels.formula.api as smf\n\n# Use matched_set as a categorical variable to condition on\nmodel = smf.glm('case_status ~ vitd_quintile + age + bmi',\n                data=df, family=sm.families.Binomial()).fit()\n```\n\nAlternatively, use `lifelines` for Cox regression with time-varying exposure if full cohort data is available.",
+      "further_reading": [
+        "Ernster VL (1994). Nested case-control studies. *Preventive Medicine*, 23(5), 587–590.",
+        "Rothman KJ, Greenland S, Lash TL (2008). *Modern Epidemiology*, 3rd ed. Chapter 8. Lippincott Williams & Wilkins.",
+        "Langholz B (2010). Encyclopedia of Biostatistics: Nested case-control studies. *Wiley*.",
+        "Wu K et al. (2007). Plasma 25-hydroxyvitamin D levels and risk of colorectal cancer in women. *JNCI*, 99(22), 1540–1544."
+      ]
+    }
+  },
+  {
+    "name": "Cross-Sectional Study",
+    "icon": "📸",
+    "evidence_pyramid": 4,
+    "aliases": [
+      "Prevalence Study",
+      "Survey",
+      "Transversal Study"
+    ],
+    "sections": {
+      "definition": "A **cross-sectional study** measures exposure and outcome simultaneously in a population at a single point in time. It provides a snapshot of disease prevalence and exposure prevalence.\n\nCross-sectional studies are **descriptive** by nature — they can identify associations but cannot establish temporal sequence. They are the most common study design in public health surveillance and survey research.",
+      "when_to_use": "Use a cross-sectional study when:\n\n- You need to estimate **disease prevalence** or **exposure prevalence**\n- You are generating **hypotheses** for future research\n- The exposure is a **fixed characteristic** (e.g., blood type, genotype)\n- You are planning health services or resource allocation\n- You want to study **multiple outcomes and exposures** simultaneously",
+      "causal_inference": "Cross-sectional studies provide **weak evidence** for causality (Level 4). The main limitation is the inability to establish temporal sequence — does the exposure precede the outcome, or vice versa? This is called the **reverse causation** problem.\n\nHowever, when the exposure is fixed (e.g., genetic variants, sex, ethnicity), temporal ambiguity is not an issue, and cross-sectional studies can provide moderate evidence. For prevalence estimation, they are essential and not replaceable by other designs.",
+      "assumptions": [
+        "The sample is representative of the target population",
+        "Response rates are adequate and non-response is not strongly biased",
+        "Measurement instruments are valid and reliable",
+        "The timing of data collection does not introduce seasonal or cyclical bias",
+        "For prevalence estimation: the population is stable and disease duration is not changing"
+      ],
+      "bias_profile": {
+        "selection_bias": {
+          "risk": "High",
+          "detail": "Non-response bias is the dominant threat; those who participate often differ from those who refuse"
+        },
+        "information_bias": {
+          "risk": "Moderate",
+          "detail": "Self-reported exposures and outcomes are subject to social desirability and recall bias"
+        },
+        "confounding": {
+          "risk": "High",
+          "detail": "Same confounding concerns as other observational designs; temporal ambiguity limits causal interpretation"
+        },
+        "performance_bias": {
+          "risk": "N/A",
+          "detail": "Not an intervention study"
+        },
+        "detection_bias": {
+          "risk": "Moderate",
+          "detail": "Prevalent cases (not incident) are identified, so the sample is biased toward longer-duration disease"
+        },
+        "attrition_bias": {
+          "risk": "N/A",
+          "detail": "Single time point; no follow-up"
+        },
+        "reporting_bias": {
+          "risk": "Low",
+          "detail": "Pre-registration of surveys is becoming more common but is not universal"
+        },
+        "lead_time_bias": {
+          "risk": "Moderate",
+          "detail": "Prevalent cases over-represent longer-duration, less aggressive disease"
+        },
+        "length_time_bias": {
+          "risk": "High",
+          "detail": "Prevalent cases systematically over-represent slow-progressing conditions"
+        }
+      },
+      "worked_example": "## Scenario\nA public health agency wants to estimate the **prevalence of depression** and its **association with social media use** among adolescents aged 13–18.\n\n## Design\n- **Population**: All high school students in a school district (N = 15,000)\n- **Sample**: Random sample of 2,000 students stratified by grade level\n- **Exposure**: Self-reported daily social media hours (<1, 1–3, 3–5, >5)\n- **Outcome**: PHQ-9 score ≥10 (moderate-severe depression)\n- **Data collection**: Anonymous online survey administered during class time\n\n## Results\n- **Prevalence**: 18% of adolescents had PHQ-9 ≥10\n- **Association**: Compared to <1 hour/day, the adjusted prevalence ratio for >5 hours/day was 2.1 (95% CI: 1.6–2.8), adjusting for age, sex, and sleep\n\n## Interpretation\nThe association is clear, but the direction is ambiguous — does social media cause depression, or do depressed adolescents use social media more? Longitudinal studies are needed to establish temporal sequence. The prevalence estimate (18%) is useful for service planning regardless of causal direction.",
+      "reporting_guideline": {
+        "name": "STROBE (cross-sectional extension)",
+        "url": "https://www.strobe-statement.org/",
+        "key_items": [
+          "Study design labeled as 'cross-sectional' in title/abstract",
+          "Sampling method, sample size, and response rate",
+          "Eligibility criteria and recruitment setting",
+          "Assessment methods for both exposure and outcome",
+          "How non-response was evaluated (responders vs non-responders comparison)",
+          "Prevalence estimates with 95% CI",
+          "For associations: clearly state that temporal sequence cannot be established"
+        ]
+      },
+      "pitfalls": [
+        "**Non-response bias**: If response rate is <70%, results may not be representative; compare responders to non-responders on available demographics",
+        "**Prevalence-incidence bias (Neyman bias)**: Prevalent cases are survivors — they differ from all cases in disease duration and severity",
+        "**Recall bias for past exposures**: Self-reported lifetime exposures are unreliable; current exposure status is more valid",
+        "**Seasonal effects**: Data collected during one season may not represent the whole year (e.g., flu season, holiday stress)",
+        "**Reverse causation**: The cross-sectional design cannot distinguish direction; avoid causal language in describing associations"
+      ],
+      "statistical_considerations": "**Primary analysis**: Prevalence estimation with 95% CI using the Wilson score method. Association analysis using prevalence ratio (PR) from log-binomial or Poisson regression.\n\n**Effect measures**: Prevalence ratio (PR) or prevalence odds ratio (POR). For common outcomes, the POR overstates the association — use PR instead.\n\n**Sample size**: Based on expected prevalence and desired precision. For rare diseases, larger samples are needed. For associations, use the standard sample size formula for two proportions.\n\n**Survey weights**: If sampling was stratified or clustered, use survey-weighted analysis with design-based variance estimation.\n\n**Non-response adjustment**: Use inverse probability weighting (IPW) based on predictors of non-response.",
+      "software_notes": "**Data structure**: One row per participant. `id`, `age`, `sex`, `social_media_hours`, `phq9_score`, `depression_status`, `sampling_weight`.\n\n**Prevalence estimation**:\n```python\nimport statsmodels.api as sm\n# Proportion with Wilson CI\nfrom statsmodels.stats.proportion import proportion_confint\nn_depressed = df['depression_status'].sum()\nn_total = len(df)\nci = proportion_confint(n_depressed, n_total, method='wilson')\n```\n\n**Prevalence ratio (log-binomial)**:\n```python\nmodel = smf.glm('depression_status ~ C(social_media_hours) + age + sex',\n                data=df, family=sm.families.Binomial(link=sm.families.links.log())).fit()\n```",
+      "further_reading": [
+        "Levin KA (2006). Study design III: Cross-sectional studies. *Evidence-Based Dentistry*, 7(1), 24–25.",
+        "Kesmodel US (2018). Cross-sectional studies — what are they good for? *Acta Obstetricia et Gynecologica Scandinavica*, 97(4), 388–393.",
+        "Rothman KJ, Greenland S, Lash TL (2008). *Modern Epidemiology*, 3rd ed. Chapter 5. Lippincott Williams & Wilkins.",
+        "Pearce N (2014). Classification of epidemiological study designs. *International Journal of Epidemiology*, 43(2), 393–397."
+      ]
+    }
+  },
+  {
+    "name": "Case Series / Case Report",
+    "icon": "📋",
+    "evidence_pyramid": 5,
+    "aliases": [
+      "Case Report (n=1)",
+      "Case Series (n≥3)",
+      "Descriptive Case Study"
+    ],
+    "sections": {
+      "definition": "A **case report** is a detailed description of a single patient. A **case series** describes a group of patients with the same condition or exposure. Both are descriptive designs with **no comparison group**.\n\nCase reports and series represent the lowest level on the evidence pyramid but serve critical functions: detecting novel diseases, describing rare presentations, generating hypotheses, and documenting treatment innovations.",
+      "when_to_use": "Use a case report or series when:\n\n- You are describing a **novel disease** or **unusual presentation**\n- The condition is **too rare** for systematic study\n- You are reporting a **treatment innovation** or **unexpected response**\n- You need to generate **hypotheses** for future research\n- You are documenting **adverse events** from a new intervention",
+      "causal_inference": "Case reports and series provide **no causal evidence** (Level 5). Without a comparison group, observed associations may be due to natural history, regression to the mean, placebo effects, or coincidence. They are **hypothesis-generating**, not hypothesis-testing.\n\nHowever, case reports have played a pivotal role in medical discovery: the first descriptions of AIDS (1981), Kaposi's sarcoma, thalidomide embryopathy, and the association between Vioxx and cardiovascular events all began with case reports.",
+      "assumptions": [
+        "No formal assumptions — this is a descriptive design",
+        "The case(s) are accurately described and documented",
+        "The report acknowledges the lack of generalizability",
+        "Alternative explanations are honestly discussed",
+        "Ethical standards for patient consent and privacy are followed"
+      ],
+      "bias_profile": {
+        "selection_bias": {
+          "risk": "Very High",
+          "detail": "No systematic sampling; cases are selected based on interest, not representativeness"
+        },
+        "information_bias": {
+          "risk": "High",
+          "detail": "Data is collected retrospectively from clinical notes without standardized protocols"
+        },
+        "confounding": {
+          "risk": "Very High",
+          "detail": "No comparison group; confounding cannot be assessed"
+        },
+        "performance_bias": {
+          "risk": "N/A",
+          "detail": "No intervention protocol"
+        },
+        "detection_bias": {
+          "risk": "High",
+          "detail": "Outcomes are noted because they are unusual — denominator is unknown"
+        },
+        "attrition_bias": {
+          "risk": "N/A",
+          "detail": "No follow-up structure"
+        },
+        "reporting_bias": {
+          "risk": "High",
+          "detail": "Only interesting cases are published (publication bias); negative outcomes in similar patients are never reported"
+        },
+        "lead_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        },
+        "length_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        }
+      },
+      "worked_example": "## Scenario\nA neurologist encounters five patients under 35 years old who developed a rare neurological syndrome (myocarditis + myasthenia-like symptoms) within 2 weeks of receiving a COVID-19 mRNA vaccine.\n\n## Design\n**Case series** describing the clinical presentation, diagnostic workup, treatment, and outcomes of five patients.\n\n## Content\n- **Patient 1**: 28-year-old female, chest pain and ptosis 10 days post-vaccine, elevated troponin, acetylcholine receptor antibodies positive, responded to IVIG\n- **Patient 2**: 31-year-old male, dyspnea and diplopia 14 days post-vaccine, similar findings, responded to plasmapheresis\n- (Patients 3–5 similar patterns)\n\n## Results\nAll five had myocarditis (confirmed by MRI) and myasthenia-like symptoms within 2 weeks of vaccination. Three required ICU admission. All recovered with immunosuppression.\n\n## Interpretation\nThis case series cannot establish that the vaccine causes the syndrome (coincidence is possible), but the temporal proximity (10–14 days), biological plausibility (molecular mimicry), and clustering of cases suggest a potential causal relationship that warrants formal investigation via a controlled study.",
+      "reporting_guideline": {
+        "name": "CARE guidelines",
+        "url": "https://www.care-statement.org/",
+        "key_items": [
+          "Title identifies the case(s) and key finding",
+          "Patient demographics (age, sex, relevant history)",
+          "Timeline of presentation, diagnosis, intervention, and outcome",
+          "Diagnostic methods and test results",
+          "Therapeutic interventions and patient response",
+          "Discussion of alternative explanations",
+          "Patient perspective or consent statement",
+          "Take-away lessons for clinicians"
+        ]
+      },
+      "pitfalls": [
+        "**Overinterpreting causality**: 'The patient improved after treatment' does not mean 'the treatment caused the improvement' — natural history and regression to the mean are alternative explanations",
+        "**Publication bias**: Dramatic positive outcomes are more likely to be reported than null or negative outcomes",
+        "**Denominator ignorance**: 'N patients developed X after Y' is meaningless without knowing how many patients received Y and did NOT develop X",
+        "**Incomplete follow-up**: If patients are lost to follow-up, the outcome is unknown — report what is known and acknowledge limitations",
+        "**No denominator**: For case series, the total number of exposed individuals is unknown, so risk cannot be calculated"
+      ],
+      "statistical_considerations": "**No formal statistical testing** is appropriate for case reports or most case series.\n\nFor larger case series (n > 20), descriptive statistics may be reported:\n- Means/medians with SD/IQR for continuous variables\n- Proportions with 95% CI for binary variables\n- Kaplan-Meier survival curves for time-to-event outcomes\n\n**Formal testing (p-values) should not be reported** unless a pre-specified comparison group exists — at which point the design is no longer a 'case series' but a cohort or case-control study.",
+      "software_notes": "**Data structure**: Typically presented as a patient-by-variable table rather than analyzed statistically.\n\n**CARE checklist tool**: Available at https://www.care-statement.org/checklist\n\n**For larger case series**: Standard descriptive statistics in `pandas`, `scipy.stats` for descriptive summaries only.",
+      "further_reading": [
+        "Nissen T, Wynn R (2014). The clinical case report: a review of its merits and limitations. *BMC Research Notes*, 7, 264.",
+        "Gagnier JJ et al. (2013). The CARE guidelines: consensus-based clinical case reporting guideline development. *BMJ Case Reports*, 2013, bcr2013201554.",
+        "Vandenbroucke JP (2001). In defense of case reports and case series. *Annals of Internal Medicine*, 134(4), 330–334.",
+        "Jenicek M (1999). *Clinical Case Reporting in Evidence-Based Medicine*. Oxford University Press."
+      ]
+    }
+  },
+  {
+    "name": "Crossover Trial",
+    "icon": "🔄",
+    "evidence_pyramid": 2,
+    "aliases": [
+      "Crossover Design",
+      "Within-Subject Trial",
+      "AB/BA Design",
+      "Repeated Measures Trial"
+    ],
+    "sections": {
+      "definition": "A **crossover trial** is a within-subject design in which each participant receives both the experimental intervention and the control in a random sequence (e.g., A then B, or B then A), separated by a **washout period** to eliminate carryover effects.\n\nEach participant serves as their own control, eliminating between-subject variability and reducing the required sample size by up to 50% compared to a parallel-group RCT.",
+      "when_to_use": "Use a crossover trial when:\n\n- The **condition is chronic and stable** (e.g., hypertension, asthma, chronic pain)\n- The **intervention has a rapid onset** and **short half-life**\n- A **washout period** is feasible and safe\n- The **outcome is reversible** (returns to baseline after treatment stops)\n- You want to **maximize statistical power** with a limited sample size",
+      "causal_inference": "Crossover trials provide **strong causal evidence** (Level 2), similar to parallel-group RCTs. The within-subject comparison eliminates confounding by time-invariant factors (genetics, baseline health, lifestyle). However, **carryover effects** are the unique threat to validity — if the effect of treatment A persists into the B period, the estimate of B's effect is biased.\n\nThe crossover design is **not appropriate** for curable conditions, interventions with long-lasting effects, or conditions that change rapidly over time.",
+      "assumptions": [
+        "The condition is stable over the study period",
+        "The intervention effect is reversible (no cure, no long-term modification)",
+        "Washout period is adequate to eliminate carryover effects (≥5 half-lives)",
+        "There is no period-by-treatment interaction (treatment effect is same in period 1 and period 2)",
+        "Dropout is non-differential between treatment sequences",
+        "Outcome measurement is valid at all time points"
+      ],
+      "bias_profile": {
+        "selection_bias": {
+          "risk": "Low",
+          "detail": "Randomization of sequence order addresses selection"
+        },
+        "information_bias": {
+          "risk": "Low",
+          "detail": "Blinding is easier to maintain than in parallel trials since each participant experiences both treatments"
+        },
+        "confounding": {
+          "risk": "Low",
+          "detail": "Each participant is their own control; time-invariant confounders are eliminated"
+        },
+        "performance_bias": {
+          "risk": "Moderate",
+          "detail": "If blinding is broken, the participant knows what they received in period 1, affecting period 2 expectations"
+        },
+        "detection_bias": {
+          "risk": "Low",
+          "detail": "Blinded outcome assessment is usually straightforward"
+        },
+        "attrition_bias": {
+          "risk": "Moderate",
+          "detail": "Dropout after period 1 destroys the paired comparison; differential dropout by sequence order is a concern"
+        },
+        "reporting_bias": {
+          "risk": "Moderate",
+          "detail": "Reporting both period results and overall crossover analysis can be selectively presented"
+        },
+        "lead_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        },
+        "length_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        }
+      },
+      "worked_example": "## Scenario\nA researcher tests whether **inhaled salbutamol** improves **exercise tolerance** in 20 asthma patients. Each patient undergoes two treadmill tests: one after salbutamol, one after placebo, in random order separated by a 7-day washout.\n\n## Design\n- **Participants**: 20 adults with mild-moderate asthma, FEV₁ ≥ 70% predicted\n- **Intervention**: Salbutamol 200 µg via inhaler (or matching placebo)\n- **Outcome**: Total exercise time (minutes) on a standardized Bruce protocol\n- **Sequences**: 10 patients: Salbutamol → Washout → Placebo. 10 patients: Placebo → Washout → Salbutamol\n- **Washout**: 7 days (salbutamol half-life = 4–6 hours; >5 half-lives = ~24 hours)\n\n## Steps\n1. Baseline assessment: spirometry, exercise test familiarization\n2. Period 1: Treatment A, exercise test 15 min post-inhalation\n3. 7-day washout (no rescue inhaler for 24 hours before next test)\n4. Period 2: Treatment B, exercise test 15 min post-inhalation\n5. Paired t-test comparing within-subject difference (salbutamol − placebo)\n\n## Results\nMean exercise time: 11.2 min (salbutamol) vs 9.8 min (placebo). Mean paired difference = 1.4 min (95% CI: 0.9–1.9, p < 0.001). No period effect detected (p = 0.52).\n\n## Interpretation\nThe within-subject comparison eliminates between-subject variability. The narrow CI reflects the efficiency gain. A washout of 7 days is conservative given the drug half-life. The absence of a period effect supports validity.",
+      "reporting_guideline": {
+        "name": "CONSORT extension for crossover trials",
+        "url": "http://www.consort-statement.org/extensions",
+        "key_items": [
+          "Rationale for crossover design (why within-subject is appropriate)",
+          "Description of sequence generation and randomization",
+          "Washout period length and justification",
+          "Primary analysis method (paired analysis, accounting for period effects)",
+          "Reporting of period effects and carryover assessment",
+          "Discussion of whether the design assumptions were met"
+        ]
+      },
+      "pitfalls": [
+        "**Inadequate washout period**: The most common and most serious error — if washout is too short, carryover effects contaminate period 2 results",
+        "**Period effects**: If the condition naturally changes over time (e.g., seasonal allergies improve), the period 1 vs period 2 comparison is confounded with time",
+        "**Dropout after period 1**: With only one period of data, the participant contributes no usable information; crossover designs are particularly sensitive to dropout",
+        "**Carryover testing has low power**: The standard test for carryover has poor statistical properties; designing adequate washout is better than testing for carryover",
+        "**Using crossover for conditions that change**: Acute conditions (e.g., migraine) or progressive conditions (e.g., Parkinson's) are inappropriate for crossover designs"
+      ],
+      "statistical_considerations": "**Primary analysis**: Paired t-test or Wilcoxon signed-rank test for the within-subject difference. Equivalently, linear mixed model with fixed effects for treatment, period, and sequence.\n\n**Effect measure**: Mean paired difference with 95% CI and Cohen's d (using paired SD).\n\n**Period effects**: Include 'period' as a fixed effect in the model. If significant, consider whether the design is interpretable.\n\n**Carryover**: Not recommended to test for carryover with low power. Report baseline values at the start of each period to assess whether washout was adequate.\n\n**Sample size**: For a crossover, sample size is approximately 50% of a parallel-group design for the same power, assuming within-subject correlation r ≥ 0.5.\n\n**Analysis of variance**: Include terms for sequence, period, and treatment. The treatment effect is tested against the within-subject error term.\n\n```python\nimport statsmodels.api as sm\nimport statsmodels.formula.api as smf\n\nmodel = smf.ols('outcome ~ treatment + period + sequence', data=df).fit()\nsm.stats.anova_lm(model, typ=2)\n```",
+      "software_notes": "**Data structure**: Two rows per participant (one per period). Columns: `id`, `period` (1/2), `sequence` (AB/BA), `treatment` (A/B), `outcome`.\n\n**Paired analysis**:\n```python\nfrom scipy import stats as sp_stats\n\ndf_wide = df.pivot_table(index='id', columns='period', values='outcome')\nt_stat, p_val = sp_stats.ttest_rel(df_wide[1], df_wide[2])\n```\n\n**Linear mixed model**:\n```python\nmodel = smf.mixedlm('outcome ~ treatment + period', data=df,\n                    groups=df['id']).fit()\nprint(model.summary())\n```",
+      "further_reading": [
+        "Mills EJ et al. (2009). Design, analysis, and presentation of crossover trials. *Trials*, 10, 27.",
+        "Senn S (2002). *Cross-over Trials in Clinical Research*, 2nd ed. Wiley.",
+        "Jones B, Kenward MG (2014). *Design and Analysis of Cross-Over Trials*, 3rd ed. CRC Press.",
+        "Dwan K et al. (2019). CONSORT 2010 extension for crossover trials. *BMJ*, 366, l4378."
+      ]
+    }
+  },
+  {
+    "name": "Factorial Design",
+    "icon": "✖️",
+    "evidence_pyramid": 2,
+    "aliases": [
+      "Factorial RCT",
+      "2×2 Design",
+      "Multi-factor Trial",
+      "Fractional Factorial"
+    ],
+    "sections": {
+      "definition": "A **factorial design** evaluates two or more interventions simultaneously in a single trial. In the simplest 2×2 design, participants are randomized to one of four combinations: A only, B only, both A and B, or neither (control).\n\nFactorial designs answer **two (or more) research questions for the price of one** — they are efficient when treatments are believed to act independently and have no negative interaction.",
+      "when_to_use": "Use a factorial design when:\n\n- You want to test **two interventions simultaneously** in the same population\n- The interventions have **different mechanisms of action** (unlikely to interact)\n- There is **no biological antagonism** between treatments\n- The population is large enough to provide adequate power for both comparisons\n- Testing the **interaction** is itself a research objective",
+      "causal_inference": "Factorial designs provide **Level 2 evidence**, equivalent to parallel-group RCTs. The main effects of each intervention are estimated with the same precision as separate trials of the same sample size, provided there is no interaction.\n\nThe factorial design also directly estimates the **interaction** between treatments — does A work better or worse in the presence of B? This is a key advantage over running two separate trials.",
+      "assumptions": [
+        "Interventions act independently (no substantial interaction on the primary outcome)",
+        "Compliance is similar across all four arms",
+        "There is no contamination between treatment groups",
+        "The primary analysis focuses on main effects unless the trial is specifically powered for interaction",
+        "Adverse events are independent (no synergistic toxicity)"
+      ],
+      "bias_profile": {
+        "selection_bias": {
+          "risk": "Low",
+          "detail": "Randomization addresses selection for all four arms"
+        },
+        "information_bias": {
+          "risk": "Low",
+          "detail": "Blinding maintains measurement validity"
+        },
+        "confounding": {
+          "risk": "Low",
+          "detail": "Randomization balances confounders"
+        },
+        "performance_bias": {
+          "risk": "Moderate",
+          "detail": "Co-interventions may differ by combination arm; blinding is essential"
+        },
+        "detection_bias": {
+          "risk": "Moderate",
+          "detail": "More complex design may increase measurement error"
+        },
+        "attrition_bias": {
+          "risk": "High",
+          "detail": "More arms mean smaller N per arm; attrition in one arm has disproportionate impact"
+        },
+        "reporting_bias": {
+          "risk": "Moderate",
+          "detail": "Interaction results may be selectively reported; pre-specify main effects vs interaction"
+        },
+        "lead_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        },
+        "length_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        }
+      },
+      "worked_example": "## Scenario\nResearchers test **aspirin** and **fish oil** for preventing colorectal adenoma recurrence in a 2×2 factorial RCT.\n\n## Design\n- **N = 1,200** patients with prior adenoma, randomized to:\n  - Aspirin + Fish Oil (n = 300)\n  - Aspirin + Placebo (n = 300)\n  - Placebo + Fish Oil (n = 300)\n  - Double Placebo (n = 300)\n- **Primary outcome**: Adenoma recurrence at 3-year colonoscopy\n- **Study duration**: 3 years\n\n## Analysis\n- **Aspirin main effect**: Compare 600 aspirin patients vs 600 no-aspirin (pooled across fish oil arms)\n- **Fish oil main effect**: Compare 600 fish oil vs 600 no-fish oil\n- **Interaction**: Is the aspirin effect modified by fish oil?\n\n## Results\n- Aspirin reduced recurrence: RR = 0.78 (95% CI: 0.67–0.91), p = 0.002\n- Fish oil: RR = 0.94 (95% CI: 0.81–1.09), p = 0.42\n- Interaction: p = 0.68 (no evidence of interaction)\n\n## Interpretation\nThe factorial design efficiently answered both questions. Aspirin was effective; fish oil was not. The absence of interaction supports the validity of the main effects analysis. The 95% CI for the interaction is wide — a non-significant interaction does NOT prove no interaction.",
+      "reporting_guideline": {
+        "name": "CONSORT extension for multi-arm trials",
+        "url": "http://www.consort-statement.org/extensions",
+        "key_items": [
+          "Rationale for factorial design (why simultaneous testing is appropriate)",
+          "Full 2×2 (or higher) randomization scheme",
+          "Whether the trial is powered for main effects, interaction, or both",
+          "Primary analysis strategy (main effects pooled across levels of the other factor)",
+          "How the interaction was tested and reported",
+          "If interaction is significant, report stratified results, not main effects"
+        ]
+      },
+      "pitfalls": [
+        "**Assuming no interaction without evidence**: A non-significant interaction test does not justify assuming no interaction — the CI for the interaction is usually wide",
+        "**Powering only for main effects**: If interaction is important, the sample size must be inflated by ~4× for the same power to detect interaction",
+        "**Reporting only significant interaction**: If interaction is non-significant, report it transparently; don't hide it or over-interpret it",
+        "**Logistic complexity**: Four arms require more monitoring, more supplies, and more complex randomization",
+        "**Analysis confusion**: The naive approach of testing all 4 pairwise comparisons is incorrect — the factorial structure must be respected"
+      ],
+      "statistical_considerations": "**Primary analysis**: Logistic regression or Poisson regression with two main effect terms (A and B) and optionally the interaction term A×B.\n\n**Effect measures**: Main effect OR or RR with 95% CI. Interaction measured on the multiplicative or additive scale.\n\n**Power**: For main effects, sample size is approximately the same as a two-arm trial of the same total N. For interaction, sample size must be inflated by a factor of approximately 4 / (design effect).\n\n**Analysis principle**: For main effects, pool across the other factor (e.g., all patients receiving A vs all not receiving A), assuming no interaction. If interaction is significant, report results stratified by the other treatment.\n\n**Subgroup analysis**: In addition to the factorial interaction, pre-specify whether subgroups (age, sex, etc.) will be tested for effect modification.",
+      "software_notes": "**Data structure**: One row per participant. Columns: `id`, `aspirin` (1/0), `fish_oil` (1/0), `recurrence` (1/0), `age`, `sex`.\n\n**Main effects analysis**:\n```python\nimport statsmodels.api as sm\nimport statsmodels.formula.api as smf\n\n# Main effects model (no interaction)\nmodel = smf.logit('recurrence ~ aspirin + fish_oil + age + sex', data=df).fit()\n```\n\n**With interaction**:\n```python\nmodel_int = smf.logit('recurrence ~ aspirin * fish_oil + age + sex', data=df).fit()\n# Likelihood ratio test for interaction\nmodel_main = smf.logit('recurrence ~ aspirin + fish_oil + age + sex', data=df).fit()\nlr_stat = 2 * (model_int.llf - model_main.llf)\np_val = 1 - sp_stats.chi2.cdf(lr_stat, 1)\n```",
+      "further_reading": [
+        "Montgomery AA, Peters TJ, Little P (2003). Design, analysis and presentation of factorial randomised controlled trials. *BMC Medical Research Methodology*, 3, 26.",
+        "McAlister FA et al. (2003). Analysing and reporting of factorial trials: a systematic review. *JAMA*, 289(19), 2545–2553.",
+        "Collins LM, Dziak JJ, Li R (2009). Design of experiments with multiple independent variables: a resource management perspective. *Psychological Methods*, 14(3), 202–224."
+      ]
+    }
+  },
+  {
+    "name": "Diagnostic Accuracy Study",
+    "icon": "🩺",
+    "evidence_pyramid": 2,
+    "aliases": [
+      "Test Accuracy Study",
+      "Diagnostic Test Evaluation",
+      "Sensitivity/Specificity Study"
+    ],
+    "sections": {
+      "definition": "A **diagnostic accuracy study** compares a new diagnostic test (index test) against a **reference standard** (gold standard) in the same participants. Results are summarized as **sensitivity**, **specificity**, and related metrics.\n\nThese studies are cross-sectional in design (all participants receive both tests at approximately the same time), but the research question is about **accuracy** rather than prevalence or association.",
+      "when_to_use": "Use a diagnostic accuracy study when:\n\n- You have developed a **new diagnostic test** and need to validate it\n- You want to compare **two or more tests** in the same population\n- You need to establish **cut-off values** for a continuous test\n- You are evaluating a test in a **new population** (e.g., different disease prevalence)\n- The reference standard exists but is expensive, invasive, or unavailable in some settings",
+      "causal_inference": "Diagnostic accuracy studies answer a **different causal question** than therapeutic studies. They ask: 'Does the index test correctly classify disease status?' rather than 'Does the intervention cause the outcome?'\n\nThe primary validity concern is **spectrum bias** — the accuracy of a test varies with disease severity, stage, and population characteristics. A test that performs well in symptomatic tertiary-care patients may fail in primary care or screening settings.\n\nEvidence level: **Level 2** for diagnostic questions when the study uses consecutive or random sampling from a clinically relevant population.",
+      "assumptions": [
+        "The reference standard is valid and applied without knowledge of the index test result",
+        "All participants receive both the index test and reference standard (verification)",
+        "The population represents the clinical spectrum in which the test will be used",
+        "The time between index test and reference standard is short enough that disease status does not change",
+        "Interpretation of the index test is blinded to the reference standard result"
+      ],
+      "bias_profile": {
+        "selection_bias": {
+          "risk": "High",
+          "detail": "Spectrum bias: if the sample is not representative of the target population, accuracy estimates are biased"
+        },
+        "information_bias": {
+          "risk": "High",
+          "detail": "If the index test result influences whether the reference standard is performed (verification bias), estimates are biased"
+        },
+        "confounding": {
+          "risk": "Moderate",
+          "detail": "Test accuracy can be confounded by comorbidity, medication, and disease stage"
+        },
+        "performance_bias": {
+          "risk": "Moderate",
+          "detail": "The index test may be performed differently in research vs clinical settings"
+        },
+        "detection_bias": {
+          "risk": "Moderate",
+          "detail": "If the person interpreting the index test also knows clinical details, bias is introduced"
+        },
+        "attrition_bias": {
+          "risk": "Moderate",
+          "detail": "Participants who don't complete the reference standard are excluded; if >10% are excluded, bias is possible"
+        },
+        "reporting_bias": {
+          "risk": "Moderate",
+          "detail": "Selective reporting of optimal cut-points (cut-point optimization) inflates apparent accuracy"
+        },
+        "lead_time_bias": {
+          "risk": "Moderate",
+          "detail": "The index test may detect disease earlier than the reference standard, making it appear falsely positive"
+        },
+        "length_time_bias": {
+          "risk": "High",
+          "detail": "Screening tests detect more indolent disease; accuracy in screening differs from accuracy in symptomatic diagnosis"
+        }
+      },
+      "worked_example": "## Scenario\nA team develops a **rapid antigen test** for Group A Streptococcus and validates it against **throat culture** (reference standard).\n\n## Design\n- **Participants**: 500 patients presenting with sore throat at an urgent care clinic\n- **Index test**: Rapid antigen test from throat swab (result in 10 minutes)\n- **Reference standard**: Throat culture on sheep blood agar (48-hour result)\n- **Blinding**: Lab technicians reading the culture are blinded to antigen test results\n- **Sampling**: Consecutive eligible patients to avoid selection bias\n\n## Results\n|                | Culture+ | Culture- |\n|----------------|---------|---------|\n| **Antigen+**   | 120 (TP)| 10 (FP) |\n| **Antigen−**   | 15 (FN) | 355 (TN)|\n\n**Sensitivity**: 120/135 = 88.9% (95% CI: 82.4–93.6)  \n**Specificity**: 355/365 = 97.3% (95% CI: 95.0–98.7)  \n**PPV**: 120/130 = 92.3% (95% CI: 86.3–96.2)  \n**NPV**: 355/370 = 95.9% (95% CI: 93.4–97.8)  \n**Prevalence**: 135/500 = 27.0%\n\n## Interpretation\nThe test has high specificity (few false positives) but moderate sensitivity (11% of cases missed). In this high-prevalence setting (27%), PPV is >90%. However, in a screening setting with 5% prevalence, PPV would drop to ~63%. LR+ = 32.3, LR− = 0.11 — strong evidence when positive, moderate when negative.",
+      "reporting_guideline": {
+        "name": "STARD 2015",
+        "url": "https://www.equator-network.org/reporting-guidelines/stard/",
+        "key_items": [
+          "Study design clearly described (cross-sectional diagnostic accuracy study)",
+          "Recruitment method (consecutive, random, or convenience)",
+          "Eligibility criteria and setting",
+          "Technical specifications of the index test and reference standard",
+          "Blinding status of test interpreters",
+          "Flow diagram: eligible, enrolled, tested, analyzed",
+          "Cross-tabulation of index test vs reference standard",
+          "Confidence intervals for all accuracy estimates"
+        ]
+      },
+      "pitfalls": [
+        "**Spectrum bias**: Testing only advanced disease inflates sensitivity; testing only early disease may inflate specificity — include the full clinical spectrum",
+        "**Verification bias (workup bias)**: If only some participants receive the reference standard and selection is based on index test results, accuracy is biased",
+        "**Cut-point optimization**: Choosing the cut-point that maximizes AUC in the study sample overestimates accuracy; use cross-validation or separate training/validation sets",
+        "**Incorporation bias**: If the index test is part of the reference standard definition (partial incorporation), accuracy is overestimated",
+        "**Disease progression bias**: If the time between index test and reference standard is long, disease may progress, causing apparent errors that are actually true changes in status"
+      ],
+      "statistical_considerations": "**Primary measures**: Sensitivity = TP/(TP+FN), Specificity = TN/(TN+FP), PPV = TP/(TP+FP), NPV = TN/(TN+FN). Report all four with 95% CI.\n\n**Likelihood ratios**: LR+ = sensitivity / (1 − specificity). LR− = (1 − sensitivity) / specificity. These do not depend on prevalence and can be used in Bayesian updating.\n\n**ROC analysis**: For continuous tests, report the AUC (c-statistic) with 95% CI. Compare AUCs using the DeLong test.\n\n**Diagnostic odds ratio**: DOR = (TP×TN)/(FP×FN). Useful for meta-analysis (usually log-transformed).\n\n**Agreement**: Beyond accuracy, Cohen's kappa (unweighted for binary, weighted for ordinal) quantifies agreement beyond chance between index test and reference standard.\n\n**Sample size**: Based on desired precision for sensitivity and/or specificity. Use the expected sensitivity and the targeted CI width. Often calculated separately for sensitivity and specificity; use the larger N.",
+      "software_notes": "**Data structure**: Two columns: `index_test` (positive/negative), `reference_standard` (positive/negative).\n\n**Analysis**:\n```python\nfrom sklearn.metrics import confusion_matrix, roc_auc_score, roc_curve\nimport statsmodels.stats.api as sms\n\ncm = confusion_matrix(y_true=df['reference'], y_pred=(df['index_pred'] > threshold))\ntn, fp, fn, tp = cm.ravel()\n\nsens = tp / (tp + fn)\nspec = tn / (tn + fp)\n\n# Confidence intervals using Wilson method\nfrom statsmodels.stats.proportion import proportion_confint\nci_sens = proportion_confint(tp, tp + fn, method='wilson')\nci_spec = proportion_confint(tn, tn + fp, method='wilson')\n\n# ROC and AUC\nfpr, tpr, thresholds = roc_curve(df['reference'], df['index_pred'])\nauc = roc_auc_score(df['reference'], df['index_pred'])\n```",
+      "further_reading": [
+        "Bossuyt PM et al. (2015). STARD 2015: an updated list of essential items for reporting diagnostic accuracy studies. *BMJ*, 351, h5527.",
+        "Whiting PF et al. (2011). QUADAS-2: a revised tool for the quality assessment of diagnostic accuracy studies. *Annals of Internal Medicine*, 155(8), 529–536.",
+        "Zhou XH, Obuchowski NA, McClish DK (2011). *Statistical Methods in Diagnostic Medicine*, 2nd ed. Wiley.",
+        "Kraemer HC (1992). *Evaluating Medical Tests: Objective and Quantitative Guidelines*. Sage Publications."
+      ]
+    }
+  },
+  {
+    "name": "Non-inferiority / Equivalence Trial",
+    "icon": "↔️",
+    "evidence_pyramid": 2,
+    "aliases": [
+      "Non-inferiority Trial",
+      "Equivalence Trial",
+      "Active Comparator Trial",
+      "NI Trial"
+    ],
+    "sections": {
+      "definition": "A **non-inferiority (NI) trial** aims to show that a new treatment is not worse than an active comparator by more than a pre-specified **non-inferiority margin** (Δ). An **equivalence trial** aims to show that two treatments differ by no more than Δ in either direction.\n\nUnlike a superiority trial, which tests whether A > B, an NI trial tests whether A ≥ B − Δ. These designs are used when the new treatment offers advantages in safety, cost, convenience, or tolerability that would justify accepting a small loss of efficacy.",
+      "when_to_use": "Use a non-inferiority design when:\n\n- A **placebo-controlled trial is unethical** (effective treatment exists)\n- The new treatment offers **advantages** (fewer side effects, lower cost, oral instead of IV, shorter treatment duration)\n- You can define a **clinically acceptable margin** — the maximum loss of efficacy worth trading for the secondary benefits\n- The **active comparator has well-established efficacy** from prior placebo-controlled trials\n- The trial can maintain **high assay sensitivity** (adherence, conduct, endpoint quality)",
+      "causal_inference": "Non-inferiority trials provide **Level 2 evidence** for the NI claim, but they are **more vulnerable to bias** than superiority trials. Poor trial conduct (non-adherence, sloppy endpoint measurement, liberal inclusion) tends to **bias toward non-inferiority** — sloppy trials are more likely to declare NI even when the new treatment is truly inferior.\n\nThe key causal concept is **indirect evidence**: NI trials rely on the historical evidence that the active comparator is superior to placebo. If this 'constancy assumption' fails, the NI conclusion is invalid.",
+      "assumptions": [
+        "The active comparator's effect vs placebo is well-established and reproducible (constancy assumption)",
+        "The non-inferiority margin Δ is pre-specified and clinically justified (typically ≤50% of the comparator's effect vs placebo)",
+        "Trial conduct is as good as or better than the historical trials establishing the comparator's efficacy",
+        "The analysis population includes both ITT and per-protocol analyses — NI must hold in both",
+        "Assay sensitivity is maintained (the trial can distinguish effective from ineffective treatment)"
+      ],
+      "bias_profile": {
+        "selection_bias": {
+          "risk": "Low",
+          "detail": "Randomization is standard"
+        },
+        "information_bias": {
+          "risk": "Moderate",
+          "detail": "Sloppy measurement biases toward NI; high-quality measurement is essential"
+        },
+        "confounding": {
+          "risk": "Low",
+          "detail": "Randomization addresses confounding"
+        },
+        "performance_bias": {
+          "risk": "High",
+          "detail": "Poor adherence biases toward NI (both arms look similar if nobody takes the drug)"
+        },
+        "detection_bias": {
+          "risk": "Moderate",
+          "detail": "Liberal endpoint adjudication biases toward NI"
+        },
+        "attrition_bias": {
+          "risk": "High",
+          "detail": "Loss to follow-up biases toward NI — missing data can make treatments look similar"
+        },
+        "reporting_bias": {
+          "risk": "Moderate",
+          "detail": "The margin Δ may be chosen after data review to ensure NI; pre-registration is essential"
+        },
+        "lead_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        },
+        "length_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        }
+      },
+      "worked_example": "## Scenario\nA new **direct oral anticoagulant (DOAC-X)** aims to be non-inferior to warfarin for stroke prevention in atrial fibrillation, with better safety (fewer intracranial hemorrhages).\n\n## Design\n- **N = 18,000** patients with AF and CHA₂DS₂-VASc ≥ 2\n- **NI margin**: Δ = 1.38 (upper bound of 95% CI for HR must be ≤ 1.38) — preserving 50% of warfarin's effect vs placebo\n- **Primary endpoint**: Composite of stroke and systemic embolism\n- **Non-inferiority**: One-sided α = 0.025\n\n## Results\nDOAC-X: 3.2%/year events. Warfarin: 3.5%/year events. HR = 0.91 (95% CI: 0.79–1.05). The upper bound (1.05) is below the NI margin (1.38). Non-inferiority is demonstrated (p < 0.001 for NI). Intracranial hemorrhage: 0.3% vs 0.8% (p < 0.001).\n\n## Interpretation\nDOAC-X is non-inferior to warfarin for stroke prevention and superior for safety. The NI conclusion is robust because: (1) The margin is conservative (50% preservation), (2) the trial was well-conducted with high adherence, (3) results are consistent across ITT and per-protocol analyses, and (4) the CI upper bound (1.05) is well below the margin (1.38).",
+      "reporting_guideline": {
+        "name": "CONSORT extension for non-inferiority/equivalence trials",
+        "url": "http://www.consort-statement.org/extensions",
+        "key_items": [
+          "Rationale for non-inferiority or equivalence design",
+          "Pre-specified non-inferiority (or equivalence) margin and its justification",
+          "Whether the margin preserves a specific fraction of the comparator effect",
+          "Both ITT and per-protocol results reported",
+          "Handling of missing data (multiple imputation or sensitivity analyses)",
+          "Evidence supporting the historical comparator effect (constancy assumption)"
+        ]
+      },
+      "pitfalls": [
+        "**Choosing an overly wide margin**: A margin larger than the full effect of the comparator is meaningless — you've shown nothing",
+        "**Relying on ITT alone**: ITT is liberal for NI (biased toward similarity); PP is conservative for NI (biased toward difference). NI must be shown in BOTH",
+        "**Poor trial conduct**: Non-adherence, sloppy measurement, and loss to follow-up all bias toward NI. A poorly conducted NI trial is uninterpretable",
+        "**Constancy assumption violation**: If the comparator's effect has changed (new co-treatments, different population), historical data may no longer apply",
+        "**Confusing non-inferiority with equivalence**: NI is one-sided (new treatment is not worse than comparator). Equivalence is two-sided (treatments are similar). Use NI unless you specifically need equivalence"
+      ],
+      "statistical_considerations": "**Primary analysis**: Two one-sided tests (TOST) for equivalence. For non-inferiority: one-sided test at α = 0.025, comparing the CI upper bound against the margin Δ.\n\n**Effect measures**: Risk difference (RD), risk ratio (RR), or hazard ratio (HR) with 95% CI. The CI is compared against Δ.\n\n**Sample size**: Non-inferiority trials typically require larger samples than superiority trials. The sample size depends on the assumed true effect of the new treatment and the NI margin.\n\n**Analysis populations**:\n- **ITT**: Include all randomized patients. For NI, ITT is anti-conservative (biases toward NI)\n- **PP**: Include only patients who completed treatment per protocol. For NI, PP is conservative (biases away from NI)\n- **Conclusion**: NI must be demonstrated in BOTH populations\n\n**Margin justification**: Typically Δ = 0.5–1.0 × the lower bound of the comparator's effect vs placebo (preserving 50% of the effect).",
+      "software_notes": "**Data structure**: Same as standard RCT: one row per participant with treatment arm and outcome.\n\n**Non-inferiority test for difference in proportions**:\n```python\nimport numpy as np\nfrom scipy import stats as sp_stats\n\np_new = 0.032; p_comp = 0.035; n = 9000\nse = np.sqrt(p_new * (1-p_new)/n + p_comp * (1-p_comp)/n)\ndiff = p_new - p_comp\nz = (diff + 0.02) / se  # 0.02 is the margin (2%)\np_ni = 1 - sp_stats.norm.cdf(z)\n```\n\n**For regression-based outcomes**: Use `statsmodels` or `lifelines` and compute the CI for the treatment effect. Compare the upper bound of the CI against the margin.",
+      "further_reading": [
+        "Piaggio G, Elbourne DR, Pocock SJ, Evans SJW, Altman DG (2006). Reporting of noninferiority and equivalence randomized trials: extension of the CONSORT statement. *JAMA*, 295(10), 1152–1160.",
+        "Schumi J, Wittes JT (2011). Through the looking glass: understanding non-inferiority. *Trials*, 12, 106.",
+        "D'Agostino RB, Massaro JM, Sullivan LM (2003). Non-inferiority trials: design concepts and issues — the encounters of academic consultants in statistics. *Statistics in Medicine*, 22(2), 169–186.",
+        "Snapinn SM (2000). Noninferiority trials. *Current Controlled Trials in Cardiovascular Medicine*, 1(1), 19–21."
+      ]
+    }
+  },
+  {
+    "name": "Single-Arm Trial",
+    "icon": "🎯",
+    "evidence_pyramid": 4,
+    "aliases": [
+      "Single-Group Study",
+      "One-Arm Trial",
+      "Open-Label Single-Arm",
+      "Phase II Trial"
+    ],
+    "sections": {
+      "definition": "A **single-arm trial** (also called a single-group or one-arm study) has no concurrent control group. All participants receive the same intervention, and outcomes are compared either to **historical controls**, **external benchmarks**, or **baseline measurements**.\n\nSingle-arm trials are common in **early-phase drug development** (Phase I/II), **rare diseases**, and **medical devices** where randomization may be impractical or unethical.",
+      "when_to_use": "Use a single-arm design when:\n\n- The disease is **rare** (randomization would be infeasible)\n- The **effect size is expected to be large** (e.g., a treatment for a uniformly fatal condition)\n- The study is **early phase** (Phase I/II for safety and preliminary efficacy)\n- There is **no standard treatment** to use as a control\n- Historical data is robust and the population is comparable\n- Ethical concerns prevent randomization (e.g., a highly promising therapy for a devastating disease)",
+      "causal_inference": "Single-arm trials provide **weak causal evidence** (Level 4). Without a concurrent control group, observed outcomes may be due to:\n\n- **Natural history** of the disease (the placebo effect)\n- **Regression to the mean** (patients enrolled when symptoms peak)\n- **Concomitant treatments** or co-interventions\n- **Changes in diagnostic or monitoring practices**\n- **Selection bias** in who receives the treatment\n\nHistorical comparisons are particularly problematic because patient populations, diagnostic criteria, and standard of care change over time.",
+      "assumptions": [
+        "The historical control data is of high quality and contemporary",
+        "Patient characteristics are comparable to the historical control group",
+        "The outcome is objective and unlikely to be influenced by expectation (e.g., overall survival, not pain scores)",
+        "The expected effect size is large enough that bias cannot explain the results",
+        "There is no major secular trend in the disease (diagnosis, treatment, or outcomes are stable)"
+      ],
+      "bias_profile": {
+        "selection_bias": {
+          "risk": "Very High",
+          "detail": "No randomization; participants are selected — they tend to be healthier, more motivated, or have different disease characteristics than historical controls"
+        },
+        "information_bias": {
+          "risk": "High",
+          "detail": "Open-label design; outcomes may be assessed differently than in historical controls"
+        },
+        "confounding": {
+          "risk": "Very High",
+          "detail": "Impossible to distinguish treatment effects from secular trends, changes in concomitant care, and differences in patient characteristics"
+        },
+        "performance_bias": {
+          "risk": "Very High",
+          "detail": "No blinding; care may differ from historical practice"
+        },
+        "detection_bias": {
+          "risk": "High",
+          "detail": "Outcome assessment is not blinded and may differ from historical studies"
+        },
+        "attrition_bias": {
+          "risk": "Moderate",
+          "detail": "Follow-up may differ from historical data"
+        },
+        "reporting_bias": {
+          "risk": "High",
+          "detail": "Single-arm trials with null results are less likely to be published; optimistic benchmarks may be selected post-hoc"
+        },
+        "lead_time_bias": {
+          "risk": "Moderate",
+          "detail": "Earlier detection in modern practice may create apparent survival improvements"
+        },
+        "length_time_bias": {
+          "risk": "High",
+          "detail": "If inclusion criteria have changed over time, the types of patients differ systematically"
+        }
+      },
+      "worked_example": "## Scenario\nA biotech company tests a **novel gene therapy (AAV-GT)** for **spinal muscular atrophy type 1 (SMA1)** — a uniformly fatal disease with median survival of 10 months without treatment.\n\n## Design\n- **N = 15** infants with genetically confirmed SMA1\n- **Intervention**: Single IV infusion of AAV-GT\n- **Primary endpoint**: Event-free survival at 24 months (alive without permanent ventilation)\n- **Historical control**: Natural history data from 23 untreated SMA1 infants\n\n## Results\n- **Gene therapy**: 13/15 (87%) alive and event-free at 24 months\n- **Historical control**: 2/23 (9%) alive at 24 months (all ventilated)\n- **Hazard ratio vs historical control**: HR = 0.08 (95% CI: 0.02–0.32)\n\n## Interpretation\nThe extremely large effect size and the uniformly fatal natural history make it highly unlikely that bias alone explains the results. The study led to regulatory approval (FDA accelerated approval). However, the absence of a concurrent control means that changes in supportive care (e.g., improved respiratory management) may contribute to the improved outcomes, and long-term safety remains uncertain.",
+      "reporting_guideline": {
+        "name": "SPIRIT (single-arm extension — limited specific guidance)",
+        "url": "https://www.spirit-statement.org/",
+        "key_items": [
+          "Rationale for single-arm design (why no concurrent control)",
+          "Source of historical/external control data",
+          "Comparability of current and historical populations",
+          "Pre-specified primary endpoint and analysis plan",
+          "Statistical analysis plan including how historical data is incorporated",
+          "Sensitivity analyses for potential biases",
+          "Registration on ClinicalTrials.gov"
+        ]
+      },
+      "pitfalls": [
+        "**Overinterpreting results**: Without a control group, attribution of improvement to the intervention is speculative — always consider alternative explanations",
+        "**Historical control bias**: Historical data often underestimates contemporary outcomes due to improvements in standard care; the apparent 'treatment effect' may simply reflect better background care",
+        "**Strict eligibility criteria**: Participants in single-arm trials are carefully selected and may not represent the broader patient population; this limits generalizability AND biases the comparison against historical data",
+        "**Publication bias**: Positive single-arm trials are published; negative ones are abandoned or not submitted — this distorts the evidence base",
+        "**Small sample + large effect fallacy**: Even a large effect in a small study may be a random fluctuation; confidence intervals are wide"
+      ],
+      "statistical_considerations": "**Primary analysis**: Comparison to historical control using one-sample tests or standardized mortality ratios.\n\n**Effect measures**: One-sample proportion with 95% CI vs historical benchmark. For time-to-event: one-sample log-rank test or SMR.\n\n**Bayesian approaches**: Incorporate historical data as a prior (power prior, commensurate prior) for more efficient borrowing. Bayesian methods are increasingly accepted by regulators for rare disease trials.\n\n**Sample size**: Single-arm trials typically need larger effects to draw conclusions. Simon's two-stage design (Phase II): min N to declare 'promising' if ≥x responses observed.\n\n**Sensitivity analyses**: E-values for unmeasured confounding, 'what-if' scenarios that assume some of the observed effect is due to bias.\n\n```python\n# One-sample proportion vs historical benchmark\nfrom statsmodels.stats.proportion import proportions_ztest\np_observed = 0.87; n = 15; p_historical = 0.09\nstat, p_val = proportions_ztest(int(p_observed * n), n, p_historical)\n```",
+      "software_notes": "**Data structure**: `id`, `treatment`, `outcome`, `follow_up_time`, `event_status`.\n\n**Comparison to historical control (binary outcome)**:\n```python\nfrom statsmodels.stats.proportion import binom_test\np_val = binom_test(x=13, n=15, prop=0.09, alternative='greater')\n```\n\n**For time-to-event vs historical control**: Use `lifelines` with a known survival curve as reference, or use the one-sample log-rank test.",
+      "further_reading": [
+        "Simon R (1989). Optimal two-stage designs for phase II clinical trials. *Controlled Clinical Trials*, 10(1), 1–10.",
+        "US FDA (2019). Rare Diseases: Natural History Studies for Drug Development — Guidance for Industry.",
+        "Schmidli H et al. (2014). Robust meta-analytic-predictive priors in clinical trials with historical control information. *Biometrics*, 70(4), 1023–1032.",
+        "Pocock SJ (1976). The combination of randomized and historical controls in clinical trials. *Journal of Chronic Diseases*, 29(3), 175–188."
+      ]
+    }
+  },
+  {
+    "name": "Cluster Randomized Trial (CRT)",
+    "icon": "🏘️",
+    "evidence_pyramid": 2,
+    "aliases": [
+      "Group-Randomized Trial",
+      "Community Trial",
+      "CRT"
+    ],
+    "sections": {
+      "definition": "A **cluster randomized trial** randomizes groups (clusters) of individuals — such as schools, clinics, or communities — to intervention or control conditions, rather than randomizing individuals directly.\n\nCRTs are used when individual randomization is **infeasible** (e.g., a school-based program), **contamination** between treatment arms is likely, or the intervention is delivered at the group level (e.g., community water fluoridation).",
+      "when_to_use": "Use a CRT when:\n\n- The intervention is **delivered at the group level** (e.g., a classroom curriculum, community health campaign)\n- **Contamination** is likely if individuals within the same cluster received different treatments\n- Individual randomization is **logistically impractical** (e.g., randomizing patients within a hospital to different hand hygiene protocols)\n- The **outcome is influenced by group dynamics** (e.g., peer effects in smoking prevention)\n- You are evaluating a **health system intervention** (e.g., implementation strategies)",
+      "causal_inference": "CRTs provide **Level 2 evidence**, comparable to individual RCTs, but with important caveats. The key statistical issue is that observations within clusters are **correlated** — individuals from the same school or clinic are more similar than individuals from different clusters.\n\nThis **intracluster correlation (ICC)** inflates the variance and reduces effective sample size. An analysis that ignores clustering produces **spuriously narrow CIs and small p-values**. The design effect (variance inflation factor) = 1 + (m − 1) × ICC, where m is the cluster size.",
+      "assumptions": [
+        "Clusters are independent of each other (no contamination between clusters)",
+        "The ICC is accurately estimated or a conservative value is used",
+        "Sufficient number of clusters (≥10 per arm is a common minimum)",
+        "Cluster sizes are reasonably balanced, or analysis accounts for variability",
+        "Individual-level covariates are balanced across arms (randomization of clusters does NOT guarantee balance at the individual level)"
+      ],
+      "bias_profile": {
+        "selection_bias": {
+          "risk": "Moderate",
+          "detail": "Clusters are randomized, but individuals within clusters may differ if recruitment occurs after randomization (recruitment bias)"
+        },
+        "information_bias": {
+          "risk": "Moderate",
+          "detail": "Blinding is often difficult at the cluster level; outcome assessors should still be blinded when possible"
+        },
+        "confounding": {
+          "risk": "Moderate",
+          "detail": "With few clusters per arm, chance imbalance on cluster-level characteristics is possible; stratification or minimization helps"
+        },
+        "performance_bias": {
+          "risk": "Moderate",
+          "detail": "Cluster-level interventions are hard to blind; differential co-interventions may occur"
+        },
+        "detection_bias": {
+          "risk": "Moderate",
+          "detail": "Outcome assessment should be blinded to allocation, but this is harder when the intervention is visible at the cluster level"
+        },
+        "attrition_bias": {
+          "risk": "Moderate",
+          "detail": "Clusters may drop out entirely; individuals within clusters may drop out differentially by arm"
+        },
+        "reporting_bias": {
+          "risk": "Low",
+          "detail": "Pre-registration is becoming standard"
+        },
+        "lead_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        },
+        "length_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        }
+      },
+      "worked_example": "## Scenario\nResearchers test a **school-based anti-obesity program** (nutrition education + daily physical activity) vs standard curriculum in 20 schools.\n\n## Design\n- **Clusters**: 20 elementary schools, randomized 10 per arm\n- **Participants**: All 4th-grade students (mean 50 students per school)\n- **Intervention**: 12-week program taught by trained facilitators\n- **Primary outcome**: Change in BMI percentile from baseline to 12 months\n- **ICC**: 0.02 (estimated from prior school-based studies)\n- **Design effect**: 1 + (50 − 1) × 0.02 = 1.98\n- **Effective sample size**: 20 × 50 / 1.98 ≈ 505 (not 1,000)\n\n## Steps\n1. Randomize 20 schools (stratified by school size and urban/rural)\n2. Recruit participants AFTER randomization (to avoid recruitment bias)\n3. Deliver intervention in 10 schools; standard curriculum in 10\n4. Measure height/weight at baseline, 6 months, 12 months\n5. Linear mixed model with random intercept for school\n\n## Results\nMean BMI change: −1.2 percentile (intervention) vs +0.5 (control). Adjusted difference = −1.7 (95% CI: −2.8 to −0.6), p = 0.005. ICC = 0.019. The intracluster correlation was small but ignoring it would have artificially narrowed the CI by ~40%.\n\n## Interpretation\nThe program reduced BMI gain. The CRT design was essential because the intervention is delivered at the school level and contamination between arms would occur if students in the same school were randomized individually.",
+      "reporting_guideline": {
+        "name": "CONSORT extension for cluster randomized trials",
+        "url": "http://www.consort-statement.org/extensions",
+        "key_items": [
+          "Rationale for cluster randomization (why individual randomization is inappropriate)",
+          "Number of clusters per arm, cluster size, and ICC",
+          "How the ICC was estimated (from pilot, literature, or study data)",
+          "Recruitment method (before or after randomization)",
+          "Primary analysis method (accounting for clustering)",
+          "Whether analyses are at the cluster or individual level",
+          "Loss of clusters and individuals within clusters"
+        ]
+      },
+      "pitfalls": [
+        "**Too few clusters**: With <10 clusters per arm, the t-distribution (not normal) should be used for inference; GEE and mixed models may have inflated Type I error",
+        "**Ignoring clustering**: Analyzing at the individual level without accounting for ICC produces confidence intervals that are too narrow, often by a factor of 2–4×",
+        "**Recruitment bias**: If participants are recruited after clusters are randomized, awareness of allocation may affect who enrolls (more motivated or healthier individuals in intervention clusters)",
+        "**Cluster attrition**: If a whole cluster drops out (e.g., a school withdraws), you lose all its participants — this is more consequential than individual dropout",
+        "**Baseline imbalance**: With few clusters, randomization may not balance cluster-level characteristics (e.g., all large schools in one arm); stratification or constrained randomization helps"
+      ],
+      "statistical_considerations": "**Primary analysis**: Linear mixed model (continuous), generalized estimating equations (GEE, binary), or mixed-effects logistic regression. Include a random intercept for cluster.\n\n**Effect measures**: Mean difference, risk ratio, or odds ratio with cluster-adjusted 95% CI.\n\n**ICC**: The intracluster correlation coefficient ρ = σ²_between / (σ²_between + σ²_within). For binary outcomes, the ICC is on the latent scale.\n\n**Sample size**: Multiply the individual-level sample size by the design effect: DE = 1 + (m − 1) × ICC. Increase the number of clusters, not the cluster size, to improve power (diminishing returns for m > 50).\n\n**Analysis methods**:\n- **Mixed model**: `Y ~ treatment + time + (1 | cluster)`\n- **GEE**: `Y ~ treatment + time`, with `groups=cluster` and exchangeable correlation structure\n- **Cluster-level analysis**: Aggregate to cluster means and analyze with a t-test (valid but less powerful)\n\n**Sensitivity analyses**: Account for small numbers of clusters using the Kenward-Roger or Satterthwaite degrees of freedom correction.",
+      "software_notes": "**Data structure**: One row per individual. `id`, `cluster_id`, `treatment`, `bmi_baseline`, `bmi_12mo`, `bmi_change`.\n\n**Linear mixed model**:\n```python\nimport statsmodels.api as sm\nimport statsmodels.formula.api as smf\n\nmodel = smf.mixedlm('bmi_change ~ treatment + bmi_baseline',\n                    data=df, groups=df['cluster_id']).fit()\nprint(model.summary())\n```\n\n**GEE for binary outcomes**:\n```python\nimport statsmodels.api as sm\n\nmodel = sm.GEE.from_formula('outcome ~ treatment + age',\n                            data=df, groups=df['cluster_id'],\n                            cov_struct=sm.cov_struct.Exchangeable(),\n                            family=sm.families.Binomial()).fit()\nprint(model.summary())\n```",
+      "further_reading": [
+        "Campbell MK, Piaggio G, Elbourne DR, Altman DG (2012). Consort 2010 statement: extension to cluster randomised trials. *BMJ*, 345, e5661.",
+        "Donner A, Klar N (2000). *Design and Analysis of Cluster Randomization Trials in Health Research*. Arnold.",
+        "Hayes RJ, Moulton LH (2017). *Cluster Randomised Trials*, 2nd ed. CRC Press.",
+        "Murray DM (1998). *Design and Analysis of Group-Randomized Trials*. Oxford University Press."
+      ]
+    }
+  },
+  {
+    "name": "Stepped Wedge Design",
+    "icon": "🧱",
+    "evidence_pyramid": 2,
+    "aliases": [
+      "Stepped Wedge Trial",
+      "SWD",
+      "Phased Implementation Trial"
+    ],
+    "sections": {
+      "definition": "A **stepped wedge** is a cluster randomized trial in which all clusters **eventually receive the intervention**, but the start time is randomized. Clusters cross over from control to intervention at randomly assigned time points (steps).\n\nThe design is particularly useful when it would be **unethical or impractical** to withhold the intervention from any cluster, and when the intervention is expected to do more good than harm.",
+      "when_to_use": "Use a stepped wedge design when:\n\n- The **intervention is believed to be beneficial** (withholding it from a control group would be unethical)\n- The intervention must be **rolled out sequentially** due to resource constraints (can't implement everywhere at once)\n- The clusters are **naturally phased** (e.g., districts, regions)\n- The outcome is measured **routinely** (e.g., from health information systems)\n- You want to study **implementation** in addition to effectiveness",
+      "causal_inference": "Stepped wedge designs provide **Level 2 evidence** for both effectiveness and implementation outcomes. The staggered rollout allows each cluster to serve as its own control (within-cluster comparison over time) and also provides between-cluster comparisons.\n\nHowever, stepped wedge designs are **more vulnerable to secular trends** than parallel CRTs. If the outcome is improving over time for reasons unrelated to the intervention, the stepped wedge can overestimate the effect — because each cluster's post-intervention period occurs later in time than its pre-intervention period.\n\nStatistical power depends heavily on the ICC and the number of steps, clusters per step, and observations per cluster per period.",
+      "assumptions": [
+        "The intervention effect is consistent over time (no time-by-treatment interaction)",
+        "Secular trends can be modeled and separated from the intervention effect",
+        "There is no contamination between clusters at different steps",
+        "The outcome measurement is stable and comparable across all time periods",
+        "Cluster characteristics do not change systematically over the rollout period"
+      ],
+      "bias_profile": {
+        "selection_bias": {
+          "risk": "Low",
+          "detail": "Clusters are randomized to step time, not to intervention vs control (all get the intervention eventually)"
+        },
+        "information_bias": {
+          "risk": "Low",
+          "detail": "Outcomes are typically from routine data collection; measurement is independent of crossover timing"
+        },
+        "confounding": {
+          "risk": "Moderate",
+          "detail": "Secular trends are the main confounding threat; careful modeling of time effects is essential"
+        },
+        "performance_bias": {
+          "risk": "Moderate",
+          "detail": "As clusters cross over, knowledge of the intervention may affect co-interventions"
+        },
+        "detection_bias": {
+          "risk": "Low",
+          "detail": "Routine outcome data is usually collected independently of trial status"
+        },
+        "attrition_bias": {
+          "risk": "Low",
+          "detail": "All clusters complete the trial (no permanent control group to 'lose')"
+        },
+        "reporting_bias": {
+          "risk": "Moderate",
+          "detail": "The complex analysis may be vulnerable to analytical flexibility; pre-register the analysis plan"
+        },
+        "lead_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        },
+        "length_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        }
+      },
+      "worked_example": "## Scenario\nA health system introduces a **new sepsis care protocol** across 10 hospitals, rolling out to 2 hospitals every 3 months over 15 months.\n\n## Design\n- **Clusters**: 10 hospitals\n- **Steps**: 5 time points (every 3 months), 2 hospitals randomized to start at each step\n- **Observation period**: 18 months total (3 months baseline + 15 months rollout)\n- **Primary outcome**: 30-day mortality from sepsis\n- **Data source**: Electronic health records (monthly mortality rates per hospital)\n\n## Timeline\n| Month | Hospitals on protocol |\n|-------|----------------------|\n| 0–3   | None (baseline)      |\n| 3–6   | Hospitals A, B       |\n| 6–9   | + C, D               |\n| 9–12  | + E, F               |\n| 12–15 | + G, H               |\n| 15–18 | + I, J (all on protocol) |\n\n## Analysis\nLinear mixed model with fixed effects for time (month) and treatment indicator, random intercept for hospital. Primary estimate: the within-hospital change in mortality from pre- to post-implementation, adjusted for secular trend.\n\n## Results\n30-day mortality decreased from 22% (pre-protocol) to 16% (post-protocol): OR = 0.68 (95% CI: 0.54–0.86), p = 0.001. The secular trend over the 18-month period was non-significant (p = 0.31).\n\n## Interpretation\nThe stepped wedge design allowed all hospitals to implement the protocol while controlling for time trends. The staggered rollout produced stronger evidence than a simple before-after study because the timing of implementation was randomized and the time trend was explicitly modeled.",
+      "reporting_guideline": {
+        "name": "CONSORT extension for stepped wedge (Hamshire et al. 2018)",
+        "url": "https://www.bmj.com/content/363/bmj.k1614",
+        "key_items": [
+          "Rationale for stepped wedge (why all clusters receive the intervention)",
+          "Number of clusters, number of steps, and clusters per step",
+          "How steps were randomized and when crossovers occurred",
+          "Primary statistical model and how time and clustering are handled",
+          "Whether the intervention effect is assumed constant over time",
+          "Reporting of secular trends and sensitivity analyses to time specifications",
+          "Trial registration (stepped wedge trials should be registered like any RCT)"
+        ]
+      },
+      "pitfalls": [
+        "**Confounding by time**: The strongest methodological concern. If the outcome is improving over time, the stepped wedge can overestimate the effect. Include flexible time functions (splines, categorical time) and test robustness",
+        "**Complex sample size planning**: Power depends on ICC, step number, cluster-period observations, and the assumed time trend. Much higher N is needed than for a parallel CRT",
+        "**Treatment effect heterogeneity over time**: If early implementers differ from late implementers, the average treatment effect may not generalize. Pre-specify whether the effect is assumed constant",
+        "**Multiple testing over steps**: With many time points, there is flexibility in how time is modeled. Pre-register the time specification and conduct sensitivity analyses",
+        "**Implementation fidelity**: If the intervention is rolled out sequentially, fidelity may decline over time (late implementers may implement less thoroughly). Document implementation quality at each step"
+      ],
+      "statistical_considerations": "**Primary analysis**: Linear mixed model (continuous) or mixed-effects logistic regression (binary) with:\n- Fixed effect for treatment (0/1)\n- Fixed effect for time (categorical or continuous, with flexible specification)\n- Random intercept for cluster\n\n**Key parameters**:\n- **ICC**: Intracluster correlation coefficient\n- **IAC**: Intraperiod correlation coefficient (cluster-period correlation)\n- **CA**: Cluster autocorrelation (correlation across time within the same cluster)\n\n**Sample size**: The Hussey and Hughes formula is the standard. Power is sensitive to the number of clusters (K), steps (T), and the ICC. Increasing the number of clusters per step is more effective than increasing the observation duration.\n\n**Methods of analysis**:\n- Hussey & Hughes model (linear mixed model with time as categorical)\n- Time as continuous with linear or spline terms\n- Blocked design (each step separately)\n\n**Sensitivity analyses**: Vary the time specification, exclude individual steps, test for time-by-treatment interaction.",
+      "software_notes": "**Data structure**: One row per cluster-period. `cluster`, `step`, `time_period`, `n_patients`, `n_deaths`, `treatment`.\n\n**Aggregate cluster-period data**:\n```python\nimport statsmodels.api as sm\nimport statsmodels.formula.api as smf\n\n# Hussey & Hughes model (time as categorical)\nmodel = smf.glm('n_deaths / n_patients ~ treatment + C(time_period)',\n                data=df, family=sm.families.Binomial(),\n                var_weights=df['n_patients'],\n                groups=df['cluster']).fit()\n```\n\n**Individual-level data**:\n```python\nmodel = smf.mixedlm('outcome ~ treatment + C(time_period)',\n                    data=df, groups=df['cluster']).fit()\n```",
+      "further_reading": [
+        "Hussey MA, Hughes JP (2007). Design and analysis of stepped wedge cluster randomized trials. *Contemporary Clinical Trials*, 28(2), 182–191.",
+        "Hemming K, Haines TP, Chilton PJ, Girling AJ, Lilford RJ (2015). The stepped wedge cluster randomised trial: rationale, design, analysis, and reporting. *BMJ*, 350, h391.",
+        "Mdege ND, Man MS, Taylor Nee Brown CA, Torgerson DJ (2011). Systematic review of stepped wedge cluster randomized trials shows that design is particularly used to evaluate interventions during routine implementation. *Journal of Clinical Epidemiology*, 64(9), 936–948.",
+        "Hargreaves JR, Copas AJ, Beard E, et al. (2015). Five questions to consider before conducting a stepped wedge trial. *Trials*, 16, 350."
+      ]
+    }
+  }
+]
