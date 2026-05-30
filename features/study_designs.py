@@ -6,7 +6,9 @@ import numpy as np
 import plotly.graph_objects as go
 from core.utils import _apa_table
 
-_DATA_PATH = os.path.join(os.path.dirname(__file__), "..", "assets", "study_designs.json")
+_DATA_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "assets", "study_designs.json"
+)
 
 BIAS_LABELS = {
     "selection_bias": "Selection Bias",
@@ -88,7 +90,13 @@ def render_study_designs():
             level_designs = [d for d in designs if d["evidence_pyramid"] == level]
             if not level_designs:
                 continue
-            level_labels = {1: "I — RCT / Experimental", 2: "II — Quasi-Experimental", 3: "III — Observational (Analytic)", 4: "IV — Observational (Descriptive)", 5: "V — Case Reports / Expert Opinion"}
+            level_labels = {
+                1: "I — RCT / Experimental",
+                2: "II — Quasi-Experimental",
+                3: "III — Observational (Analytic)",
+                4: "IV — Observational (Descriptive)",
+                5: "V — Case Reports / Expert Opinion",
+            }
             st.markdown(f"**Level {level_labels[level]}**")
             for d in level_designs:
                 label = f"{d['icon']} {d['name']}"
@@ -97,7 +105,11 @@ def render_study_designs():
                     label,
                     key=btn_key,
                     use_container_width=True,
-                    type="primary" if st.session_state.get(DESIGN_KEY) == d["name"] else "secondary",
+                    type=(
+                        "primary"
+                        if st.session_state.get(DESIGN_KEY) == d["name"]
+                        else "secondary"
+                    ),
                 ):
                     st.session_state[SESSION_KEY] = "design_detail"
                     st.session_state[DESIGN_KEY] = d["name"]
@@ -149,13 +161,21 @@ def _render_wizard(designs):
     with c3:
         timeline = st.radio(
             "When is the outcome measured?",
-            ["After the intervention (prospective)", "Looking back (retrospective)", "At the same time (cross-sectional)"],
+            [
+                "After the intervention (prospective)",
+                "Looking back (retrospective)",
+                "At the same time (cross-sectional)",
+            ],
             key="wiz_timeline",
         )
     with c4:
         comparison = st.radio(
             "Do you have a comparison group?",
-            ["Yes — a separate control/comparison group", "No — all participants receive the same treatment", "Each participant serves as their own control"],
+            [
+                "Yes — a separate control/comparison group",
+                "No — all participants receive the same treatment",
+                "Each participant serves as their own control",
+            ],
             key="wiz_comparison",
         )
 
@@ -191,7 +211,11 @@ def _render_wizard(designs):
                     score += 2 if "Cluster" in d["name"] else 0
                 n_criteria += 1
             else:
-                if "Case" in d["name"] or "Cohort" in d["name"] or "Stepped" in d["name"]:
+                if (
+                    "Case" in d["name"]
+                    or "Cohort" in d["name"]
+                    or "Stepped" in d["name"]
+                ):
                     score += 1
                 n_criteria += 1
         else:
@@ -206,7 +230,9 @@ def _render_wizard(designs):
                 score += 2 if "Case-Control" in d["name"] else 0
                 n_criteria += 1
             elif outcome_rarity.startswith("No"):
-                score += 2 if "Cohort" in d["name"] or "Cross-Sectional" in d["name"] else 0
+                score += (
+                    2 if "Cohort" in d["name"] or "Cross-Sectional" in d["name"] else 0
+                )
                 n_criteria += 1
 
             if timeline == "At the same time (cross-sectional)":
@@ -226,10 +252,14 @@ def _render_wizard(designs):
     top_designs = [(name, score) for name, score in top_n if score > 0]
 
     if not top_designs:
-        st.warning("No designs closely match your parameters. Consider consulting a research methodologist.")
+        st.warning(
+            "No designs closely match your parameters. Consider consulting a research methodologist."
+        )
         st.markdown("#### All Available Designs")
         for d in designs:
-            st.markdown(f"- {d['icon']} **{d['name']}** (Evidence Level {d['evidence_pyramid']})")
+            st.markdown(
+                f"- {d['icon']} **{d['name']}** (Evidence Level {d['evidence_pyramid']})"
+            )
         return
 
     st.markdown("### Recommended Designs")
@@ -246,7 +276,11 @@ def _render_wizard(designs):
             aliases = design.get("aliases", [])
             if aliases:
                 st.caption(f"Also known as: {', '.join(aliases[:3])}")
-            if st.button("View Details", key=f"wiz_goto_{design['name']}", use_container_width=True):
+            if st.button(
+                "View Details",
+                key=f"wiz_goto_{design['name']}",
+                use_container_width=True,
+            ):
                 st.session_state[SESSION_KEY] = "design_detail"
                 st.session_state[DESIGN_KEY] = name
                 st.rerun()
@@ -290,24 +324,26 @@ def _render_bias_matrix(designs):
     z = df.map(lambda x: risk_values.get(x, 4))
     bias_cols = list(BIAS_LABELS.values())
 
-    fig = go.Figure(data=go.Heatmap(
-        z=z.values,
-        x=bias_cols,
-        y=df.index.tolist(),
-        text=df.values,
-        texttemplate="%{text}",
-        textfont={"size": 10, "color": "white"},
-        colorscale=[
-            [0, "rgba(228,87,86,0.85)"],
-            [0.25, "rgba(228,87,86,0.55)"],
-            [0.5, "rgba(241,197,55,0.65)"],
-            [0.75, "rgba(76,120,168,0.55)"],
-            [1, "rgba(128,128,128,0.25)"],
-        ],
-        zmin=0,
-        zmax=4,
-        hovertemplate="<b>%{y}</b><br>%{x}: %{text}<extra></extra>",
-    ))
+    fig = go.Figure(
+        data=go.Heatmap(
+            z=z.values,
+            x=bias_cols,
+            y=df.index.tolist(),
+            text=df.values,
+            texttemplate="%{text}",
+            textfont={"size": 10, "color": "white"},
+            colorscale=[
+                [0, "rgba(228,87,86,0.85)"],
+                [0.25, "rgba(228,87,86,0.55)"],
+                [0.5, "rgba(241,197,55,0.65)"],
+                [0.75, "rgba(76,120,168,0.55)"],
+                [1, "rgba(128,128,128,0.25)"],
+            ],
+            zmin=0,
+            zmax=4,
+            hovertemplate="<b>%{y}</b><br>%{x}: %{text}<extra></extra>",
+        )
+    )
     fig.update_layout(
         template="plotly_dark",
         height=60 + 40 * len(designs),
@@ -328,9 +364,10 @@ def _render_bias_matrix(designs):
                 unsafe_allow_html=True,
             )
 
-    with st.expander("Bias Definitions (click to expand)"):
+    st.divider()
+    with st.expander("Bias Definitions", expanded=True):
         for bk, label in BIAS_LABELS.items():
-            st.markdown(f"**{label}**: {BIAS_DESCRIPTIONS.get(bk, '')}")
+            st.markdown(f":orange[**{label}**]: {BIAS_DESCRIPTIONS.get(bk, '')}")
 
 
 def _render_bias_checklist(designs):
@@ -352,7 +389,9 @@ def _render_bias_checklist(designs):
     bp = design["sections"]["bias_profile"]
     responses = {}
 
-    st.markdown("For each bias, indicate whether you have addressed it in your study design:")
+    st.markdown(
+        "For each bias, indicate whether you have addressed it in your study design:"
+    )
 
     for bk in BIAS_LABELS:
         label = BIAS_LABELS[bk]
@@ -381,19 +420,29 @@ def _render_bias_checklist(designs):
             with cols[2]:
                 responses[bk] = st.selectbox(
                     "Status",
-                    ["Not Addressed", "Partially", "Fully Addressed", "N/A for my study"],
+                    [
+                        "Not Addressed",
+                        "Partially",
+                        "Fully Addressed",
+                        "N/A for my study",
+                    ],
                     key=f"bc_{bk}",
                     label_visibility="collapsed",
                 )
 
     st.divider()
 
-    not_addressed = [BIAS_LABELS[bk] for bk, v in responses.items() if v == "Not Addressed"]
+    not_addressed = [
+        BIAS_LABELS[bk] for bk, v in responses.items() if v == "Not Addressed"
+    ]
     partial = [BIAS_LABELS[bk] for bk, v in responses.items() if v == "Partially"]
 
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.metric("Fully Addressed", sum(1 for v in responses.values() if v == "Fully Addressed"))
+        st.metric(
+            "Fully Addressed",
+            sum(1 for v in responses.values() if v == "Fully Addressed"),
+        )
     with c2:
         st.metric("Partially Addressed", len(partial))
     with c3:
@@ -418,16 +467,26 @@ def _render_bias_checklist(designs):
                 st.markdown(f"- **{bias}**: {suggestions[bias]}")
 
     if not not_addressed and not partial:
-        st.success("All biases have been addressed. Your study design is robust against the identified threats to validity.")
+        st.success(
+            "All biases have been addressed. Your study design is robust against the identified threats to validity."
+        )
     elif not not_addressed and partial:
-        st.info("Most biases are addressed, but some need further attention. Review the suggestions above.")
+        st.info(
+            "Most biases are addressed, but some need further attention. Review the suggestions above."
+        )
 
 
 def _render_design_page(design):
     s = design["sections"]
 
     with st.container():
-        evidence_labels = {1: "I — High (RCT / Experimental)", 2: "II — Moderate-High (Quasi-Experimental)", 3: "III — Moderate (Observational — Analytic)", 4: "IV — Low-Moderate (Observational — Descriptive)", 5: "V — Low (Case Reports / Expert Opinion)"}
+        evidence_labels = {
+            1: "I — High (RCT / Experimental)",
+            2: "II — Moderate-High (Quasi-Experimental)",
+            3: "III — Moderate (Observational — Analytic)",
+            4: "IV — Low-Moderate (Observational — Descriptive)",
+            5: "V — Low (Case Reports / Expert Opinion)",
+        }
         st.markdown(
             f"<div style='display:flex; align-items:center; gap:12px; margin-bottom:4px;'>"
             f"<span style='font-size:2.5rem;'>{design['icon']}</span>"
@@ -440,7 +499,13 @@ def _render_design_page(design):
             st.caption(f"Also known as: {', '.join(aliases)}")
 
         ev_level = design["evidence_pyramid"]
-        ev_colors = {1: "rgba(76,120,168,0.8)", 2: "rgba(76,120,168,0.6)", 3: "rgba(241,197,55,0.7)", 4: "rgba(228,87,86,0.5)", 5: "rgba(228,87,86,0.7)"}
+        ev_colors = {
+            1: "rgba(76,120,168,0.8)",
+            2: "rgba(76,120,168,0.6)",
+            3: "rgba(241,197,55,0.7)",
+            4: "rgba(228,87,86,0.5)",
+            5: "rgba(228,87,86,0.7)",
+        }
         st.markdown(
             f"<div style='background:{ev_colors[ev_level]}; padding:6px 14px; border-radius:6px; "
             f"display:inline-block; margin:6px 0 16px; font-weight:600;'>"
@@ -474,11 +539,13 @@ def _render_design_page(design):
         risk = entry["risk"]
         detail = entry.get("detail", "")
         color = RISK_COLORS.get(risk, "gray")
-        bias_rows.append({
-            "Bias": BIAS_LABELS[bk],
-            "Risk": risk,
-            "Detail": detail,
-        })
+        bias_rows.append(
+            {
+                "Bias": BIAS_LABELS[bk],
+                "Risk": risk,
+                "Detail": detail,
+            }
+        )
     bias_df = pd.DataFrame(bias_rows)
     col_map = {"Bias": None, "Risk": None, "Detail": None}
     _apa_table(bias_df, hide_index=True)

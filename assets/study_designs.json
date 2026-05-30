@@ -1247,5 +1247,722 @@
         "Hargreaves JR, Copas AJ, Beard E, et al. (2015). Five questions to consider before conducting a stepped wedge trial. *Trials*, 16, 350."
       ]
     }
+  },
+  {
+    "name": "Systematic Review",
+    "icon": "📚",
+    "evidence_pyramid": 1,
+    "aliases": [
+      "SR",
+      "Systematic Literature Review",
+      "Evidence Synthesis"
+    ],
+    "sections": {
+      "definition": "A **systematic review** uses a rigorous, pre-specified protocol to identify, appraise, and synthesize all available evidence on a focused research question. Unlike a narrative review, an SR follows a reproducible methodology with explicit eligibility criteria, comprehensive search strategies, and systematic assessment of study quality.\n\nSystematic reviews sit at the **top of the evidence pyramid** because they aggregate multiple studies, increasing precision and generalizability while reducing the impact of individual study limitations.",
+      "when_to_use": "Use a systematic review when:\n\n- You need to **summarize all available evidence** on a focused clinical or policy question\n- You want to assess the **consistency** of findings across studies\n- You need a **quantitative summary** (via meta-analysis) of treatment effects\n- You are developing **clinical practice guidelines**\n- You need to **identify gaps** in the evidence base for future research",
+      "causal_inference": "Systematic reviews provide **Level 1 evidence** when they include a meta-analysis of high-quality RCTs. However, the review is only as strong as the studies it includes — a systematic review of poorly designed studies remains weak evidence.\n\nThe key threats to validity are **publication bias** (studies with positive results are more likely to be published), **selection bias** in study inclusion, and **heterogeneity** across studies that is not properly addressed.",
+      "assumptions": [
+        "A clear, focused research question is defined a priori",
+        "The search strategy is comprehensive and reproducible across multiple databases",
+        "Eligibility criteria are pre-specified and applied consistently",
+        "Study quality is assessed using validated tools (Cochrane RoB, Newcastle-Ottawa, AMSTAR)",
+        "Data extraction is performed independently by two reviewers",
+        "Heterogeneity is assessed and explored through subgroup or sensitivity analyses"
+      ],
+      "bias_profile": {
+        "selection_bias": {
+          "risk": "High",
+          "detail": "Search strategy may miss relevant studies; language, database, and publication date restrictions introduce selection bias"
+        },
+        "information_bias": {
+          "risk": "Moderate",
+          "detail": "Data extraction errors; mitigated by dual independent extraction and consensus"
+        },
+        "confounding": {
+          "risk": "High",
+          "detail": "The primary studies carry their own confounding; a review cannot fix design flaws in included studies"
+        },
+        "performance_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable — no intervention is delivered"
+        },
+        "detection_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        },
+        "attrition_bias": {
+          "risk": "Moderate",
+          "detail": "Studies with missing outcome data may be excluded; sensitivity analyses for missing data are essential"
+        },
+        "reporting_bias": {
+          "risk": "High",
+          "detail": "Publication bias is the dominant threat; positive results are published, negative results are not"
+        },
+        "lead_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        },
+        "length_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        }
+      },
+      "worked_example": "## Scenario\nResearchers conduct a systematic review of **low-dose aspirin for primary prevention of cardiovascular disease**.\n\n## Protocol\n- **Question**: In adults without prior CVD, does daily low-dose aspirin reduce all-cause mortality, MI, and stroke?\n- **Databases**: MEDLINE, Embase, CENTRAL, Web of Science (2000–2024)\n- **Inclusion**: RCTs with ≥1,000 participants, minimum 12 months follow-up\n- **Quality**: Cochrane Risk of Bias tool (RoB 2)\n- **Pre-registered**: PROSPERO CRD42024xxxxxx\n\n## Results\n- 13 RCTs identified (N = 164,000 participants)\n- **All-cause mortality**: RR = 0.98 (95% CI: 0.93–1.03), I² = 12%\n- **MI**: RR = 0.88 (95% CI: 0.80–0.97), I² = 34%\n- **Major bleeding**: RR = 1.43 (95% CI: 1.30–1.58), I² = 8%\n- Publication bias: Egger's test p = 0.42 (no evidence)\n\n## Interpretation\nAspirin reduces MI risk modestly but increases bleeding risk. The review found no benefit for mortality. The consistent direction of effects across 13 RCTs strengthens the conclusion despite non-significance for mortality.",
+      "reporting_guideline": {
+        "name": "PRISMA 2020",
+        "url": "https://www.prisma-statement.org/",
+        "key_items": [
+          "Pre-registration with PROSPERO or Open Science Framework",
+          "Full search strategy for at least one database (reproducible)",
+          "PRISMA flow diagram: records identified, screened, assessed, included",
+          "Risk of bias assessment for each included study",
+          "Synthesis methods (meta-analysis or narrative synthesis)",
+          "Heterogeneity assessment (I², prediction intervals)",
+          "Reporting bias assessment (funnel plot, Egger's test)",
+          "Certainty of evidence (GRADE)"
+        ]
+      },
+      "pitfalls": [
+        "**Inadequate search**: Searching only MEDLINE misses up to 50% of relevant studies; always search multiple databases and check reference lists",
+        "**No protocol or changing it mid-review**: Post-hoc changes to eligibility criteria introduce bias; pre-register and report deviations transparently",
+        "**Ignoring study quality**: Combining low-quality studies with high-quality ones in a meta-analysis produces misleading results; perform sensitivity analyses excluding high-risk-of-bias studies",
+        "**Publication bias not assessed**: Without a funnel plot and statistical test, you cannot determine whether missing studies would change the conclusion",
+        "**Overinterpreting non-significant findings**: 'No evidence of effect' is not 'evidence of no effect'; consider whether the meta-analysis was adequately powered"
+      ],
+      "statistical_considerations": "**Primary synthesis**: Random-effects meta-analysis (DerSimonian-Laird or restricted maximum likelihood) when heterogeneity is present. Fixed-effects model when studies are methodologically homogeneous.\n\n**Effect measures**: Risk ratio (RR), odds ratio (OR), mean difference (MD), standardized mean difference (SMD), or hazard ratio (HR) depending on outcome type.\n\n**Heterogeneity**: I² statistic (percentage of variability due to true heterogeneity rather than chance). τ² (between-study variance). Prediction intervals for the expected effect in a new study.\n\n**Subgroup analysis**: Pre-specified subgroups to explore heterogeneity. Test for interaction (not separate p-values within subgroups).\n\n**Sensitivity analyses**: Leave-one-out analysis, influence diagnostics, exclusion of high-risk-of-bias studies.\n\n**Reporting bias**: Funnel plot asymmetry (Egger's regression test, Begg's rank test). Trim-and-fill method for adjustment.\n\n**GRADE**: Rate certainty of evidence as High, Moderate, Low, or Very Low based on risk of bias, inconsistency, indirectness, imprecision, and publication bias.",
+      "software_notes": "**Data structure**: One row per included study. Columns: `study_id`, `author_year`, `n_treatment`, `n_control`, `event_treatment`, `event_control`, `mean_treatment`, `sd_treatment`, `mean_control`, `sd_control`, `effect_size`, `se`, `risk_of_bias`.\n\n**Key packages**: `meta` or `metafor` (R), `statsmodels` (Python — limited meta-analysis), `scipy.stats`. For comprehensive meta-analysis in Python, consider `pymeta` or use R via `rpy2`.\n\n**Example meta-analysis in Python**:\n```python\nimport numpy as np\nfrom scipy import stats as sp_stats\n\n# Inverse-variance weighted fixed effects\nlog_or = np.log(odds_ratios)\nse = np.sqrt(1/n_events_t + 1/n_noevent_t + 1/n_events_c + 1/n_noevent_c)\nweights = 1 / se**2\npooled_log_or = np.sum(weights * log_or) / np.sum(weights)\nse_pooled = np.sqrt(1 / np.sum(weights))\nz = pooled_log_or / se_pooled\np = 2 * (1 - sp_stats.norm.cdf(abs(z)))\n```\n\n**PRISMA flow diagram**: Create manually in diagramming software or use `PRISMAstatement` in R.",
+      "further_reading": [
+        "Page MJ et al. (2021). The PRISMA 2020 statement: an updated guideline for reporting systematic reviews. *BMJ*, 372, n71.",
+        "Higgins JPT, Thomas J, Chandler J et al. (eds) (2019). *Cochrane Handbook for Systematic Reviews of Interventions*, 2nd ed. Wiley.",
+        "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). *Introduction to Meta-Analysis*. Wiley.",
+        "Guyatt GH et al. (2008). GRADE: an emerging consensus on rating quality of evidence and strength of recommendations. *BMJ*, 336(7650), 924–926."
+      ]
+    }
+  },
+  {
+    "name": "Meta-Analysis",
+    "icon": "📊",
+    "evidence_pyramid": 1,
+    "aliases": [
+      "Quantitative Synthesis",
+      "Pooled Analysis",
+      "MA"
+    ],
+    "sections": {
+      "definition": "**Meta-analysis** is the statistical combination of results from two or more independent studies. It is usually (but not necessarily) conducted within a systematic review. By pooling data, meta-analysis increases statistical power, improves precision of effect estimates, and can resolve apparent contradictions between studies.\n\nA meta-analysis is not always appropriate — when studies are too heterogeneous in design, population, or outcome measurement, a **narrative synthesis** is preferred.",
+      "when_to_use": "Use a meta-analysis when:\n\n- You have **multiple studies** addressing the same research question with comparable outcome measures\n- The studies are **sufficiently homogeneous** in design and population (clinical heterogeneity is manageable)\n- You need a **precise estimate** of the overall effect\n- You want to explore **sources of heterogeneity** through subgroup or meta-regression analysis\n- The individual studies are **underpowered** and pooling would provide adequate power",
+      "causal_inference": "Meta-analysis inherits the evidence level of the included studies. A meta-analysis of high-quality RCTs provides **Level 1 evidence**; a meta-analysis of case-control studies provides Level 3 evidence.\n\nThe main threats are **publication bias** (missing studies distort the pooled estimate), **heterogeneity** (combining apples and oranges), and **ecological fallacy** (the pooled estimate may not apply to any specific population or setting). Meta-analysis does not correct flaws in the original studies (garbage in, garbage out).",
+      "assumptions": [
+        "Studies are combinable (sufficient similarity in design, population, intervention, and outcome)",
+        "Effect estimates are available or can be calculated from reported data",
+        "Studies are independent (multiple reports from the same trial are handled correctly)",
+        "Publication bias is minimal or can be assessed",
+        "Heterogeneity is quantifiable and explorable",
+        "The statistical model (fixed or random effects) is appropriate for the data"
+      ],
+      "bias_profile": {
+        "selection_bias": {
+          "risk": "High",
+          "detail": "The meta-analysis is only as comprehensive as the underlying search; selective inclusion of studies distorts results"
+        },
+        "information_bias": {
+          "risk": "Moderate",
+          "detail": "Errors in extracting effect sizes and standard errors propagate to the pooled estimate; dual extraction mitigates this"
+        },
+        "confounding": {
+          "risk": "High",
+          "detail": "Study-level confounders (e.g.,不同 populations, different co-interventions) cannot be fully adjusted"
+        },
+        "performance_bias": {
+          "risk": "N/A",
+          "detail": "No intervention is delivered"
+        },
+        "detection_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        },
+        "attrition_bias": {
+          "risk": "Moderate",
+          "detail": "Studies with incomplete outcome data contribute less weight but may bias the result if missingness is informative"
+        },
+        "reporting_bias": {
+          "risk": "High",
+          "detail": "Publication bias is the single greatest threat; funnel plot asymmetry must be evaluated"
+        },
+        "lead_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        },
+        "length_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        }
+      },
+      "worked_example": "## Scenario\nFive RCTs have tested whether a **new antihypertensive drug (Drug X)** reduces cardiovascular events compared to placebo. Each trial individually showed a trend but was underpowered. A meta-analysis is performed.\n\n## Studies\n| Study | N | Events (Drug) | Events (Placebo) | RR (95% CI) |\n|-------|---|--------------|-----------------|-------------|\n| Trial 1 | 1,200 | 48/600 | 62/600 | 0.77 (0.54–1.11) |\n| Trial 2 | 850 | 32/425 | 41/425 | 0.78 (0.50–1.22) |\n| Trial 3 | 2,000 | 72/1,000 | 95/1,000 | 0.76 (0.57–1.02) |\n| Trial 4 | 650 | 22/325 | 30/325 | 0.73 (0.43–1.24) |\n| Trial 5 | 1,500 | 55/750 | 70/750 | 0.79 (0.56–1.10) |\n\n## Pooled result (random effects)\nPooled RR = 0.77 (95% CI: 0.66–0.90), p = 0.001  \nHeterogeneity: I² = 0%, τ² = 0, p = 1.00\n\n## Interpretation\nThe meta-analysis reveals a statistically significant 23% risk reduction that was not apparent in any single trial. The absence of heterogeneity (I² = 0%) strengthens confidence. A funnel plot would need ≥10 studies to assess publication bias — with only 5 studies, sensitivity analysis using the fail-safe N (Orwin's method) is appropriate: 11 null studies would be needed to bring the pooled RR to 0.90.",
+      "reporting_guideline": {
+        "name": "PRISMA 2020 + Meta-analysis reporting items",
+        "url": "https://www.prisma-statement.org/",
+        "key_items": [
+          "Eligibility criteria for including studies in the meta-analysis",
+          "Which effect measure was used and why",
+          "Statistical model (fixed or random effects) and justification",
+          "Heterogeneity statistics (I², τ², and prediction interval)",
+          "Results of individual studies displayed in a forest plot",
+          "Subgroup or meta-regression analyses (pre-specified)",
+          "Assessment of publication bias (funnel plot + test)",
+          "Sensitivity analyses to assess robustness"
+        ]
+      },
+      "pitfalls": [
+        "**Combining heterogeneous studies without exploration**: I² must be reported; if I² > 50%, explore sources before accepting the pooled estimate",
+        "**Ignoring publication bias**: A meta-analysis of only published studies overestimates effects by 10–30% on average; use funnel plots and trim-and-fill",
+        "**Using fixed effects when random effects is appropriate**: Fixed effects assume one true effect; random effects is almost always more appropriate for medical research",
+        "**Overconfidence in the summary estimate**: The 95% CI quantifies random error, not systematic error (bias); the true effect may lie outside the CI if bias is present",
+        "**Including duplicate data**: Multiple publications from the same trial (different follow-up times, different outcomes) must be identified and handled appropriately"
+      ],
+      "statistical_considerations": "**Primary analysis**: Random-effects meta-analysis using DerSimonian-Laird (DL), restricted maximum likelihood (REML), or Paule-Mandel estimator. Fixed-effects using Mantel-Haenszel (binary) or inverse-variance (continuous).\n\n**Effect measures**: RR or OR (binary), MD or SMD (continuous), HR (time-to-event), IR (incidence rate).\n\n**Heterogeneity**:\n- **I²**: 0–40% = low, 30–60% = moderate, 50–90% = substantial, 75–100% = considerable\n- **τ²**: Between-study variance (absolute measure)\n- **Prediction interval**: The range where the true effect in a *new* study is expected to fall (important for clinical decision-making)\n\n**Small-study effects**: Egger's regression test (linear regression of SE on effect size). Begg's rank test. Trim-and-fill adjustment.\n\n**Sensitivity analyses**: Leave-one-out, influence diagnostics, using different priors for Bayesian MA.\n\n**Network meta-analysis**: When comparing multiple interventions simultaneously, enabling indirect comparisons (A vs C via B).",
+      "software_notes": "**Data structure**: Same as systematic review. Key columns: `study`, `event_t`, `n_t`, `event_c`, `n_c` for binary; `mean_t`, `sd_t`, `n_t`, `mean_c`, `sd_c`, `n_c` for continuous.\n\n**Forest plot**: Use Plotly for interactive forest plots, or export data to R for publication-quality figures.\n\n**Meta-analysis in Python** (basic):\n```python\nimport numpy as np\nfrom scipy import stats as sp_stats\n\n# Random-effects (DL method)\nlog_rr = np.log(rrs)\nweights = 1 / (se**2 + tau2)\npooled = np.sum(weights * log_rr) / np.sum(weights)\nse_pooled = np.sqrt(1 / np.sum(weights))\nci_lo = np.exp(pooled - 1.96 * se_pooled)\nci_hi = np.exp(pooled + 1.96 * se_pooled)\n```\n\n**Full-featured Meta-analysis in R** (recommended):\n```r\nlibrary(meta)\nmetabin(event.e, n.e, event.c, n.c, data = df, sm = \"RR\", method = \"MH\")\n```",
+      "further_reading": [
+        "Borenstein M, Hedges LV, Higgins JPT, Rothstein HR (2009). *Introduction to Meta-Analysis*. Wiley.",
+        "Higgins JPT, Thompson SG, Deeks JJ, Altman DG (2003). Measuring inconsistency in meta-analyses. *BMJ*, 327(7414), 557–560.",
+        "Sterne JAC et al. (2011). Recommendations for examining and interpreting funnel plot asymmetry in meta-analyses of randomised controlled trials. *BMJ*, 343, d4002.",
+        "Riley RD, Higgins JPT, Deeks JJ (2011). Interpretation of random effects meta-analyses. *BMJ*, 342, d549."
+      ]
+    }
+  },
+  {
+    "name": "Narrative Review",
+    "icon": "📝",
+    "evidence_pyramid": 5,
+    "aliases": [
+      "Traditional Review",
+      "Literature Review",
+      "Descriptive Review"
+    ],
+    "sections": {
+      "definition": "A **narrative review** provides a broad, qualitative synthesis of the literature on a topic without the systematic methodology of an SR. The author selects, interprets, and summarizes studies based on expertise and perspective, rather than a pre-specified, reproducible protocol.\n\nNarrative reviews are valuable for **introducing a topic**, **providing historical context**, and **synthesizing broad, heterogeneous literatures** where systematic methods would be impractical.",
+      "when_to_use": "Use a narrative review when:\n\n- You are **introducing a broad topic** (e.g., a textbook chapter, grant introduction)\n- The literature is **too heterogeneous** for systematic synthesis (different methods, populations, eras)\n- You want to provide **historical context** or a **conceptual framework**\n- A **rapid overview** is needed for policy or education\n- The question is **exploratory** rather than focused",
+      "causal_inference": "Narrative reviews provide **Level 5 evidence** — expert opinion level. They are critically vulnerable to **selection bias** (authors cite studies that support their viewpoint), **confirmation bias** (seeking confirming evidence), and **lack of reproducibility**.\n\nA narrative review is **never sufficient** for clinical practice guidelines or health policy decisions, which require systematic reviews.",
+      "assumptions": [
+        "The author has sufficient expertise to select and interpret the literature",
+        "The review covers the breadth of the topic (not cherry-picked studies)",
+        "Conflicting evidence is acknowledged and discussed",
+        "The review is transparent about its limitations",
+        "The intended use of the review matches its level of rigor"
+      ],
+      "bias_profile": {
+        "selection_bias": {
+          "risk": "Very High",
+          "detail": "Authors selectively cite studies supporting their position; no systematic search means studies are chosen subjectively"
+        },
+        "information_bias": {
+          "risk": "High",
+          "detail": "No standardized data extraction; interpretation varies by author"
+        },
+        "confounding": {
+          "risk": "Very High",
+          "detail": "Without systematic methods, confounding in the primary literature is not systematically addressed"
+        },
+        "performance_bias": {
+          "risk": "N/A",
+          "detail": "No intervention"
+        },
+        "detection_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        },
+        "attrition_bias": {
+          "risk": "Moderate",
+          "detail": "Studies that are hard to access (non-English, older, unpublished) are systematically excluded by convenience"
+        },
+        "reporting_bias": {
+          "risk": "Very High",
+          "detail": "Publication bias is not assessed; narrative reviews amplify existing publication bias by weighting accessible, positive studies"
+        },
+        "lead_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        },
+        "length_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        }
+      },
+      "worked_example": "## Scenario\nAn expert in diabetes writes a narrative review on **The Role of Inflammation in Type 2 Diabetes** for a clinical journal.\n\n## Content\n- Introduction: historical perspective linking inflammation and insulin resistance\n- Section 1: Evidence from animal models (6 studies cited)\n- Section 2: Cross-sectional human studies of inflammatory markers (8 studies)\n- Section 3: Longitudinal evidence linking CRP to diabetes risk (5 studies)\n- Section 4: Anti-inflammatory interventions (metformin, thiazolidinediones, IL-1 antagonists) — 4 clinical trials\n- Section 5: Future directions and unanswered questions\n\n## Limitations acknowledged\n- \"This review is not systematic and may not have captured all relevant studies\"\n- \"Studies cited were selected for illustrative purposes\"\n\n## Interpretation\nThe review provides a valuable conceptual framework for understanding the inflammation-diabetes link, but cannot be used to quantify the strength of the association or the efficacy of anti-inflammatory interventions. It generates hypotheses for systematic reviews and identifies research gaps (e.g., the need for RCTs of specific anti-inflammatory agents).",
+      "reporting_guideline": {
+        "name": "No single guideline — follow journal-specific author guidelines",
+        "url": "",
+        "key_items": [
+          "State explicitly that this is a narrative (not systematic) review in the title or abstract",
+          "Describe the search strategy, even if non-systematic (e.g., 'PubMed search using key terms')",
+          "Acknowledge the potential for selection bias in study inclusion",
+          "Balance evidence for and against the main thesis",
+          "Avoid quantitative claims that imply meta-analytic precision",
+          "Include a statement about limitations — 'this review is not systematic and may be subject to publication bias'"
+        ]
+      },
+      "pitfalls": [
+        "**Cherry-picking evidence**: The most common criticism — authors cite studies that support their position and ignore contradictory evidence",
+        "**Confirmation bias**: Unconscious preference for studies that align with the author's prior beliefs or clinical experience",
+        "**Burying contradictory evidence**: Negative studies are mentioned in passing or in a single sentence while positive studies are described in detail",
+        "**Claiming quantitative precision**: Saying 'most studies show X' without counting or systematically evaluating all available evidence",
+        "**Becoming outdated**: Without a systematic and dated search, the review may reflect literature that is years out of date"
+      ],
+      "statistical_considerations": "**No formal statistical analysis** in a narrative review.\n\nDescriptive statistics (counts, proportions) of cited studies may be reported:\n- '12 of 18 studies found a significant association'\n- 'The median effect size across studies was X'\n\n**Formal meta-analysis should not be attempted** without systematic methodology.\n\n**Citation analysis**: Number of citations, publication dates, journal impact factors, and geographical distribution of cited studies can provide context but not evidence.",
+      "software_notes": "**Data structure**: Typically managed with reference managers (Zotero, EndNote, Mendeley) rather than statistical software.\n\n**No statistical code** is typically reported for a narrative review.\n\n**Reference management**: Export citations in BibTeX, RIS, or CSL format for integration with manuscript writing tools.",
+      "further_reading": [
+        "Ferrari R (2015). Writing narrative style literature reviews. *Medical Writing*, 24(4), 230–235.",
+        "Green BN, Johnson CD, Adams A (2006). Writing narrative literature reviews for peer-reviewed journals: secrets of the trade. *Journal of Chiropractic Medicine*, 5(3), 101–117.",
+        "Dijkers MP (2009). The value of traditional reviews in the era of systematic reviewing. *American Journal of Physical Medicine & Rehabilitation*, 88(5), 423–430.",
+        "Grant MJ, Booth A (2009). A typology of reviews: an analysis of 14 review types and associated methodologies. *Health Information & Libraries Journal*, 26(2), 91–108."
+      ]
+    }
+  },
+  {
+    "name": "Scoping Review",
+    "icon": "🔍",
+    "evidence_pyramid": 5,
+    "aliases": [
+      "Scoping Study",
+      "Scoping Exercise",
+      "Mapping Review"
+    ],
+    "sections": {
+      "definition": "A **scoping review** maps the existing literature on a broad topic, identifying key concepts, types of evidence, and research gaps. Unlike a systematic review, a scoping review does not assess study quality or produce a quantitative synthesis.\n\nScoping reviews are ideal for **emerging topics**, **heterogeneous literatures**, and **conceptual mapping**. They answer 'what is known?' rather than 'what is the effect?'",
+      "when_to_use": "Use a scoping review when:\n\n- The topic is **broad or emerging** and has not been comprehensively reviewed\n- You want to **map concepts, definitions, or measurement approaches**\n- You need to identify **research gaps** to justify a future systematic review\n- The literature is **methodologically diverse** (quantitative, qualitative, mixed methods)\n- You are developing a **research agenda** or clinical guideline scope",
+      "causal_inference": "Scoping reviews do **not test causal hypotheses**. Their purpose is **descriptive mapping** — identifying the volume, nature, and characteristics of available research. They cannot determine the direction or magnitude of treatment effects.\n\nEvidence level: **Level 5** (expert/descriptive). A scoping review may be upgraded if it follows a rigorous, pre-registered protocol with dual screening — but it still does not provide causal evidence.",
+      "assumptions": [
+        "The research question is broad enough to warrant a scoping (rather than systematic) approach",
+        "The search strategy is sufficiently broad to capture diverse study types",
+        "Data charting (extraction) is systematic and reproducible",
+        "The review clearly distinguishes between 'evidence mapped' and 'evidence synthesized'",
+        "The limitations of the scoping approach are transparently reported"
+      ],
+      "bias_profile": {
+        "selection_bias": {
+          "risk": "High",
+          "detail": "Search strategies for scoping reviews are broad but less rigorous than SRs; relevant studies may be missed"
+        },
+        "information_bias": {
+          "risk": "High",
+          "detail": "Data charting is typically single-reviewer for scoping reviews (due to volume); verification is recommended"
+        },
+        "confounding": {
+          "risk": "Very High",
+          "detail": "No quality assessment of included studies; confounding in primary studies is not addressed"
+        },
+        "performance_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        },
+        "detection_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        },
+        "attrition_bias": {
+          "risk": "Moderate",
+          "detail": "Large volumes of citations may lead to pragmatic screening decisions that miss relevant studies"
+        },
+        "reporting_bias": {
+          "risk": "High",
+          "detail": "Publication bias is not assessed in scoping reviews; the map reflects only published literature"
+        },
+        "lead_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        },
+        "length_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        }
+      },
+      "worked_example": "## Scenario\nResearchers want to understand how **artificial intelligence** is being applied to **clinical diagnosis** in low-resource settings — a broad, emerging topic with no existing comprehensive map.\n\n## Methods\n- **Question**: What AI-based diagnostic tools have been tested in low-resource clinical settings? What populations, diseases, and AI methods have been studied?\n- **Databases**: MEDLINE, Embase, IEEE Xplore, ACM Digital Library (2015–2024)\n- **Inclusion**: Any study type (RCT, observational, validation, qualitative) reporting AI diagnostic tools in low-resource settings\n- **Data charting**: Study design, disease, AI method, country, outcome measure, implementation barriers\n- **No quality assessment**: As per scoping review methodology\n\n## Results\n- 147 studies included (of 3,200 screened)\n- 62% focused on infectious diseases (TB, malaria, HIV)\n- 78% used deep learning (CNN for imaging)\n- Only 12% included prospective validation in the target setting\n- Only 5% reported cost-effectiveness data\n\n## Interpretation\nThe scoping review reveals that while many AI diagnostic tools are being developed, very few have been prospectively validated in resource-limited settings. Cost-effectiveness data is virtually absent. These gaps directly inform a research agenda and justify future systematic reviews focused on specific disease areas.",
+      "reporting_guideline": {
+        "name": "PRISMA-ScR (Scoping Review Extension)",
+        "url": "https://www.prisma-scr.org/",
+        "key_items": [
+          "Rationale for scoping rather than systematic review approach",
+          "Pre-registration (optional but recommended — Open Science Framework)",
+          "Full search strategy for at least one database",
+          "PRISMA flow diagram",
+          "Data charting form and pilot-testing process",
+          "Narrative summary of findings (tables, charts, maps)",
+          "No meta-analysis (explicitly state why)",
+          "Discussion of implications for research, policy, or practice"
+        ]
+      },
+      "pitfalls": [
+        "**Scope creep**: The broad research question can expand indefinitely; define clear boundaries early and stick to them",
+        "**Confusion with systematic review**: If you end up doing quality assessment and meta-analysis, it's not a scoping review — choose the right methodology from the start",
+        "**Inadequate data charting**: With potentially hundreds of studies, a pilot-tested, standardized extraction form is essential",
+        "**Missing qualitative studies**: Many scoping reviews explicitly include qualitative research, but standard databases index them poorly",
+        "**No consultation**: The Joanna Briggs Institute recommends stakeholder consultation as part of scoping reviews; this is often omitted"
+      ],
+      "statistical_considerations": "**No formal statistical synthesis**. Descriptive statistics only:\n\n- Frequency tables: study types, countries, populations, AI methods\n- Bubble plots: number of studies by disease and year\n- Geographic maps: distribution of studies\n- Word clouds: frequently used terms and concepts\n\n**Bibliometric analysis**: Co-authorship networks, citation analysis, journal distribution — if relevant to the research question.\n\n**Inter-rater reliability**: Cohen's kappa for screening decisions (recommended but rarely reported in scoping reviews).",
+      "software_notes": "**Data structure**: One row per included study. Columns: `study_id`, `author_year`, `study_design`, `disease`, `ai_method`, `country`, `sample_size`, `outcome`, `validation_type`, `implementation_barriers`.\n\n**Screening**: Covidence, Rayyan, or DistillerSR.\n\n**Data charting**: Microsoft Excel or Google Sheets with drop-down menus for standardized fields.\n\n**Visualization**: Plotly or Tableau for interactive maps and bubble charts.\n\n```python\nimport pandas as pd\nimport plotly.express as px\n\n# Bubble chart: studies by disease and year\nfig = px.scatter(df, x='year', y='disease', size='n_studies',\n                 color='study_design', hover_data=['ai_method'])\nfig.update_layout(template='plotly_dark')\n```",
+      "further_reading": [
+        "Arksey H, O'Malley L (2005). Scoping studies: towards a methodological framework. *International Journal of Social Research Methodology*, 8(1), 19–32.",
+        "Levac D, Colquhoun H, O'Brien KK (2010). Scoping studies: advancing the methodology. *Implementation Science*, 5, 69.",
+        "Tricco AC et al. (2018). PRISMA extension for scoping reviews (PRISMA-ScR): checklist and explanation. *Annals of Internal Medicine*, 169(7), 467–473.",
+        "Peters MDJ et al. (2020). Updated methodological guidance for the conduct of scoping reviews. *JBI Evidence Synthesis*, 18(10), 2119–2126."
+      ]
+    }
+  },
+  {
+    "name": "Pilot / Feasibility Study",
+    "icon": "🧪",
+    "evidence_pyramid": 4,
+    "aliases": [
+      "Pilot Trial",
+      "Feasibility Study",
+      "Proof-of-Concept Study",
+      "Viability Study"
+    ],
+    "sections": {
+      "definition": "A **pilot or feasibility study** is a small-scale preliminary study conducted before a full-scale study to test the feasibility of research procedures, estimate recruitment rates, refine outcome measures, and assess acceptability of the intervention.\n\nPilot studies are **not designed to test efficacy** — they test whether the larger study can be done. The distinction: **feasibility** asks 'can it be done?' and **pilot** is a smaller version of the planned main study.",
+      "when_to_use": "Use a pilot/feasibility study when:\n\n- You are planning a **large, expensive trial** and need to confirm logistical feasibility\n- The intervention is **novel** and its acceptability is unknown\n- You need **parameter estimates** (recruitment rate, attrition, standard deviation) for sample size calculation\n- The outcome measures have **not been validated** in the target population\n- You want to test **recruitment and consent procedures** before committing major resources",
+      "causal_inference": "Pilot studies are **not designed for causal inference**. They are underpowered for hypothesis testing, and effect estimates from pilots are imprecise and potentially misleading. A 'promising' signal in a pilot does not guarantee efficacy in a full trial, and a 'non-significant' pilot result does not rule out a clinically important effect.\n\nEvidence level: **Level 4** (descriptive). Pilots are hypothesis-generating, not hypothesis-testing.",
+      "assumptions": [
+        "The primary goal is feasibility, not efficacy",
+        "Sample size is adequate for feasibility objectives (typically 30–50 per arm)",
+        "Feasibility outcomes (recruitment, retention, fidelity) are pre-specified with clear progression criteria",
+        "No formal hypothesis testing for efficacy is planned or conducted",
+        "Results will inform the design of a future definitive study"
+      ],
+      "bias_profile": {
+        "selection_bias": {
+          "risk": "High",
+          "detail": "Small samples and convenience recruitment; participants may be more motivated than the broader population"
+        },
+        "information_bias": {
+          "risk": "High",
+          "detail": "Feasibility outcomes (recruitment logs, fidelity checklists) are often collected informally"
+        },
+        "confounding": {
+          "risk": "Very High",
+          "detail": "No randomization or minimal randomization; confounding is severe in small samples"
+        },
+        "performance_bias": {
+          "risk": "Moderate",
+          "detail": "Pilot procedures are often refined during the study, making the intervention inconsistent"
+        },
+        "detection_bias": {
+          "risk": "Moderate",
+          "detail": "Feasibility outcomes are often subjective (e.g., 'was the training adequate?')"
+        },
+        "attrition_bias": {
+          "risk": "High",
+          "detail": "Estimating attrition is itself a pilot objective, but high attrition in the pilot may not predict the main trial"
+        },
+        "reporting_bias": {
+          "risk": "High",
+          "detail": "Pilots with 'promising' results are more likely to be published and funded; pilots showing infeasibility often go unreported"
+        },
+        "lead_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        },
+        "length_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        }
+      },
+      "worked_example": "## Scenario\nResearchers plan a large RCT of a **mobile app-based cognitive behavioral therapy (CBT) for postpartum depression**. Before the full trial, they conduct a pilot to test feasibility.\n\n## Design\n- **N = 40** postpartum women with EPDS score ≥10\n- Single arm (open-label feasibility)\n- **Primary feasibility outcomes**: Recruitment rate (≥15/month), retention at 12 weeks (≥70%), app engagement (≥3 logins/week), data completeness (≥90%), acceptability (≥80% would recommend)\n- **Progression criteria**: All five feasibility outcomes must meet target for full trial to proceed\n\n## Results\n- Recruitment: 18/month ✅\n- Retention: 75% (30/40 at 12 weeks) ✅\n- Engagement: Mean 4.2 logins/week ✅\n- Data completeness: 88% ❌ (missing PHQ-9 items)\n- Acceptability: 85% ✅\n- **Progression decision**: Proceed with modifications to data collection procedures\n\n## Interpretation\nFour of five feasibility criteria were met. The main issue was missing data — the app questionnaire design will be simplified for the full trial. No efficacy conclusions were drawn. The pilot provided SD estimates for sample size calculation: SD = 4.2 for EPDS, requiring N = 168 for the full trial.",
+      "reporting_guideline": {
+        "name": "CONSORT extension for pilot/feasibility trials",
+        "url": "https://www.equator-network.org/reporting-guidelines/consort-2010-statement-extension-to-randomised-pilot-and-feasibility-trials/",
+        "key_items": [
+          "Explicitly state 'pilot' or 'feasibility' in the title",
+          "Clear distinction between feasibility objectives and efficacy objectives",
+          "Pre-specified progression criteria to decide whether to proceed to the main trial",
+          "No formal hypothesis testing for efficacy (or if reported, explicitly interpret with caution)",
+          "Sample size justification based on precision of feasibility estimates, not power for efficacy",
+          "Results should inform sample size and design of the future definitive trial"
+        ]
+      },
+      "pitfalls": [
+        "**Testing efficacy in a pilot**: The single most common error — pilots are underpowered; p-values from pilots are neither meaningful nor reliable",
+        "**Using pilot results to power the main trial without accounting for imprecision**: The CI around a pilot SD is wide; use the upper bound of the CI or conduct a sensitivity analysis in the sample size calculation",
+        "**Ignoring progression criteria**: If progression criteria are not pre-specified, the decision to proceed is subjective and vulnerable to optimism bias",
+        "**Overinterpreting 'promising' signals**: A pilot with p < 0.05 does not guarantee efficacy; the effect estimate is imprecise and likely inflated due to the winner's curse",
+        "**Not reporting pilot results**: Feasibility data (even from unsuccessful pilots) is valuable for other researchers; register and publish pilot results regardless of outcome"
+      ],
+      "statistical_considerations": "**No hypothesis testing for efficacy**. Statistical methods focus on estimation with adequate precision:\n\n- **Recruitment rate**: Mean per month with 95% CI (Poisson or binomial)\n- **Retention**: Proportion with 95% CI (Wilson score method)\n- **SD estimates**: 95% CI around the SD (chi-square distribution)\n- **Progression criteria**: Pre-specified thresholds with traffic-light system (green/amber/red)\n\n**Sample size**: Based on precision of feasibility estimates, not power for efficacy. Rule of thumb: 30 per arm for continuous feasibility outcomes, 50+ per arm for binary feasibility outcomes with reasonable precision.\n\n**Interim analyses**: Rare in pilots; all feasibility data is analyzed at the end of the pilot period.",
+      "software_notes": "**Data structure**: Two levels — participant-level and procedural-level. Participant data: `id`, `screened`, `consented`, `baseline_complete`, `week_4`, `week_8`, `week_12`, `logins`, `adverse_events`. Procedural data: `recruitment_date`, `screen_fail_reason`, `withdrawal_reason`.\n\n**Feasibility analysis**:\n```python\nfrom statsmodels.stats.proportion import proportion_confint\n\nn_retained = 30; n_enrolled = 40\nretention = n_retained / n_enrolled\nci = proportion_confint(n_retained, n_enrolled, method='wilson')\nprint(f\"Retention: {retention:.0%} (95% CI: {ci[0]:.1%}–{ci[1]:.1%})\")\n\n# SD estimation for sample size calculation\nsd_epds = 4.2; n = 30\nci_lo_sd = sd_epds * np.sqrt((n-1) / sp_stats.chi2.ppf(0.975, n-1))\nci_hi_sd = sd_epds * np.sqrt((n-1) / sp_stats.chi2.ppf(0.025, n-1))\n```",
+      "further_reading": [
+        "Eldridge SM et al. (2016). CONSORT 2010 statement: extension to randomised pilot and feasibility trials. *BMJ*, 355, i5239.",
+        "Thabane L et al. (2010). A tutorial on pilot studies: the what, why and how. *BMC Medical Research Methodology*, 10, 1.",
+        "Lancaster GA, Dodd S, Williamson PR (2004). Design and analysis of pilot studies: recommendations for good practice. *Journal of Evaluation in Clinical Practice*, 10(2), 307–312.",
+        "Arain M, Campbell MJ, Cooper CL, Lancaster GA (2010). What is a pilot or feasibility study? A review of current practice and editorial policy. *BMC Medical Research Methodology*, 10, 67."
+      ]
+    }
+  },
+  {
+    "name": "Ecological Study",
+    "icon": "🌍",
+    "evidence_pyramid": 4,
+    "aliases": [
+      "Ecological Analysis",
+      "Ecological Comparison",
+      "Population-Level Study",
+      "Aggregate Study"
+    ],
+    "sections": {
+      "definition": "An **ecological study** uses groups (populations, regions, time periods) rather than individuals as the unit of analysis. Exposure and outcome are measured at the aggregate level, and associations are examined across populations.\n\nEcological studies are common in **public health**, **health policy**, and **social epidemiology** because they can leverage existing aggregate data (national statistics, health surveys) and generate hypotheses efficiently.",
+      "when_to_use": "Use an ecological study when:\n\n- The **exposure varies at the population level** (e.g., air pollution regulations, tax policies, water fluoridation)\n- **Individual-level data is unavailable** or prohibitively expensive\n- You want to compare **disease rates across countries or regions**\n- You need **rapid hypothesis generation** for emerging health issues\n- The research question is inherently **population-level** (e.g., does universal healthcare reduce mortality?)",
+      "causal_inference": "Ecological studies provide **weak evidence for individual-level causation** (Level 4). The central threat is the **ecological fallacy** — associations at the group level may not hold at the individual level (Robinson, 1950).\n\nFor example, countries with higher per-capita fat consumption have higher breast cancer rates (ecological association), but individual-level studies show no association between dietary fat and breast cancer within countries.\n\nEcological studies are best for **descriptive epidemiology** and **hypothesis generation**, not causal inference.",
+      "assumptions": [
+        "Aggregate data is accurate and comparable across groups",
+        "The grouping variable is meaningful for the research question",
+        "Confounders at the aggregate level are measured or can be adjusted for",
+        "The ecological association is not an artifact of different population structures (age, sex)",
+        "The temporal relationship between exposure and outcome can be established (for ecological time series)"
+      ],
+      "bias_profile": {
+        "selection_bias": {
+          "risk": "High",
+          "detail": "Groups are defined by data availability, not research design; selection is non-random"
+        },
+        "information_bias": {
+          "risk": "High",
+          "detail": "Aggregate data hides within-group variation; exposure classification is crude and measurement error is likely"
+        },
+        "confounding": {
+          "risk": "Very High",
+          "detail": "Confounding at the individual level cannot be addressed; only aggregate confounders can be adjusted for"
+        },
+        "performance_bias": {
+          "risk": "N/A",
+          "detail": "No intervention is assigned"
+        },
+        "detection_bias": {
+          "risk": "Moderate",
+          "detail": "Disease surveillance and diagnostic practices differ across regions and time periods"
+        },
+        "attrition_bias": {
+          "risk": "Low",
+          "detail": "Aggregate data is typically from complete registries; attrition is minimal"
+        },
+        "reporting_bias": {
+          "risk": "Moderate",
+          "detail": "Countries/regions with better data infrastructure contribute more data; publication bias toward high-income settings"
+        },
+        "lead_time_bias": {
+          "risk": "Moderate",
+          "detail": "Differences in screening and diagnostic practices across regions create artificial differences in disease rates"
+        },
+        "length_time_bias": {
+          "risk": "Moderate",
+          "detail": "Regions with different healthcare access detect disease at different stages"
+        }
+      },
+      "worked_example": "## Scenario\nResearchers examine whether **national sugar-sweetened beverage (SSB) taxes** are associated with lower **obesity prevalence** across 40 countries.\n\n## Design\n- **Unit of analysis**: Country-year (2000–2020)\n- **Exposure**: Presence and magnitude of national SSB tax (yes/no, tax rate in %)\n- **Outcome**: Age-standardized adult obesity prevalence (>30 BMI)\n- **Data sources**: World Health Organization (obesity), World Bank (tax data, GDP), FAO (food supply)\n- **Analysis**: Fixed-effects panel regression (country and year fixed effects)\n\n## Results\n- Countries with SSB taxes had 1.8% lower obesity prevalence (95% CI: −3.2 to −0.4) after adjusting for GDP, urbanization, and overall food supply\n- The association was stronger for higher tax rates: −0.3% per 10% tax increase\n- Country fixed effects account for time-invariant confounders (culture, genetics)\n\n## Interpretation\nThe ecological association is consistent with the hypothesis that SSB taxes reduce obesity. However, individual-level confounding (did the same people who consume SSBs also change other behaviors?) cannot be assessed. Ecological studies of dietary policies are particularly vulnerable to confounding by health consciousness — countries that implement SSB taxes may also implement other health-promoting policies.",
+      "reporting_guideline": {
+        "name": "STROBE (cross-sectional extension — most applicable)",
+        "url": "https://www.strobe-statement.org/",
+        "key_items": [
+          "Specify the unit of analysis (e.g., country, region, year)",
+          "Describe the data sources for both exposure and outcome",
+          "Report the number of ecological units and time periods",
+          "Discuss the ecological fallacy explicitly as a limitation",
+          "Describe how population structure (age, sex) was standardized",
+          "Present crude and adjusted associations",
+          "Include sensitivity analyses using different data sources or geographies"
+        ]
+      },
+      "pitfalls": [
+        "**Ecological fallacy**: The most critical threat — do not conclude that an ecological association applies to individuals within the population",
+        "**Confounding by indication**: Countries with worse health outcomes may be more likely to implement policies (reverse causation in policy evaluation)",
+        "**Modifiable areal unit problem (MAUP)**: Results change depending on how regions are defined (e.g., states vs counties vs zip codes)",
+        "**Cross-level bias**: Group-level confounders may not capture individual-level confounding; individual-level data within a sample of the population can help validate ecological findings",
+        "**Simpson's paradox**: The direction of association may reverse when aggregate data is disaggregated to the individual level"
+      ],
+      "statistical_considerations": "**Primary analysis**: Poisson regression for rates, linear regression for continuous outcomes, logistic regression for proportions — all at the aggregate level.\n\n**Effect measures**: Rate ratios, prevalence differences, or correlation coefficients.\n\n**Fixed effects models**: Country and year fixed effects control for time-invariant country characteristics and global secular trends.\n\n**Random effects (multilevel) models**: When ecological units are nested (e.g., counties within states within countries), hierarchical models account for clustering.\n\n**Spatial regression**: When neighboring units are more similar than distant units (spatial autocorrelation), use SAR or CAR models.\n\n**Sensitivity analyses**: Change the areal unit definition, adjust for different sets of confounders, exclude influential observations.\n\n**Individual-level validation**: If individual-level data is available for a subset (e.g., a health survey within a country), conduct multilevel analysis to cross-validate ecological findings.",
+      "software_notes": "**Data structure**: One row per ecological unit per time period. `country`, `year`, `ssb_tax`, `tax_rate`, `obesity_prevalence`, `gdp_per_capita`, `urbanization`, `food_supply`.\n\n**Fixed-effects panel regression**:\n```python\nimport statsmodels.api as sm\nimport statsmodels.formula.api as smf\n\nmodel = smf.ols('obesity ~ ssb_tax + gdp + urbanization + C(country) + C(year)', data=df).fit()\n```\n\n**Multilevel model**:\n```python\nmodel = smf.mixedlm('obesity ~ ssb_tax + gdp + year', data=df,\n                    groups=df['country']).fit()\n```",
+      "further_reading": [
+        "Morgenstern H (1995). Ecological studies in epidemiology: concepts, principles, and methods. *Annual Review of Public Health*, 16, 61–81.",
+        "Robinson WS (1950). Ecological correlations and the behavior of individuals. *American Sociological Review*, 15(3), 351–357.",
+        "Greenland S, Robins J (1994). Invited commentary: ecologic studies — biases, misconceptions, and counterexamples. *American Journal of Epidemiology*, 139(8), 747–760.",
+        "Wakefield J (2008). Ecologic studies revisited. *Annual Review of Public Health*, 29, 75–90."
+      ]
+    }
+  },
+  {
+    "name": "Critical Review",
+    "icon": "⚖️",
+    "evidence_pyramid": 5,
+    "aliases": [
+      "Critical Appraisal",
+      "Critical Analysis",
+      "Critical Literature Review"
+    ],
+    "sections": {
+      "definition": "\"A **critical review** goes beyond summarizing the literature — it evaluates, critiques, and identifies strengths, weaknesses, contradictions, and theoretical gaps in the existing body of work. The reviewer brings a specific analytical lens (theoretical, methodological, or disciplinary) to assess the quality and meaning of the evidence.\n\nCritical reviews are common in **theory development**, **methodological critiques**, and **paradigm-shifting papers**. They require deep expertise in the field and are valued for their intellectual contribution rather than their comprehensiveness.",
+      "when_to_use": "Use a critical review when:\n\n- You want to **challenge or refine an existing theory or paradigm**\n- The literature has **methodological problems** that need systematic critique\n- You are proposing a **new conceptual framework** or typology\n- The field has **contradictory findings** that cannot be resolved by a simple systematic review\n- You are writing a **thesis or dissertation** literature review",
+      "causal_inference": "Critical reviews provide **Level 5 evidence** — they are expert opinions, albeit potentially influential ones. The strength of a critical review lies in the **quality of argument and evidence of reasoning**, not in systematic methodology.\n\nA well-argued critical review can influence the direction of future research more than a systematic review in some contexts (e.g., Kuhn's *Structure of Scientific Revolutions*), but it does not establish causal relationships.",
+      "assumptions": [
+        "The reviewer has deep, recognized expertise in the field",
+        "The critique is balanced and acknowledges counterarguments",
+        "The selection of literature for critique is transparent (why these studies and not others?)",
+        "The review distinguishes between critique of methodology and critique of conclusions",
+        "The review offers constructive alternatives, not just criticism"
+      ],
+      "bias_profile": {
+        "selection_bias": {
+          "risk": "Very High",
+          "detail": "Studies are selected to illustrate the author's critical argument; there is no pretense of systematic inclusion"
+        },
+        "information_bias": {
+          "risk": "Very High",
+          "detail": "Interpretation of study quality and meaning is subjective and not independently verifiable"
+        },
+        "confounding": {
+          "risk": "Very High",
+          "detail": "The critical lens itself (e.g., feminist, post-colonial, biomedical) shapes which aspects are highlighted and which are ignored"
+        },
+        "performance_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        },
+        "detection_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        },
+        "attrition_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        },
+        "reporting_bias": {
+          "risk": "Very High",
+          "detail": "Critical reviews are especially vulnerable to confirmation bias — the author selects evidence that supports their critique"
+        },
+        "lead_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        },
+        "length_time_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        }
+      },
+      "worked_example": "## Scenario\nA senior researcher writes a critical review of **the evidence linking sugar to non-alcoholic fatty liver disease (NAFLD)** in children, arguing that the causal case is weaker than commonly claimed.\n\n## Structure\n- **Introduction**: The 'sugar causes NAFLD' narrative has become dominant in pediatric hepatology, driven by animal studies and cross-sectional human data\n- **Section 1 — Animal evidence**: Most rodent studies use supraphysiological doses (equivalent to 2–3× human consumption); gavage feeding bypasses normal oral processing; species differences in fructose metabolism limit translation\n- **Section 2 — Human cross-sectional evidence**: The majority adjust inadequately for total energy intake and physical activity; residual confounding by ultra-processed food consumption is likely\n- **Section 3 — Longitudinal evidence**: Only 3 prospective studies exist; 2 show association, 1 does not; all have short follow-up (<5 years)\n- **Section 4 — Interventional evidence**: The 4 dietary intervention trials are small (N < 30), short-term (4–8 weeks), and not blinded; all used multifactorial dietary changes, not isolated sugar reduction\n- **Section 5 — Synthesis and recommendations**: The evidence is suggestive but not conclusive; specific recommendations for future research (long-term RCTs with isolated sugar reduction, adequate confounding control in observational studies)\n\n## Impact\nThe review does not settle the scientific question but raises the methodological bar for future studies. It is cited as justification for higher-quality research designs.",
+      "reporting_guideline": {
+        "name": "No specific guideline — follow journal and disciplinary conventions",
+        "url": "",
+        "key_items": [
+          "State the critical lens or theoretical perspective explicitly",
+          "Describe how literature was identified (even if not systematic)",
+          "Present both supporting and contradicting evidence fairly",
+          "Separate methodological critique from conceptual critique",
+          "Avoid ad hominem arguments (critique the work, not the researchers)",
+          "Offer constructive alternatives or a research agenda",
+          "Acknowledge the reviewer's own perspective and potential biases"
+        ]
+      },
+      "pitfalls": [
+        "**Straw man argument**: Critiquing a weak version of the opposing position rather than the strongest formulation",
+        "**Ad hominem**: Criticizing the researchers rather than the research; this weakens the credibility of the critical review",
+        "**Cherry-picking for critique**: Selecting only the weakest studies to critique while ignoring stronger evidence that supports the prevailing view",
+        "**Confirmation bias**: Interpreting ambiguous evidence as supporting the author's critical position",
+        "**Lack of constructive alternatives**: Criticizing is easy; offering a better theory, method, or framework is the real contribution"
+      ],
+      "statistical_considerations": "**No statistical analysis** is expected or appropriate in a critical review.\n\nThe critical review may include **methodological quality counts** (e.g., 'of 15 studies, only 3 used blinding, 2 had adequate sample sizes, and 1 used a validated outcome measure') as part of the critique.\n\nThe emphasis is on **qualitative assessment** of study design, internal validity, and the gap between claims and evidence.",
+      "software_notes": "**No software** is specific to critical reviews. Reference management (Zotero, EndNote) and writing tools are the primary aids.\n\n**No analysis code** is typically provided.",
+      "further_reading": [
+        "Jesson J, Matheson L, Lacey FM (2011). *Doing Your Literature Review: Traditional and Systematic Techniques*. Sage.",
+        "Grant MJ, Booth A (2009). A typology of reviews: an analysis of 14 review types and associated methodologies. *Health Information & Libraries Journal*, 26(2), 91–108.",
+        "Greenhalgh T, Thorne S, Malterud K (2018). Time to challenge the spurious hierarchy of systematic over narrative reviews? *European Journal of Clinical Investigation*, 48(6), e12931.",
+        "Kuhn TS (1962). *The Structure of Scientific Revolutions*. University of Chicago Press."
+      ]
+    }
+  },
+  {
+    "name": "State-of-the-Art Review",
+    "icon": "✨",
+    "evidence_pyramid": 5,
+    "aliases": [
+      "Current Concepts Review",
+      "Recent Advances Review",
+      "What's New Review"
+    ],
+    "sections": {
+      "definition": "A **state-of-the-art (SOTA) review** provides a current, forward-looking synthesis of the most recent developments in a rapidly evolving field. Unlike a systematic review, it focuses on **cutting-edge research**, emerging trends, and future directions rather than comprehensive coverage of all past work.\n\nSOTA reviews are common in **fast-moving fields** (e.g., AI in medicine, precision oncology, gene therapy) where even recent systematic reviews may be outdated, and researchers need a curated overview of the latest advances.",
+      "when_to_use": "Use a state-of-the-art review when:\n\n- The field is **rapidly evolving** (new studies published weekly or monthly)\n- You want to highlight **recent breakthroughs** and emerging trends\n- Traditional systematic reviews would be **outdated before publication**\n- You are introducing a **new area of research** to a broad audience\n- The readership needs a **curated update** on what has changed in the last 2–5 years",
+      "causal_inference": "State-of-the-art reviews provide **Level 5 evidence**. Their value is in **timeliness and expert curation**, not methodological rigor. They cannot establish causal claims but can identify where the field is heading and which emerging findings deserve closer scrutiny.\n\nThe main risk is that **novelty is emphasized over replicability** — early findings in rapidly moving fields often fail to replicate (the Proteus phenomenon).",
+      "assumptions": [
+        "The reviewer has current, active expertise in the field",
+        "Recent literature (last 2–5 years) is the primary focus, not comprehensive historical coverage",
+        "Emerging findings are identified through a combination of systematic search and expert knowledge",
+        "The review distinguishes between established findings, emerging findings, and speculative claims",
+        "The review is transparent about what is known, what is suspected, and what is unknown"
+      ],
+      "bias_profile": {
+        "selection_bias": {
+          "risk": "Very High",
+          "detail": "Heavy emphasis on recent, high-profile, or novel findings; older but potentially more robust studies may be overlooked"
+        },
+        "information_bias": {
+          "risk": "High",
+          "detail": "Preprint servers and conference abstracts are often included; these have not undergone peer review"
+        },
+        "confounding": {
+          "risk": "Very High",
+          "detail": "The focus on novelty creates a systematic bias toward exaggerated effect sizes (Proteus phenomenon)"
+        },
+        "performance_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        },
+        "detection_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        },
+        "attrition_bias": {
+          "risk": "N/A",
+          "detail": "Not applicable"
+        },
+        "reporting_bias": {
+          "risk": "Very High",
+          "detail": "Publication bias is amplified — positive novel findings are more likely to be 'state-of-the-art' than null replications"
+        },
+        "lead_time_bias": {
+          "risk": "High",
+          "detail": "Review may capture early adoption of technologies before long-term outcomes are known"
+        },
+        "length_time_bias": {
+          "risk": "Moderate",
+          "detail": "Rapidly adopted interventions tend to be those with dramatic early results (which may not persist)"
+        }
+      },
+      "worked_example": "## Scenario\nAn expert writes a SOTA review on **AI-based polyp detection during colonoscopy** for a gastroenterology journal, covering advances from 2022–2024.\n\n## Structure\n- **Introduction**: Why AI polyp detection has become one of the fastest-moving areas in gastroenterology\n- **Recent advances**: 5 key papers from 2023–2024 showing AI-assisted colonoscopy increasing adenoma detection rate (ADR) by 15–30%\n- **Technology overview**: Real-time deep learning models (YOLOv7, EfficientDet) with latency <50ms — one paragraph on how they work (for clinician readers)\n- **Clinical impact**: Meta-analysis of 8 RCTs (all published 2022–2024) showing pooled ADR increase from 32% to 42%\n- **Limitations and controversies**: High false-positive rate, lack of diversity in training data (mostly European/Asian populations), only 2 studies from the US, no long-term outcome data\n- **What's next**: Real-time video analysis, integration with endoscopic AI for polyp characterization, multi-center trials in diverse populations\n- **Expert commentary**: 'The technology is ready for prime time, but reimbursement models, training requirements, and medicolegal frameworks need to catch up'\n\n## Interpretation\nThe review provides a valuable, current snapshot of a rapidly evolving field. It explicitly acknowledges that most studies are from high-volume academic centers and that community-based effectiveness data is lacking.",
+      "reporting_guideline": {
+        "name": "No formal guideline — follow journal-specific author guidelines; SOTA reviews typically have their own format",
+        "url": "",
+        "key_items": [
+          "Define the time window for 'current' (e.g., last 3 years)",
+          "Describe the search strategy (databases, search terms, date range)",
+          "State whether preprints and conference abstracts are included",
+          "Present recent evidence in a structured format (tables comparing key studies)",
+          "Explicitly note when evidence is preliminary (preprint, single-site, small sample)",
+          "Identify emerging trends AND persistent gaps",
+          "Provide a forward-looking perspective — where should the field invest its efforts?"
+        ]
+      },
+      "pitfalls": [
+        "**Novelty bias**: Recent high-profile studies may receive disproportionate attention relative to their quality or replicability",
+        "**Including too much unpublished work**: Conference abstracts and preprints are valuable but should be clearly marked as not peer-reviewed",
+        "**Ignoring negative replications**: In emphasizing 'advances', negative replications of highlighted studies may be omitted",
+        "**Confusing novelty with importance**: A new finding is not necessarily an important finding until it is replicated and contextualized",
+        "**Rapid obsolescence**: The review itself becomes outdated quickly; some journals now publish 'living' SOTA reviews that are regularly updated"
+      ],
+      "statistical_considerations": "**No novel statistical analysis** — the SOTA review synthesizes published statistics.\n\nWhen recent meta-analyses are available, report their pooled estimates:\n- 'The most recent meta-analysis of 8 RCTs found an RR = 1.28 (95% CI: 1.15–1.42)'\n\n**Descriptive statistics** of the recent literature may be helpful:\n- Number of studies per year (showing acceleration)\n- Geographic distribution of recent studies\n- Study design types (showing methodological evolution)\n\n**Network visualization**: Co-citation networks to show which recent papers are most influential in the field.\n\n**Bibliometric indicators**: Altmetric scores, citation rates (with caveats about their limitations).",
+      "software_notes": "**No dedicated software**. Reference management and writing tools.\n\n**Citation analysis** tools for identifying influential recent papers:\n- Google Scholar (sort by date, view highly cited)\n- Web of Science / Scopus (citation alerts)\n- PubMed (sort by publication date, filter by article type)\n- Semantic Scholar (AI-enhanced literature discovery)\n\n**No analysis code** is typically required.",
+      "further_reading": [
+        "Grant MJ, Booth A (2009). A typology of reviews: an analysis of 14 review types and associated methodologies. *Health Information & Libraries Journal*, 26(2), 91–108.",
+        "Ioannidis JPA (2005). Why most published research findings are false. *PLoS Medicine*, 2(8), e124.",
+        "Ware M, Mabe M (2015). *The STM Report: An Overview of Scientific and Scholarly Publishing*, 4th ed. STM Association.",
+        "Cochrane Handbook for Systematic Reviews — sections on 'When to update a systematic review' (for the living review concept)."
+      ]
+    }
   }
 ]
