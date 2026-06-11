@@ -1033,6 +1033,241 @@ def _diag_fligner_killeen():
 
 
 # =========================
+# BROWN-FORSYTHE TEST
+# =========================
+
+
+def _diag_brown_forsythe():
+    _section("Brown-Forsythe Test for Homogeneity of Variance")
+
+    st.markdown("""
+    **Objective:** A robust test for homogeneity of variances across groups.
+    Also known as Levene's test using group **medians** (rather than means), making it
+    more robust to non-normality than Levene's test with means and more powerful than
+    Fligner-Killeen under many conditions. Recommended as the default homogeneity-of-variance test.
+    """)
+
+    st.latex(
+        r"W = \frac{(N - k) \sum_{i=1}^{k} n_i (\tilde{z}_{i\bullet} - \tilde{z}_{\bullet\bullet})^2}{(k - 1) \sum_{i=1}^{k} \sum_{j=1}^{n_i} (z_{ij} - \tilde{z}_{i\bullet})^2}"
+    )
+
+    st.markdown("""
+    Where $z_{ij} = |x_{ij} - \\tilde{x}_i|$ (absolute deviation from group median),
+    $\\tilde{z}_{i\\bullet}$ is the group mean of absolute deviations,
+    $\\tilde{z}_{\\bullet\\bullet}$ is the grand mean of absolute deviations,
+    $k$ is the number of groups, and $N$ is the total sample size.
+    """)
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        k = st.slider("Number of Groups", 2, 6, 3, key="bf_k")
+    with c2:
+        n_per = st.slider("Observations per Group", 5, 100, 30, key="bf_n")
+    with c3:
+        unequal_var = st.checkbox("Unequal Variances", value=False, key="bf_unequal")
+
+    _rng = np.random.default_rng(42)
+    base_var = 1.0
+    groups = {}
+    for i in range(k):
+        var_i = base_var * (1 + i * 1.5) if unequal_var else base_var
+        groups[f"Group {i+1}"] = _rng.normal(i * 0.5, np.sqrt(var_i), n_per)
+
+    df_list = [groups[g] for g in groups]
+    stat, p = sp_stats.levene(*df_list, center="median")
+    stat_val = float(stat)
+    p_val = float(p)
+
+    col_a, col_b = st.columns(2)
+    col_a.metric("Brown-Forsythe W", f"{stat_val:.5f}")
+    col_b.metric("p-value", f"{p_val:.5f}")
+
+    alpha = st.slider(
+        "Significance Level (α)", 0.001, 0.10, 0.05, 0.001, key="bf_alpha"
+    )
+    conclusion = (
+        "Reject H₀ — variances are not equal"
+        if p_val < alpha
+        else "Fail to reject H₀ — variances are equal"
+    )
+    st.success(f"**Conclusion:** {conclusion}")
+
+    st.plotly_chart(
+        _boxplot_groups(groups, "Group Comparison — Brown-Forsythe Test"),
+        use_container_width=True,
+    )
+
+    with st.expander("Step-by-Step Calculation", expanded=False):
+        _step_header(1, "Compute group medians")
+        medians_bf = {g: np.median(groups[g]) for g in groups}
+        for g in groups:
+            _step_result(f"{g}: median = {medians_bf[g]:.4f}")
+
+        _step_header(2, "Compute absolute deviations from group medians")
+        deviations = {}
+        for g in groups:
+            deviations[g] = np.abs(groups[g] - medians_bf[g])
+        _step_result("Computed z_{ij} = |x_{ij} - median_i| for all observations")
+
+        _step_header(3, "Run one-way ANOVA on the absolute deviations")
+        from scipy.stats import f_oneway
+
+        f_stat, f_p = f_oneway(*[deviations[g] for g in groups])
+        _step_formula(rf"W = F_{{\text{{ANOVA on deviations}}}} = {stat_val:.5f}")
+        _step_formula(rf"p = {p_val:.5f}")
+
+    _interpret_card(
+        "Interpretation",
+        f"""
+    Brown-Forsythe test (Levene's test with medians) is a robust check for equal variances.
+
+    - **W = {stat_val:.4f}, p = {p_val:.4f}**: {'Significant — variances differ' if p_val < alpha else 'Not significant — variances are equal'}.
+    - More robust to non-normality than Levene's test with means (the original Levene's test).
+    - More powerful than Fligner-Killeen when data are approximately normal.
+    - Recommended as the **default** homogeneity-of-variance test for ANOVA.
+    - Also known as the Brown-Forsythe test or Levene's Median test.
+    """,
+    )
+
+
+# =========================
+# LINEARITY / SPECIFICATION TESTS
+# =========================
+
+
+def _diag_rainbow_test():
+    _section("Rainbow Test for Linearity")
+
+    st.markdown("""
+    **Objective:** Tests whether a linear regression model adequately fits the data, or whether
+    non-linear terms are needed. The test divides the data into two groups based on the
+    predictor values (central vs. outer observations) and compares the fit of the model
+    in each subset. A significant result suggests the relationship may be non-linear.
+    """)
+
+    st.latex(
+        r"F = \frac{\text{RSS}_{\text{full}} - \text{RSS}_{\text{center}}}{\text{RSS}_{\text{center}}} \cdot \frac{n_c - 2p}{n - n_c}"
+    )
+
+    st.markdown("""
+    Where $\\text{RSS}_{\\text{full}}$ is the residual sum of squares of the full model,
+    $\\text{RSS}_{\\text{center}}$ is the RSS of the model fitted only on the central
+    observations, $n_c$ is the number of central observations, and $p$ is the number
+    of parameters. Under H₀ (linearity), F ~ F(n - n_c, n_c - 2p).
+    """)
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        n = st.slider("Sample Size", 30, 300, 100, key="rb_n")
+    with c2:
+        curv = st.selectbox("True Relationship", ["Linear", "Quadratic", "Logarithmic", "Sine Wave"],
+                            key="rb_curv")
+    with c3:
+        noise_lvl = st.slider("Noise Level", 0.1, 3.0, 1.0, 0.1, key="rb_noise")
+
+    _rng = np.random.default_rng(42)
+    x = np.linspace(0, 4, n)
+    np.random.seed(42)
+    noise = _rng.normal(0, noise_lvl, n)
+
+    if curv == "Linear":
+        y = 1 + 0.5 * x + noise
+    elif curv == "Quadratic":
+        y = 1 + 0.5 * x + 0.4 * x ** 2 + noise
+    elif curv == "Logarithmic":
+        y = 1 + 2 * np.log(x + 0.5) + noise
+    else:
+        y = 1 + 0.5 * x + 0.3 * np.sin(2 * np.pi * x / 3) + noise
+
+    import statsmodels.api as sm
+
+    X = sm.add_constant(x)
+    model_full = sm.OLS(y, X).fit()
+    rss_full = model_full.ssr
+
+    # Central third of observations (by x order)
+    x_order = np.argsort(x)
+    n_center = n // 3
+    center_idx = x_order[n_center:-n_center] if n_center > 0 else x_order
+    X_c = X[center_idx]
+    y_c = y[center_idx]
+
+    try:
+        model_center = sm.OLS(y_c, X_c).fit()
+        rss_center = model_center.ssr
+        df1 = n - len(center_idx)
+        df2 = len(center_idx) - 2 * X.shape[1]
+        if df2 > 0 and rss_center > 0:
+            f_stat = ((rss_full - rss_center) / df1) / (rss_center / df2)
+            from scipy.stats import f as f_dist
+
+            p_val = 1 - f_dist.cdf(f_stat, df1, df2)
+        else:
+            f_stat, p_val = np.nan, np.nan
+    except Exception:
+        f_stat, p_val = np.nan, np.nan
+
+    col_a, col_b = st.columns(2)
+    col_a.metric("F-statistic", f"{f_stat:.4f}" if not np.isnan(f_stat) else "N/A")
+    col_b.metric("p-value", f"{p_val:.4f}" if not np.isnan(p_val) else "N/A")
+
+    alpha = st.slider("Significance Level (α)", 0.001, 0.10, 0.05, 0.001, key="rb_alpha")
+    if not np.isnan(p_val):
+        conclusion = (
+            "Reject H₀ — relationship may be non-linear"
+            if p_val < alpha
+            else "Fail to reject H₀ — linear model is adequate"
+        )
+        st.success(f"**Conclusion:** {conclusion}")
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=x, y=y, mode="markers", name="Observed",
+                              marker=dict(color="#4C78A8", size=5, opacity=0.7)))
+    x_sorted = np.sort(x)
+    pred_full = model_full.predict(sm.add_constant(x_sorted))
+    fig.add_trace(go.Scatter(x=x_sorted, y=pred_full, mode="lines", name="Linear Fit",
+                              line=dict(color="#E45756", width=3)))
+
+    # Highlight central observations
+    if len(center_idx) > 0:
+        fig.add_trace(go.Scatter(x=x[center_idx], y=y[center_idx], mode="markers",
+                                  name="Central Observations",
+                                  marker=dict(color="#F58518", size=8, symbol="circle-open",
+                                              line=dict(width=2))))
+
+    fig.update_layout(template="plotly_dark", height=450,
+                      xaxis_title="Predictor (X)", yaxis_title="Outcome (Y)",
+                      title="Rainbow Test — Linear Fit with Central Observations Highlighted")
+    st.plotly_chart(fig, use_container_width=True)
+
+    with st.expander("How It Works", expanded=False):
+        _step_header(1, "Fit full linear model on all data")
+        _step_result(f"RSS_full = {rss_full:.4f}")
+
+        _step_header(2, "Fit model on central 1/3 of observations (by X order)")
+        _step_result(f"RSS_center = {rss_center:.4f} (n_center = {len(center_idx)})")
+
+        _step_header(3, "Compute F-statistic")
+        _step_result(f"F = ({rss_full:.4f} - {rss_center:.4f}) / {df1} ÷ {rss_center:.4f} / {df2} = {f_stat:.4f}")
+
+        _step_header(4, "Compare to F-distribution")
+        _step_result(f"p = {p_val:.4f}")
+
+    _interpret_card(
+        "Interpretation",
+        f"""
+    The Rainbow Test checks whether a linear model fits the data equally well across
+    the predictor range.
+
+    - **F = {f_stat:.4f}, p = {p_val:.4f}**: {'Evidence of non-linearity' if not np.isnan(p_val) and p_val < alpha else 'Linear model appears adequate'}.
+    - A significant result suggests the relationship between X and Y is not well captured by a straight line.
+    - Consider adding polynomial terms, splines, or a non-linear model (e.g., GAM).
+    - The test has higher power to detect non-linearity in the middle of the predictor range.
+    """,
+    )
+
+
+# =========================
 # AUTOCORRELATION TEST
 # =========================
 
@@ -3352,6 +3587,7 @@ DIAG_CATEGORIES = {
         "Levene's Test",
         "Bartlett's Test",
         "Fligner-Killeen Test",
+        "Brown-Forsythe Test",
         "Cochran's C Test",
     ],
     "Autocorrelation Tests": [
@@ -3376,6 +3612,9 @@ DIAG_CATEGORIES = {
         "DFFITS",
         "Leverage / Hat Values",
     ],
+    "Linearity / Specification Tests": [
+        "Rainbow Test",
+    ],
 }
 
 _CATEGORY_LIST = list(DIAG_CATEGORIES.keys())
@@ -3390,6 +3629,7 @@ _DIAG_ROUTER = {
     "Levene's Test": _diag_levene,
     "Bartlett's Test": _diag_bartlett,
     "Fligner-Killeen Test": _diag_fligner_killeen,
+    "Brown-Forsythe Test": _diag_brown_forsythe,
     "Cochran's C Test": _diag_cochran_c,
     "Durbin-Watson Test": _diag_durbin_watson,
     "Breusch-Pagan Test": _diag_breusch_pagan,
@@ -3403,6 +3643,7 @@ _DIAG_ROUTER = {
     "Cook's Distance": _diag_cooks_distance,
     "DFFITS": _diag_dffits,
     "Leverage / Hat Values": _diag_leverage,
+    "Rainbow Test": _diag_rainbow_test,
 }
 
 
@@ -3414,6 +3655,18 @@ def render_diagnostics():
     """)
 
     cat_key = "diag_category"
+
+    # Cross-link support: accept ?diag=TestName in query params
+    diag_param = st.query_params.get("diag")
+    if diag_param:
+        for d_cat, d_tests in DIAG_CATEGORIES.items():
+            if diag_param in d_tests:
+                st.session_state[cat_key] = d_cat
+                st.session_state["diag_selector"] = diag_param
+                st.query_params.clear()
+                st.rerun()
+                break
+
     if cat_key not in st.session_state:
         st.session_state[cat_key] = _CATEGORY_LIST[0]
     with st.sidebar:
@@ -3461,6 +3714,10 @@ def render_diagnostics():
             "regression estimates. Cook's distance combines leverage and residual magnitude into a single influence "
             "measure. DFFITS captures the standardized change in fitted values when an observation is removed. "
             "Leverage (hat values) flags points with extreme predictor values regardless of their residual.",
+        "Linearity / Specification Tests": "These tests evaluate whether a linear regression model is an adequate "
+            "description of the relationship between predictors and outcome. The Rainbow Test (also known as "
+            "the Uttir's Rainbow Test) compares model fit on central observations versus the full dataset — "
+            "a significant result suggests non-linearity or other model misspecification.",
     }
     st.markdown(f"_{cat_descriptions[cat]}_")
 

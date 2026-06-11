@@ -984,5 +984,512 @@ def render_fisher_s_exact_test(external_data=None):
     )
     st.plotly_chart(fig2, use_container_width=True)
 
+
+@register_test("Cochran-Mantel-Haenszel Test")
+def render_cochran_mantel_haenszel_test(external_data=None):
+
+    from statsmodels.stats.contingency_tables import StratifiedTable
+
+    st.subheader("Interactive Cochran-Mantel-Haenszel Test")
+
+    # =========================
+    # DATA SOURCE TOGGLE
+    # =========================
+
+    if external_data and external_data.get("using_uploaded"):
+        src = external_data
+    else:
+        src = data_source_toggle("cmh_test", mode="categorical_two")
+
+    # =========================
+    # CONTROLS / DATA
+    # =========================
+
+    if src["using_uploaded"]:
+        ct = src["data"]["contingency_table"]
+        if ct.shape != (2, 2):
+            st.error("CMH Test with external data requires a 2\u00d72 table. "
+                     "For stratified analysis, use the manual sliders below.")
+            return
+        n_strata = st.slider("Number of Strata", 2, 6, 2, key="cmh_n_strata_upload")
+        tables = []
+        for s in range(n_strata):
+            st.markdown(f"**Stratum {s+1}**")
+            a = st.slider(f"Cell A (Stratum {s+1})", 0, 200, 30, key=f"cmh_strat_{s}_a")
+            b = st.slider(f"Cell B (Stratum {s+1})", 0, 200, 20, key=f"cmh_strat_{s}_b")
+            c = st.slider(f"Cell C (Stratum {s+1})", 0, 200, 10, key=f"cmh_strat_{s}_c")
+            d = st.slider(f"Cell D (Stratum {s+1})", 0, 200, 40, key=f"cmh_strat_{s}_d")
+            tables.append(np.array([[a, b], [c, d]], dtype=float))
+    else:
+        n_strata = st.slider("Number of Strata", 2, 6, 2, key="cmh_n_strata")
+        tables = []
+        for s in range(n_strata):
+            st.markdown(f"**Stratum {s+1}**")
+            a = st.slider(f"Cell A (Stratum {s+1})", 0, 200, 30, key=f"cmh_slider_strat_{s}_a")
+            b = st.slider(f"Cell B (Stratum {s+1})", 0, 200, 20, key=f"cmh_slider_strat_{s}_b")
+            c = st.slider(f"Cell C (Stratum {s+1})", 0, 200, 10, key=f"cmh_slider_strat_{s}_c")
+            d = st.slider(f"Cell D (Stratum {s+1})", 0, 200, 40, key=f"cmh_slider_strat_{s}_d")
+            tables.append(np.array([[a, b], [c, d]], dtype=float))
+
+    # =========================
+    # COMPUTE CMH
+    # =========================
+
+    tables_arr = np.array(tables)
+    st_cmh = StratifiedTable(tables_arr)
+    result = st_cmh.test_null_odds()
+    cmh_stat = result.statistic
+    cmh_pval = result.pvalue
+
+    common_or = st_cmh.oddsratio_pooled
+    common_or_ci = st_cmh.oddsratio_pooled_confint()
+
+    st.latex(rf"\chi^2_{{MH}} = {cmh_stat:.3f}")
+    st.latex(rf"\text{{{format_p_value(cmh_pval)}}}")
+    st.latex(rf"\text{{Common OR}} = {common_or:.3f}")
+    st.latex(rf"95\%\ \text{{CI (OR)}} = [{common_or_ci[0]:.3f},\, {common_or_ci[1]:.3f}]")
+
+    # =========================
+    # STRATA SUMMARY
+    # =========================
+
+    st.divider()
+    st.subheader("Stratum-level Details")
+
+    summary_rows = []
+    for s, tbl in enumerate(tables):
+        or_s = (tbl[0, 0] * tbl[1, 1]) / (tbl[0, 1] * tbl[1, 0]) if (tbl[0, 1] * tbl[1, 0]) > 0 else float("inf")
+        summary_rows.append({
+            "Stratum": f"{s+1}",
+            "a": int(tbl[0, 0]),
+            "b": int(tbl[0, 1]),
+            "c": int(tbl[1, 0]),
+            "d": int(tbl[1, 1]),
+            "OR": f"{or_s:.3f}" if or_s != float("inf") else "\u221e"
+        })
+    summary_df = pd.DataFrame(summary_rows)
+    st.table(summary_df)
+
+    # =========================
+    # HEATMAP
+    # =========================
+
+    for s, tbl in enumerate(tables):
+        fig = go.Figure(
+            data=go.Heatmap(
+                z=tbl,
+                text=tbl.astype(int),
+                texttemplate="%{text}",
+                x=["Col 1", "Col 2"],
+                y=["Row 1", "Row 2"]
+            )
+        )
+        fig.update_layout(
+            template="plotly_dark",
+            height=300,
+            title=f"Stratum {s+1}",
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+
+@register_test("Two-sample Proportion Test")
+def render_two_sample_proportion_test(external_data=None):
+
+    from statsmodels.stats.proportion import test_proportions_2indep, confint_proportions_2indep
+
+    st.subheader("Interactive Two-sample Proportion Test")
+
+    # =========================
+    # DATA SOURCE TOGGLE
+    # =========================
+
+    if external_data and external_data.get("using_uploaded"):
+        src = external_data
+    else:
+        src = data_source_toggle("prop_2samp", mode="categorical_two")
+
+    # =========================
+    # CONTROLS / DATA
+    # =========================
+
+    if src["using_uploaded"]:
+        ct = src["data"]["contingency_table"]
+        if ct.shape != (2, 2):
+            st.error("Two-sample Proportion Test requires a 2\u00d72 contingency table. "
+                     "Use two binary categorical variables.")
+            return
+        n1 = int(ct.iloc[0, 0] + ct.iloc[0, 1])
+        s1 = int(ct.iloc[0, 0])
+        n2 = int(ct.iloc[1, 0] + ct.iloc[1, 1])
+        s2 = int(ct.iloc[1, 0])
+        st.info(f"Group 1: {s1}/{n1} ({s1/n1:.1%})  |  Group 2: {s2}/{n2} ({s2/n2:.1%})")
+    else:
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("**Group 1**")
+            s1 = st.slider("Successes", 0, 200, 80, key="prop_2samp_s1")
+            n1 = st.slider("Total", 1, 200, 120, key="prop_2samp_n1")
+            if s1 > n1:
+                s1 = n1
+        with col2:
+            st.markdown("**Group 2**")
+            s2 = st.slider("Successes", 0, 200, 60, key="prop_2samp_s2")
+            n2 = st.slider("Total", 1, 200, 110, key="prop_2samp_n2")
+            if s2 > n2:
+                s2 = n2
+
+    p1 = s1 / n1
+    p2 = s2 / n2
+    diff = p1 - p2
+
+    # =========================
+    # TEST
+    # =========================
+
+    res = test_proportions_2indep(s1, n1, s2, n2)
+    z_stat = res.statistic
+    p_val = res.pvalue
+
+    ci = confint_proportions_2indep(s1, n1, s2, n2)
+
+    st.latex(rf"p_1 = {p1:.3f} \quad p_2 = {p2:.3f} \quad \text{{difference}} = {diff:+.3f}")
+    st.latex(rf"z = {z_stat:.3f}")
+    st.latex(rf"\text{{{format_p_value(p_val)}}}")
+    st.latex(rf"95\%\ \text{{CI (difference)}} = [{ci[0]:.3f},\, {ci[1]:.3f}]")
+
+    # =========================
+    # BAR CHART
+    # =========================
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Bar(
+            name="Group 1",
+            x=["Group 1", "Group 2"],
+            y=[p1, p2],
+            marker_color=["rgba(54, 162, 235, 0.7)", "rgba(255, 99, 71, 0.7)"],
+            text=[f"{p1:.1%}", f"{p2:.1%}"],
+            textposition="outside",
+        )
+    )
+    fig.update_layout(
+        template="plotly_dark",
+        height=400,
+        yaxis_title="Proportion",
+        yaxis_range=[0, 1],
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+    # =========================
+    # DETAILED RESULTS
+    # =========================
+
+    st.divider()
+    st.subheader("Detailed Results")
+
+    results_data = {
+        "Metric": [
+            "Group 1 Proportion",
+            "Group 2 Proportion",
+            "Difference",
+            "z-statistic",
+            "p-value",
+            "95% CI (difference)",
+            "Sample Size (Group 1)",
+            "Sample Size (Group 2)",
+        ],
+        "Value": [
+            f"{p1:.4f}",
+            f"{p2:.4f}",
+            f"{diff:+.4f}",
+            f"{z_stat:.4f}",
+            f"{p_val:.5f}",
+            f"[{ci[0]:.4f}, {ci[1]:.4f}]",
+            f"{n1}",
+            f"{n2}",
+        ],
+    }
+    st.table(pd.DataFrame(results_data))
+
+
+
+@register_test("Goodness-of-Fit G-Test")
+def render_goodness_of_fit_g_test(external_data=None):
+
+    st.subheader("Interactive G-Test (Likelihood Ratio Goodness-of-Fit)")
+
+    st.info("""
+    **G-Test** (Likelihood Ratio Test) is an alternative to the Chi-Square Goodness-of-Fit test.
+    G = 2 × Σ O × ln(O / E)
+    It asymptotically follows a χ² distribution under H₀.
+    """)
+
+    np.random.seed(42)
+
+    dist_choice = st.selectbox("Distribution", ["Uniform", "Mendelian 9:3:3:1", "Custom"], key="gtest_dist")
+    n_g = st.slider("Sample Size", 20, 500, 100, key="gtest_n")
+
+    if dist_choice == "Uniform":
+        k_g = st.slider("Number of Categories", 2, 10, 5, key="gtest_k")
+        expected_g = np.array([n_g / k_g] * k_g)
+        p_true = np.array([1 / k_g] * k_g)
+    elif dist_choice == "Mendelian 9:3:3:1":
+        k_g = 4
+        expected_g = np.array([9 / 16 * n_g, 3 / 16 * n_g, 3 / 16 * n_g, 1 / 16 * n_g])
+        p_true = np.array([9 / 16, 3 / 16, 3 / 16, 1 / 16])
+    else:
+        k_g = st.slider("Number of Categories", 2, 10, 4, key="gtest_k_custom")
+        st.markdown("**Enter expected proportions (must sum to 1):**")
+        props = []
+        cols = st.columns(k_g)
+        remaining = 1.0
+        for i in range(k_g - 1):
+            v = cols[i].number_input(f"p{i + 1}", 0.0, remaining, remaining / (k_g - i), 0.01, key=f"gprop_{i}")
+            props.append(v)
+            remaining -= v
+        props.append(remaining)
+        expected_g = np.array(props) * n_g
+        p_true = np.array(props)
+
+    observed_g = np.random.multinomial(n_g, p_true).astype(float)
+
+    mask = observed_g > 0
+    G_stat = 2 * np.sum(observed_g[mask] * np.log(observed_g[mask] / expected_g[mask]))
+    df_g = k_g - 1
+
+    from scipy.stats import chi2 as chi2_g
+    p_g = 1 - chi2_g.cdf(G_stat, df_g)
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("G Statistic", f"{G_stat:.3f}")
+    col2.metric("df", f"{df_g}")
+    col3.metric("p-value", f"{p_g:.4f}")
+
+    fig = go.Figure()
+    categories_g = [f"Cat {i + 1}" for i in range(k_g)]
+    fig.add_trace(go.Bar(x=categories_g, y=observed_g, name="Observed",
+                          marker_color="#4C78A8"))
+    fig.add_trace(go.Bar(x=categories_g, y=expected_g, name="Expected",
+                          marker_color="#F58518"))
+    fig.update_layout(template="plotly_dark", height=450,
+                      barmode="group",
+                      xaxis_title="Category", yaxis_title="Frequency",
+                      title="Observed vs Expected Frequencies")
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.divider()
+    st.subheader("Detailed Results")
+    st.table(pd.DataFrame({
+        "Metric": ["G Statistic", "df", "p-value", "Sample Size", "Categories"],
+        "Value": [f"{G_stat:.3f}", f"{df_g}", format_p_value(p_g), f"{n_g}", f"{k_g}"],
+    }))
+
+
+@register_test("Barnard's Exact Test")
+def render_barnard_s_exact_test(external_data=None):
+
+    from scipy.stats import barnard_exact
+
+    st.subheader("Interactive Barnard's Exact Test")
+
+    st.info("""
+    **Barnard's Exact Test** is a more powerful alternative to Fisher's Exact Test for 2×2 tables.
+    It considers the unconditional (rather than conditional) distribution.
+    """)
+
+    np.random.seed(42)
+
+    n1_b = st.slider("Group 1 Sample Size", 5, 50, 15, key="barnard_n1")
+    p1_b = st.slider("Group 1 Proportion", 0.1, 0.9, 0.6, 0.05, key="barnard_p1")
+    n2_b = st.slider("Group 2 Sample Size", 5, 50, 15, key="barnard_n2")
+    p2_b = st.slider("Group 2 Proportion", 0.1, 0.9, 0.3, 0.05, key="barnard_p2")
+
+    succ1 = np.random.binomial(n1_b, p1_b)
+    succ2 = np.random.binomial(n2_b, p2_b)
+    table_b = np.array([[succ1, n1_b - succ1],
+                         [succ2, n2_b - succ2]])
+
+    res_b = barnard_exact(table_b)
+    stat_b, p_b = res_b.statistic, res_b.pvalue
+
+    col1, col2 = st.columns(2)
+    col1.metric("Test Statistic", f"{stat_b:.4f}")
+    col2.metric("p-value", f"{p_b:.4f}")
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(x=["Group 1", "Group 2"],
+                          y=[succ1 / n1_b, succ2 / n2_b],
+                          name="Proportion",
+                          marker_color=["#4C78A8", "#F58518"]))
+    fig.update_layout(template="plotly_dark", height=400,
+                      yaxis_title="Proportion", yaxis_range=[0, 1],
+                      title="Observed Proportions by Group")
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.divider()
+    st.subheader("Detailed Results")
+    st.table(pd.DataFrame({
+        "Metric": ["Test Statistic", "p-value",
+                   "Group 1 Successes/n", "Group 2 Successes/n",
+                   "Observed Difference"],
+        "Value": [f"{stat_b:.4f}", format_p_value(p_b),
+                  f"{succ1}/{n1_b} ({succ1 / n1_b:.1%})",
+                  f"{succ2}/{n2_b} ({succ2 / n2_b:.1%})",
+                  f"{succ1 / n1_b - succ2 / n2_b:+.3f}"],
+    }))
+
+
+@register_test("Boschloo's Exact Test")
+def render_boschloo_s_exact_test(external_data=None):
+
+    from scipy.stats import boschloo_exact
+
+    st.subheader("Interactive Boschloo's Exact Test")
+
+    st.info("""
+    **Boschloo's Exact Test** is an unconditional exact test for 2×2 tables.
+    Like Barnard's test, it is uniformly more powerful than Fisher's Exact Test.
+    Boschloo's test uses the p-value of Fisher's test as the test statistic.
+    """)
+
+    np.random.seed(42)
+
+    n1_bo = st.slider("Group 1 Sample Size", 5, 50, 15, key="boschloo_n1")
+    p1_bo = st.slider("Group 1 Proportion", 0.1, 0.9, 0.6, 0.05, key="boschloo_p1")
+    n2_bo = st.slider("Group 2 Sample Size", 5, 50, 15, key="boschloo_n2")
+    p2_bo = st.slider("Group 2 Proportion", 0.1, 0.9, 0.3, 0.05, key="boschloo_p2")
+
+    succ1_bo = np.random.binomial(n1_bo, p1_bo)
+    succ2_bo = np.random.binomial(n2_bo, p2_bo)
+    table_bo = np.array([[succ1_bo, n1_bo - succ1_bo],
+                          [succ2_bo, n2_bo - succ2_bo]])
+
+    res_bo = boschloo_exact(table_bo)
+    stat_bo, p_bo = res_bo.statistic, res_bo.pvalue
+
+    col1, col2 = st.columns(2)
+    col1.metric("p-value (Boschloo)", f"{p_bo:.4f}")
+
+    st.info("Boschloo's test has a **uniform power advantage** over Fisher's Exact Test "
+            "and is recommended for small-sample 2×2 tables.")
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(x=["Group 1", "Group 2"],
+                          y=[succ1_bo / n1_bo, succ2_bo / n2_bo],
+                          name="Proportion",
+                          marker_color=["#4C78A8", "#F58518"]))
+    fig.update_layout(template="plotly_dark", height=400,
+                      yaxis_title="Proportion", yaxis_range=[0, 1],
+                      title="Observed Proportions by Group")
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.divider()
+    st.subheader("Detailed Results")
+    st.table(pd.DataFrame({
+        "Metric": ["p-value (Boschloo)",
+                   "Group 1 Successes/n", "Group 2 Successes/n",
+                   "Observed Difference"],
+        "Value": [format_p_value(p_bo),
+                  f"{succ1_bo}/{n1_bo} ({succ1_bo / n1_bo:.1%})",
+                  f"{succ2_bo}/{n2_bo} ({succ2_bo / n2_bo:.1%})",
+                  f"{succ1_bo / n1_bo - succ2_bo / n2_bo:+.3f}"],
+    }))
+
+
+@register_test("Stuart-Maxwell Test")
+def render_stuart_maxwell_test(external_data=None):
+
+    from scipy.stats import chi2 as chi2_sm
+
+    st.subheader("Interactive Stuart-Maxwell Test")
+
+    st.info("""
+    **Stuart-Maxwell Test** tests for marginal homogeneity in paired categorical data with k ≥ 3 categories.
+    It extends McNemar's test to more than 2 categories.
+    H₀: The row and column marginal distributions are the same (no change).
+    """)
+
+    np.random.seed(42)
+
+    n_sm = st.slider("Number of Subjects", 20, 200, 100, key="sm_n")
+    k_sm = st.slider("Number of Categories", 3, 5, 3, key="sm_k")
+    change_str = st.slider("Change Strength", 0.0, 1.0, 0.3, 0.05, key="sm_change")
+
+    joint = np.zeros((k_sm, k_sm))
+    diag_prob = (1 - change_str) / k_sm
+    off_prob = change_str / (k_sm * (k_sm - 1))
+
+    for i in range(k_sm):
+        for j in range(k_sm):
+            if i == j:
+                joint[i, j] = diag_prob + (1 - (diag_prob * k_sm + off_prob * k_sm * (k_sm - 1))) / k_sm
+            else:
+                joint[i, j] = off_prob
+    joint = joint / joint.sum()
+
+    flat_idx = np.random.choice(k_sm * k_sm, size=n_sm, p=joint.ravel())
+    for idx in flat_idx:
+        i = idx // k_sm
+        j = idx % k_sm
+        joint[i, j] = joint[i, j] + 0
+
+    table_sm = np.zeros((k_sm, k_sm))
+    for idx in flat_idx:
+        i = idx // k_sm
+        j = idx % k_sm
+        table_sm[i, j] += 1
+    table_sm = table_sm.astype(int)
+
+    row_marg = table_sm.sum(axis=1)
+    col_marg = table_sm.sum(axis=0)
+    d_sm = row_marg - col_marg
+
+    V_sm = np.zeros((k_sm, k_sm))
+    for i in range(k_sm):
+        for j in range(k_sm):
+            if i == j:
+                V_sm[i, j] = row_marg[i] + col_marg[i] - 2 * table_sm[i, i]
+            else:
+                V_sm[i, j] = -(table_sm[i, j] + table_sm[j, i])
+
+    V_red = V_sm[:-1, :-1]
+    d_red = d_sm[:-1]
+
+    try:
+        V_inv = np.linalg.inv(V_red)
+        chi2_sm = d_red @ V_inv @ d_red
+    except np.linalg.LinAlgError:
+        chi2_sm = 0.0
+
+    from scipy.stats import chi2 as chi2_dist
+    df_sm = k_sm - 1
+    p_sm = 1 - chi2_dist.cdf(chi2_sm, df_sm) if chi2_sm > 0 else 1.0
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("χ²", f"{chi2_sm:.3f}")
+    col2.metric("df", f"{df_sm}")
+    col3.metric("p-value", f"{p_sm:.4f}")
+
+    fig = go.Figure()
+    categories_sm = [f"Cat {i + 1}" for i in range(k_sm)]
+    fig.add_trace(go.Bar(x=categories_sm, y=row_marg / n_sm,
+                          name="Before (Row %)", marker_color="#4C78A8"))
+    fig.add_trace(go.Bar(x=categories_sm, y=col_marg / n_sm,
+                          name="After (Col %)", marker_color="#F58518"))
+    fig.update_layout(template="plotly_dark", height=450,
+                      barmode="group",
+                      xaxis_title="Category", yaxis_title="Proportion",
+                      title="Before vs After: Marginal Distributions")
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.divider()
+    st.subheader("Detailed Results")
+    st.table(pd.DataFrame({
+        "Metric": ["χ² (Stuart-Maxwell)", "df", "p-value",
+                   "Categories", "Sample Size"],
+        "Value": [f"{chi2_sm:.3f}", f"{df_sm}", format_p_value(p_sm),
+                  f"{k_sm}", f"{n_sm}"],
+    }))
+
 # Parametric Two Sample Tests
 

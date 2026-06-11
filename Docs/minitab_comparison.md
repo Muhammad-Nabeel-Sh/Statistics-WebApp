@@ -64,7 +64,7 @@
 | **Outlier Test (Grubbs)** | ✅ In diagnostics | ✅ Basic Statistics |
 | Normality Test (Shapiro-Wilk, etc.) | ✅ In diagnostics | ✅ Basic Statistics |
 
-**Summary:** Our app has more interactive hypothesis test widgets (41+ vs ~40 listed in Minitab Basic + Nonparametrics + Tables). Minitab's advantage is in Poisson rate tests and the equivalence test 2x2 crossover design. Our advantage includes Cochran's Q, Permutation MANOVA, Multinomial, Weighted Kappa, Fleiss' Kappa, Bland-Altman, Kendall's Tau, Point-Biserial, Negative Binomial, and diagnostic accuracy tests — not available in base Minitab.
+**Summary:** Our app has more interactive hypothesis test widgets (71 vs ~40 listed in Minitab Basic + Nonparametrics + Tables). Minitab's advantage is in Poisson rate tests and the equivalence test 2x2 crossover design. Our advantage includes Cochran's Q, Permutation MANOVA, Multinomial, Weighted Kappa, Fleiss' Kappa, Bland-Altman, Kendall's Tau, Point-Biserial, Negative Binomial, and diagnostic accuracy tests — not available in base Minitab.
 
 ---
 
@@ -483,7 +483,7 @@
 | Visualizations per test | ✅ Q-Q plots, histograms, boxplots, residual plots with every test | ✅ Diagnostic graphs |
 | Box-Cox / Johnson transformations | ⚠ In diagnostics | ✅ |
 
-**Summary:** Our app has 21 diagnostic tests across 7 categories — more than Minitab's listed diagnostics. We include several tests (Fligner-Killeen, Breusch-Pagan, White, Rosner's, Mahalanobis, Condition Index, DFFITS) not found in Minitab's Basic Statistics menu. Minitab has the edge on data transformation tools.
+**Summary:** Our app has **24 diagnostic tests across 9 categories** — more than Minitab's listed diagnostics. We include several tests (Fligner-Killeen, Breusch-Pagan, White, Rosner's, Mahalanobis, Condition Index, DFFITS, Brown-Forsythe, Rainbow) not found in Minitab's Basic Statistics menu. Minitab has the edge on data transformation tools.
 
 ---
 
@@ -492,7 +492,7 @@
 | Feature | Our App | Minitab |
 |---------|---------|---------|
 | **Test Finder** | ✅ Interactive wizard: objective → IV type → DV type → groups → relationship → distribution → recommendation | ❌ Not available |
-| **Interactive test widgets** | **41 widgets** — all with real-time sliders that update plots and statistics instantly | ❌ Static output |
+| **Interactive test widgets** | **71 widgets** — all with real-time sliders that update plots and statistics instantly | ❌ Static output |
 | **Interactive graph explorer** | **83 graph types** — all with real-time parameter sliders | ❌ Static graphs |
 | **Step-by-step solved examples** | ✅ 7 examples with full LaTeX formulas, step-by-step solutions, decision rules | ❌ Not available |
 | **Glossary** | ✅ ~150 terms across 14 categories, all interactive | ❌ Not available |
@@ -518,7 +518,7 @@
 
 | Category | Our App | Minitab | Advantage |
 |----------|---------|---------|-----------|
-| **Hypothesis Tests** | 41+ widgets, more variety | ~40 tests, standard set | **Our App** (more types, interactive) |
+| **Hypothesis Tests** | 71 widgets, more variety | ~40 tests, standard set | **Our App** (more types, interactive) |
 | **Graphs** | 83 types, all interactive | 40-50 types, static | **Our App** (more types, interactive) |
 | **Distributions** | 20 distributions, all interactive | ~20 distributions, static | **Our App** (interactivity, CLT, etc.) |
 | **Power Analysis** | 30 types, 5 modes, adjustments | ~15-20 types, 3-4 modes | **Our App** (more comprehensive) |
@@ -535,7 +535,7 @@
 | **Post-Hoc Tests** | ✅ 23 methods + 6 visualizations | ~6-8 basic methods | **Our App** |
 | **Meta-Analysis** | ✅ 5 plot types | ❌ None | **Our App** |
 | **Tabulation** | ✅ 13 sections, 6 explorers | Basic | **Our App** |
-| **Diagnostics** | 21 tests (7 categories) | ~10 tests | **Our App** (more variety) |
+| **Diagnostics** | 24 tests (9 categories) | ~10 tests | **Our App** (more variety) |
 | **Educational Features** | ✅ Extensive | ❌ None | **Our App** |
 | **Data Management** | Basic (CSV/Excel) | ✅ Professional | **Minitab** |
 | **Collaboration** | ❌ None | ✅ Project sharing | **Minitab** |
@@ -567,7 +567,7 @@
 | Feature | What it does |
 |---------|-------------|
 | **Test Finder Wizard** | Interactive 6-step questionnaire → test recommendation |
-| **41 Interactive Test Widgets** | Real-time sliders update plots/stats instantly |
+| **71 Interactive Test Widgets** | Real-time sliders update plots/stats instantly |
 | **83 Interactive Graph Types** | All with adjustable parameters |
 | **23 Post-Hoc Methods** | Nonparametric, MANOVA, and repeated measures methods |
 | **6 Educational Table Explorers** | Interactive learning modules for cross-tab concepts |
@@ -598,4 +598,4 @@
 
 ---
 
-*Generated May 2026. Our app version: ~28,000 lines across 7 apps, 12 feature modules, 4 core modules. Minitab version: Minitab Statistical Software (latest).*
+*Generated June 2026. Our app version: ~40,000 lines across 8 apps (1 legacy), 14 feature modules, 4 core modules. Minitab version: Minitab Statistical Software (latest).*

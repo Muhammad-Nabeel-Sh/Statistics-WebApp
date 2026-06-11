@@ -1445,3 +1445,119 @@ def render_cox_proportional_hazards_regression(external_data=None):
 
         st.plotly_chart(fig, use_container_width=True)
 
+@register_test("Hosmer-Lemeshow Test")
+def render_hosmer_lemeshow_test(external_data=None):
+
+    from sklearn.linear_model import LogisticRegression
+    from scipy.stats import chi2 as chi2_hl
+
+    st.subheader("Interactive Hosmer-Lemeshow Goodness-of-Fit Test")
+
+    st.info("""
+    **Hosmer-Lemeshow Test** assesses the goodness-of-fit of a logistic regression model.
+    It groups predicted probabilities into deciles and compares observed vs expected
+    event rates in each group.
+    H₀: The model fits the data well (observed ≈ expected).
+    """)
+
+    np.random.seed(42)
+
+    n_hl = st.slider("Sample Size", 100, 1000, 300, key="hl_n")
+    n_pred = st.slider("Number of Predictors", 1, 5, 3, key="hl_pred")
+    calib = st.selectbox("Calibration", ["Well-calibrated", "Over-confident", "Under-confident"],
+                         key="hl_calib")
+
+    X_hl = np.random.randn(n_hl, n_pred)
+    true_beta = np.array([0.5, -0.3, 0.8, 0.2, -0.1][:n_pred])
+    logit_true = X_hl @ true_beta
+
+    if calib == "Well-calibrated":
+        logit_true = logit_true - logit_true.mean()
+    elif calib == "Over-confident":
+        logit_true = logit_true * 1.5 - logit_true.mean()
+    else:
+        logit_true = logit_true * 0.5 - logit_true.mean()
+
+    prob_true = 1 / (1 + np.exp(-logit_true))
+    y_hl = (np.random.random(n_hl) < prob_true).astype(int)
+
+    model_hl = LogisticRegression(C=1e10, solver="lbfgs", max_iter=1000)
+    model_hl.fit(X_hl, y_hl)
+    pred_prob = model_hl.predict_proba(X_hl)[:, 1]
+
+    order = np.argsort(pred_prob)
+    pred_prob_sorted = pred_prob[order]
+    y_sorted = y_hl[order]
+
+    G = 10
+    n_per_group = n_hl // G
+    chi2_hl_val = 0.0
+
+    obs_counts = []
+    exp_counts = []
+    mid_probs = []
+
+    for g in range(G):
+        start = g * n_per_group
+        if g < G - 1:
+            end = start + n_per_group
+        else:
+            end = n_hl
+
+        y_g = y_sorted[start:end]
+        p_g = pred_prob_sorted[start:end]
+
+        obs_g = y_g.sum()
+        exp_g = p_g.sum()
+
+        obs_counts.append(obs_g)
+        exp_counts.append(exp_g)
+        mid_probs.append(p_g.mean())
+
+        n_g = len(y_g)
+        if n_g > 0 and exp_g * (n_g - exp_g) > 0:
+            chi2_hl_val += (obs_g - exp_g) ** 2 / (exp_g * (1 - exp_g / n_g) * n_g)
+
+    df_hl = G - 2
+    p_hl = 1 - chi2_hl.cdf(chi2_hl_val, df_hl) if df_hl > 0 else 1.0
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("H-L χ²", f"{chi2_hl_val:.3f}")
+    col2.metric("df", f"{df_hl}")
+    col3.metric("p-value", f"{p_hl:.4f}")
+
+    fig = go.Figure()
+    decile_labels = [f"D{g + 1}" for g in range(G)]
+    fig.add_trace(go.Bar(x=decile_labels, y=obs_counts, name="Observed Events",
+                          marker_color="#4C78A8"))
+    fig.add_trace(go.Bar(x=decile_labels, y=exp_counts, name="Expected Events",
+                          marker_color="#F58518"))
+    fig.update_layout(template="plotly_dark", height=400,
+                      barmode="group",
+                      xaxis_title="Risk Decile", yaxis_title="Count",
+                      title="Observed vs Expected Events per Decile")
+    st.plotly_chart(fig, use_container_width=True)
+
+    fig2 = go.Figure()
+    fig2.add_trace(go.Scatter(x=mid_probs, y=np.array(obs_counts) / (n_hl / G),
+                              mode="markers+lines", name="Calibration Curve",
+                              marker=dict(color="#4C78A8", size=10),
+                              line=dict(color="#4C78A8")))
+    fig2.add_trace(go.Scatter(x=[0, 1], y=[0, 1], mode="lines",
+                              name="Perfect Calibration",
+                              line=dict(color="red", dash="dash")))
+    fig2.update_layout(template="plotly_dark", height=400,
+                      xaxis_title="Predicted Risk", yaxis_title="Observed Proportion",
+                      xaxis_range=[0, 1], yaxis_range=[0, 1],
+                      title="Calibration Plot")
+    st.plotly_chart(fig2, use_container_width=True)
+
+    st.divider()
+    st.subheader("Detailed Results")
+    st.table(pd.DataFrame({
+        "Metric": ["H-L χ²", "df", "p-value", "Sample Size",
+                   "Predictors", "Groups (G)"],
+        "Value": [f"{chi2_hl_val:.3f}", f"{df_hl}", format_p_value(p_hl),
+                  f"{n_hl}", f"{n_pred}", f"{G}"],
+    }))
+

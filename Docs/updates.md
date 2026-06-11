@@ -1,5 +1,103 @@
 # Updates.md — Statistics WebApp Changelog
 
+## [2026-06-12] Phase 3: Cross-Linking, Widget Expansion, Diagnostic Expansion
+
+### Overview
+Cross-linked the test finder with diagnostics, expanded to 71 tests + 24 diagnostics, integrated solved examples into test detail pages, and fully refactored the monolithic widgets.py into a modular `features/widgets/` package.
+
+### Architecture Changes
+
+#### New Package: `features/widgets/`
+Refactored the monolithic `features/widgets.py` (7015 lines) into a clean directory with 9 module files:
+
+```
+features/widgets/
+├── __init__.py          # Registry: _widget_registry dict, register_widget(), get_widget()
+├── parametric.py        # t-tests, ANOVA, z-test, equivalence, correlation, regression
+├── nonparametric.py     # Mann-Whitney, Wilcoxon, Kruskal-Wallis, Friedman, sign, permutation
+├── categorical.py       # Chi-square, Fisher's, McNemar, multinomial, Poisson GOF, Barnard, Boschloo, Stuart-Maxwell
+├── agreement.py         # Cohen's Kappa, Fleiss' Kappa, Weighted Kappa, Gwet's AC1, Krippendorff's Alpha, ICC
+├── survival.py          # Kaplan-Meier, Cox PH, Log-Rank
+├── diagnostic.py        # Sensitivity, Specificity, ROC, PPV/NPV, LR/LR-, calibration, confusion matrix
+├── spc.py               # Xbar-R, Xbar-S, I-MR, p, np, c, u, EWMA, CUSUM
+└── regression.py        # Hosmer-Lemeshow, regularization path
+```
+
+Each test registers via `@register_widget("Test Name")` decorator. Total: **71 registered widgets**.
+
+#### New Asset: `assets/test_definitions.json`
+Moved all 71 test definitions from `core/data.py` into structured JSON. Each entry contains:
+- `name`, `category`, `family`, `objective`, `variables`, `description`, `formula`, `assumptions`, `interpretation`, `decision_rule`, `examples`, `when_to_use`, `limitations`, `references`
+
+#### Cross-Linking: Finder → Diagnostics
+- `_TEST_DIAG_MAP` in `finder_ui.py` maps 54 tests → (diagnostic name, category, description)
+- Rendered as "🔍 Recommended Assumption Checks" in the left column of each test detail page
+- Query param support in `diagnostics.py` — `?diag=Shapiro-Wilk+Test` deep-links from finder
+
+#### Solved Examples Integration
+- `_SOLVED_EXAMPLE_MAP` maps 7 test names → `_solved_*()` functions from `solved_examples.py`
+- Rendered as "📝 Step-by-Step Walkthrough" expander in detail pages
+- Currently covers 7 one-sample tests (one-sample t, z, Wilcoxon, sign, proportion exact, proportion normal, binomial)
+
+#### Layout Changes
+- **Interpretation** moved from right column → left column (after Decision Rules, before Post-Hoc)
+- **Recommended Assumption Checks** added to left column (bottom)
+- Both changes in `render_test_detail_page()`
+
+### New Tests Added (14 total)
+
+| Test | Module | Type |
+|------|--------|------|
+| One-way Welch ANOVA | `parametric.py` | Parametric |
+| Hotelling's T-Squared | `parametric.py` | Multivariate |
+| Two-Sample Kolmogorov-Smirnov | `nonparametric.py` | Nonparametric |
+| Jonckheere-Terpstra Test | `nonparametric.py` | Nonparametric |
+| Page Test for Ordered Alternatives | `nonparametric.py` | Nonparametric |
+| Mann-Kendall Trend Test | `nonparametric.py` | Nonparametric |
+| G-Test (Goodness-of-Fit) | `categorical.py` | Categorical |
+| Barnard's Exact Test | `categorical.py` | Categorical |
+| Boschloo's Exact Test | `categorical.py` | Categorical |
+| Stuart-Maxwell Test | `categorical.py` | Categorical |
+| Gwet's AC1 | `agreement.py` | Agreement |
+| Krippendorff's Alpha | `agreement.py` | Agreement |
+| Intraclass Correlation Coefficient (ICC) | `agreement.py` | Agreement |
+| Hosmer-Lemeshow Test | `regression.py` | Regression |
+
+### New Diagnostics Added (2 total)
+
+| Diagnostic | Category | Description |
+|-----------|---|-----------|
+| **Brown-Forsythe Test** | Homogeneity of Variance | Robust alternative to Levene's (uses median instead of mean) |
+| **Rainbow Test** | Linearity / Specification Tests | Tests linearity assumption in regression models |
+
+Total: **24 diagnostic functions** across **9 categories**.
+
+### Migrated to Legacy
+- `apps/app_examples.py` → `legacy/app_examples.py` (functionality integrated into finder as solved examples)
+
+### Bug Fixes
+- `barnard_exact` / `boschloo_exact`: Result objects expose `.statistic`, `.pvalue` (not tuples)
+- `page_trend_test`: No `.statistic_z` — Z computed manually from L formula
+- `stuart_maxwell`: `chi2_sm.cdf()` on numpy float → `scipy.stats.chi2.cdf()`
+
+### Data Workspace Updates
+- Categorical widgets now consume `external_data` with `categorical_one`/`categorical_two` format
+- Dynamic adaptation to variable numbers of categories/cells from user data
+- `_build_external_data()` helper converts raw DataFrames → `external_data` dict
+- Supports modes: `one_sample`, `two_sample`, `multi_sample`, `paired`, `repeated`, `correlation`, `categorical_two`, `categorical_one`
+- `_apa_table()` consolidated in `core/utils.py` (was duplicated across 4 feature files)
+
+### Key Numbers
+| Metric | Before | After |
+|--------|--------|-------|
+| Test definitions | 57 (in `core/data.py`) | 71 (in `assets/test_definitions.json`) |
+| Registered widgets | 57 (in `features/widgets.py`) | 71 (in `features/widgets/`) |
+| Diagnostics | 22 | 24 |
+| Cross-link mappings | 0 | 54 (`_TEST_DIAG_MAP`) |
+| Solved examples integrated | 0 | 7 (`_SOLVED_EXAMPLE_MAP`) |
+
+---
+
 ## [2026-05-26] Phase 2: Multi-App Refactoring
 
 ### Overview
@@ -15,8 +113,13 @@ apps/                    # Independent app entry points
 ├── app_tabulation.py    # 📋 Tabulation (mode "Tabulation")
 ├── app_power.py         # ⚡ Power Analysis (mode "Power calculator")
 ├── app_distributions.py # 🎲 Probability Distributions (mode "Distributions")
-├── app_examples.py      # 📚 Solved Examples (mode "Solved examples")
+├── app_designs.py       # 📐 Study Designs (mode "Study Designs")
+├── app_data_workspace.py# 🛠️ Data Workspace (standalone)
 └── app_diagnostics.py   # 🔬 Data Screening (mode "Diagnostics")
+
+legacy/                  # Archived monolithic modules
+├── app_legacy.py        # Original monolithic app.py (2655 lines)
+└── app_examples.py      # Solved Examples (functionality integrated into finder)
 
 core/                    # Shared utilities imported by multiple apps
 ├── __init__.py
@@ -26,15 +129,25 @@ core/                    # Shared utilities imported by multiple apps
 └── post_hoc.py          # render_post_hoc() (8 post-hoc methods)
 
 features/                # Feature modules (1 per app or logical group)
+├── widgets/             # Modular package (71 widgets across 9 files)
+│   ├── __init__.py      # Registry: _widget_registry, register_widget(), get_widget()
+│   ├── parametric.py    # t-tests, ANOVA, z-test, equivalence, correlation, regression
+│   ├── nonparametric.py # Mann-Whitney, Wilcoxon, Kruskal-Wallis, Friedman, etc.
+│   ├── categorical.py   # Chi-square, Fisher's, McNemar, Barnard, Boschloo, etc.
+│   ├── agreement.py     # Kappa, ICC, Gwet's AC1, Krippendorff's Alpha
+│   ├── survival.py      # Kaplan-Meier, Cox PH, Log-Rank
+│   ├── diagnostic.py    # Sensitivity, Specificity, ROC, PPV/NPV
+│   ├── spc.py           # Control charts (Xbar-R, I-MR, p, c, EWMA, CUSUM)
+│   └── regression.py    # Hosmer-Lemeshow, regularization path
 ├── __init__.py
-├── finder_ui.py         # Extracted from app.py: Test Finder UI + Flowchart
-├── power_ui.py          # Extracted from app.py: Power Analysis UI (1300+ lines)
-├── widgets.py           # 40+ render_test_widget() functions
+├── finder_ui.py         # Test Finder UI + Flowchart + cross-linking
+├── data_workspace.py    # Data Workspace with AG Grid
+├── power_ui.py          # Power Analysis UI (1300+ lines)
 ├── graph_explorer.py    # Graph Explorer UI
 ├── tabulation.py        # Tabulation UI
 ├── distributions.py     # Distributions UI
+├── diagnostics.py       # Diagnostics UI (24 functions, query-param routing)
 ├── solved_examples.py   # Solved Examples UI
-├── diagnostics.py       # Diagnostics UI
 ├── glossary.py          # Glossary UI
 └── flowchart.py         # build_tree(), build_sunburst_chart()
 ```
@@ -58,13 +171,14 @@ features/                # Feature modules (1 per app or logical group)
 
 ```sh
 # From project root, run any app independently:
-streamlit run apps/app_finder.py       # Test Finder
-streamlit run apps/app_explorer.py     # Graph Explorer
-streamlit run apps/app_tabulation.py   # Tabulation
-streamlit run apps/app_power.py        # Power Analysis
-streamlit run apps/app_distributions.py# Distributions
-streamlit run apps/app_examples.py     # Solved Examples
-streamlit run apps/app_diagnostics.py  # Data Screening
+streamlit run apps/app_finder.py          # Test Finder
+streamlit run apps/app_explorer.py        # Graph Explorer
+streamlit run apps/app_tabulation.py      # Tabulation
+streamlit run apps/app_power.py           # Power Analysis
+streamlit run apps/app_distributions.py   # Distributions
+streamlit run apps/app_diagnostics.py     # Data Screening
+streamlit run apps/app_designs.py         # Study Designs
+streamlit run apps/app_data_workspace.py  # Data Workspace
 ```
 
 ### Import Fixes Applied
@@ -78,6 +192,15 @@ streamlit run apps/app_diagnostics.py  # Data Screening
 
 ### Archived
 - Original `app.py` → `app_legacy.py` (preserved for reference)
+- `apps/app_examples.py` → `legacy/app_examples.py` (functionality integrated into finder solved examples)
+
+### Later Refinements
+- **Monolithic widgets.py broken up** → `features/widgets/` package with 9 modules and a registry pattern
+- **Test definitions decoupled** → `assets/test_definitions.json` (71 entries)
+- **Cross-linking system** → Finder ↔ Diagnostics via `_TEST_DIAG_MAP` and query params
+- **Solved examples integrated** → Inline walkthroughs in test detail pages
+- **14 new tests added** → Total now 71 (Widgets + SPC + Agreement + Regression)
+- **2 new diagnostics added** → Total now 24 (9 categories)
 
 ---
 
@@ -265,7 +388,7 @@ Created **`index.html`** — a pure HTML/CSS landing page with beautiful, produc
 [ Statistics Assistant ]
 [ Choose your analysis path... ]
 
-       7     40+    80+
+       8     71    83
     Mini Apps  Tests  Plots
 
 --- Core Analysis ---

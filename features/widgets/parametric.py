@@ -2417,5 +2417,188 @@ def render_equivalence_test_tost_two_independent_samples(external_data=None):
                             showlegend=True, margin=dict(t=10, b=10))
     st.plotly_chart(fig_tost, use_container_width=True)
 
+@register_test("Yuen's Trimmed t-test")
+def render_yuen_trimmed_t_test(external_data=None):
+
+    from scipy import stats as scipy_stats
+
+    st.subheader("Interactive Yuen's Trimmed t-test")
+
+    if external_data and external_data.get("using_uploaded"):
+        src = external_data
+    else:
+        from core.utils import data_source_toggle
+        src = data_source_toggle("yuen_ttest", mode="two_sample")
+
+    trim_prop = st.slider(
+        "Trim Proportion (per tail)",
+        min_value=0.0,
+        max_value=0.45,
+        value=0.2,
+        step=0.05,
+        key="yuen_trim",
+    )
+
+    if src["using_uploaded"]:
+        g1 = src["data"]["group1"]
+        g2 = src["data"]["group2"]
+    else:
+        np.random.seed(42)
+        mu1 = st.slider("Group 1 Mean", -5.0, 5.0, 0.0, 0.1, key="yuen_m1")
+        mu2 = st.slider("Group 2 Mean", -5.0, 5.0, 1.0, 0.1, key="yuen_m2")
+        sd1 = st.slider("Group 1 SD", 0.1, 5.0, 1.0, 0.1, key="yuen_sd1")
+        sd2 = st.slider("Group 2 SD", 0.1, 5.0, 1.0, 0.1, key="yuen_sd2")
+        n = st.slider("Sample Size per Group", 10, 200, 50, key="yuen_n")
+
+        g1 = np.random.normal(mu1, sd1, n)
+        g2 = np.random.normal(mu2, sd2, n)
+        outlier_frac = st.slider("Outlier Fraction", 0.0, 0.2, 0.05, 0.01, key="yuen_outliers")
+        n_out1 = int(len(g1) * outlier_frac)
+        n_out2 = int(len(g2) * outlier_frac)
+        if n_out1 > 0:
+            g1[:n_out1] = np.random.normal(mu1 + 5 * sd1, sd1 * 0.5, n_out1)
+        if n_out2 > 0:
+            g2[:n_out2] = np.random.normal(mu2 + 5 * sd2, sd2 * 0.5, n_out2)
+
+    def _yuen_ttest(x, y, tr):
+        n1, n2 = len(x), len(y)
+        n1t = int(np.floor(n1 * tr))
+        n2t = int(np.floor(n2 * tr))
+        x_sorted = np.sort(x)
+        y_sorted = np.sort(y)
+        if n1t > 0:
+            x_trimmed = x_sorted[n1t:-n1t]
+        else:
+            x_trimmed = x_sorted
+        if n2t > 0:
+            y_trimmed = y_sorted[n2t:-n2t]
+        else:
+            y_trimmed = y_sorted
+        h1 = len(x_trimmed)
+        h2 = len(y_trimmed)
+        tx = np.mean(x_trimmed)
+        ty = np.mean(y_trimmed)
+
+        x_winsor = x_sorted.copy()
+        if n1t > 0:
+            x_winsor[:n1t] = x_sorted[n1t]
+            x_winsor[-n1t:] = x_sorted[-n1t - 1]
+        y_winsor = y_sorted.copy()
+        if n2t > 0:
+            y_winsor[:n2t] = y_sorted[n2t]
+            y_winsor[-n2t:] = y_sorted[-n2t - 1]
+
+        sw1_sq = np.var(x_winsor, ddof=1)
+        sw2_sq = np.var(y_winsor, ddof=1)
+
+        d1 = (n1 - 1) * sw1_sq / (h1 * (h1 - 1))
+        d2 = (n2 - 1) * sw2_sq / (h2 * (h2 - 1))
+        se = np.sqrt(d1 + d2)
+        tyuen = (tx - ty) / se if se > 0 else 0
+
+        num = (d1 + d2) ** 2
+        den = d1 ** 2 / (h1 - 1) + d2 ** 2 / (h2 - 1)
+        df = num / den if den > 0 else 1
+        p = 2 * (1 - scipy_stats.t.cdf(abs(tyuen), df)) if df > 0 else 1.0
+        return tyuen, p, df, tx, ty, h1, h2
+
+    t_y, p_y, df_y, tx, ty, h1, h2 = _yuen_ttest(
+        np.asarray(g1), np.asarray(g2), trim_prop
+    )
+
+    st.divider()
+    st.subheader("Results")
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Group 1 Trimmed Mean", f"{tx:.3f}", delta=None)
+    col2.metric("Group 2 Trimmed Mean", f"{ty:.3f}", delta=None)
+    col3.metric("Difference", f"{tx - ty:.3f}")
+
+    st.latex(rf"t_{{\text{{Yuen}}}} = {t_y:.3f}")
+    st.latex(rf"df = {df_y:.1f}")
+    st.latex(rf"\text{{{format_p_value(p_y)}}}")
+
+    st.info(
+        f"Trimmed sample sizes: n₁ = {h1}, n₂ = {h2} "
+        f"(trimmed {trim_prop:.0%} from each tail)"
+    )
+
+    fig_yuen = go.Figure()
+    fig_yuen.add_trace(go.Box(y=g1, name="Group 1", boxmean=True,
+                               marker_color="#4C78A8"))
+    fig_yuen.add_trace(go.Box(y=g2, name="Group 2", boxmean=True,
+                               marker_color="#F58518"))
+    fig_yuen.add_hline(y=tx, line_dash="dash", line_color="#4C78A8",
+                        annotation_text=f"Trimmed mean 1 = {tx:.2f}")
+    fig_yuen.add_hline(y=ty, line_dash="dash", line_color="#F58518",
+                        annotation_text=f"Trimmed mean 2 = {ty:.2f}")
+    fig_yuen.update_layout(template="plotly_dark", height=400,
+                            yaxis_title="Value",
+                            title="Group Distributions with Trimmed Means")
+    st.plotly_chart(fig_yuen, use_container_width=True)
+
+    render_post_hoc(
+        [np.asarray(g1), np.asarray(g2)],
+        param_type="parametric",
+        key="yuen_ph",
+    )
+
+
+
+@register_test("Hotelling's T-Squared")
+def render_hotelling_t_squared(external_data=None):
+    from scipy.stats import f
+
+    st.subheader("Interactive Hotelling's T-Squared")
+    st.markdown("Tests whether the mean vectors of two groups differ across multiple dependent variables.")
+
+    n = st.slider("Sample Size per Group", 10, 100, 30, key="hot_n", label_visibility="collapsed")
+    p = st.selectbox("Number of Dependent Variables", [2, 3, 4, 5], index=0, key="hot_p")
+    effect = st.slider("Effect Size (Mahalanobis D)", 0.0, 3.0, 0.5, 0.1, key="hot_d")
+
+    np.random.seed(42)
+    mean_diff = np.array([effect] + [0] * (p - 1))
+    cov = np.eye(p)
+    group1 = np.random.multivariate_normal(np.zeros(p), cov, n)
+    group2 = np.random.multivariate_normal(mean_diff, cov, n)
+
+    mean1 = group1.mean(axis=0)
+    mean2 = group2.mean(axis=0)
+    diff = mean1 - mean2
+    S1 = np.cov(group1, rowvar=False)
+    S2 = np.cov(group2, rowvar=False)
+    Sp = ((n - 1) * S1 + (n - 1) * S2) / (2 * n - 2)
+
+    try:
+        Sp_inv = np.linalg.inv(Sp)
+        T2 = (n * n / (2 * n)) * diff @ Sp_inv @ diff
+        F_stat = (2 * n - p - 1) / (p * (2 * n - 2)) * T2
+        p_val = 1 - f.cdf(F_stat, p, 2 * n - p - 1)
+    except np.linalg.LinAlgError:
+        st.error("Covariance matrix is singular. Try a larger sample size.")
+        return
+
+    c1, c2, c3 = st.columns(3)
+    c1.metric("T-Squared", f"{T2:.3f}")
+    c2.metric("F(df1={}, df2={})".format(p, 2 * n - p - 1), f"{F_stat:.3f}")
+    c3.metric("p-value", f"{p_val:.4f}")
+
+    st.markdown("**Group Means:**")
+    comp = pd.DataFrame({"Variable": [f"V{i+1}" for i in range(p)], "Group 1": mean1, "Group 2": mean2})
+    st.dataframe(comp.style.format({c: "{:.3f}" for c in comp.columns if c != "Variable"}), use_container_width=True)
+
+    fig = go.Figure()
+    for g, name, color in [(group1, "Group 1", "#4C78A8"), (group2, "Group 2", "#E45756")]:
+        if p >= 2:
+            fig.add_trace(go.Scatter(x=g[:, 0], y=g[:, 1], mode="markers", name=name,
+                                     marker=dict(color=color, size=6, opacity=0.7),
+                                     text=[f"V1={v1:.1f}, V2={v2:.1f}" for v1, v2 in g[:, :2]]))
+            fig.add_trace(go.Scatter(x=[g[:, 0].mean()], y=[g[:, 1].mean()], mode="markers",
+                                     marker=dict(color=color, size=14, symbol="x"), showlegend=False))
+    fig.update_layout(template="plotly_dark", height=400,
+                      xaxis_title="Variable 1", yaxis_title="Variable 2",
+                      title="First Two Variables with Group Means")
+    st.plotly_chart(fig, use_container_width=True)
+
 # Non-parametric Multiple Group Tests
 

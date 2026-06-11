@@ -10,15 +10,20 @@ Here is a comprehensive breakdown of what can be improved or added to the applic
 
 Currently, the application suffers from monolithic files and hard-coded data structures, which hinder maintainability and scalability.
 
-*   **Refactor Monolithic Files:** 
-    *   `features/widgets.py` is over 7,000 lines and 250 KB. It currently acts as a massive container for every statistical test widget and rendering logic. This should be broken down into a `features/widgets/` directory with separate modules for each statistical family (e.g., `parametric.py`, `nonparametric.py`, `regression.py`, `categorical.py`).
-    *   `features/graph_explorer.py` is similarly massive (~8000 lines). It should be split into individual plot types (e.g., `comparisons.py`, `distributions.py`... etc.).
-*   **Decouple Static Data from Code:** 
-    *   `core/data.py` contains over 1,000 lines of hardcoded dictionaries (`rules`) defining tests, formulas, explanations, and mappings. This data should be moved out of Python files and into structured JSON or YAML files (e.g., `assets/test_definitions.json`). This makes the application easier to update, translates better, and cleans up the core logic.
-*   **Implement a Dynamic Registry Pattern:** 
-    *   Currently, the application likely relies on giant `if/elif` chains or static dictionary mapping to render specific tests. Implementing a dynamic registry (e.g., using decorators like `@register_test("Paired t-test")`) would allow individual test modules to register themselves automatically, making the codebase highly extensible.
+❌ ~~**Refactor Monolithic Files:**~~ ✅ **COMPLETED (June 2026)**
+    *   ~~`features/widgets.py` is over 7,000 lines and 250 KB. It currently acts as a massive container for every statistical test widget and rendering logic. This should be broken down into a `features/widgets/` directory with separate modules for each statistical family (e.g., `parametric.py`, `nonparametric.py`, `regression.py`, `categorical.py`).~~
+    *   **Done**: `features/widgets.py` → `features/widgets/` package with 9 modules, registry pattern, decorator-based registration. Total: 71 registered widgets.
+    *   ~~`features/graph_explorer.py` is similarly massive (~8000 lines). It should be split into individual plot types (e.g., `comparisons.py`, `distributions.py`... etc.).~~
+    *   **Remaining**: Graph explorer (~7469 lines, 12 submodules) is still monolithic — left as-is for now.
+*   ❌ ~~**Decouple Static Data from Code:**~~ ✅ **COMPLETED (June 2026)**
+    *   ~~`core/data.py` contains over 1,000 lines of hardcoded dictionaries (`rules`) defining tests, formulas, explanations, and mappings. This data should be moved out of Python files and into structured JSON or YAML files (e.g., `assets/test_definitions.json`).~~
+    *   **Done**: All 71 test definitions moved to `assets/test_definitions.json`. `core/data.py` remains for runtime utilities only (`rules` list, `TEST_TO_SS_TYPE` mapping, `FIELDS`).
+*   ❌ ~~**Implement a Dynamic Registry Pattern:**~~ ✅ **COMPLETED (June 2026)**
+    *   ~~Currently, the application likely relies on giant `if/elif` chains or static dictionary mapping to render specific tests.~~
+    *   **Done**: `@register_widget("Test Name")` decorator in `features/widgets/__init__.py`. Widgets auto-register into `_widget_registry` dict. Access via `get_widget("Test Name")`.
 *   **Introduce Strict Typing and Data Classes:** 
     *   The `external_data` dictionary passed between the Data Workspace and Widgets relies on loose string keys (`{"mode": "uploaded", "_format": "one_sample", ...}`). Introducing `Pydantic` models or Python `dataclasses` would enforce strict type-checking, reducing runtime `KeyError` issues and making the code self-documenting.
+    *   **Status**: Not yet implemented. Partial mitigation: `_build_external_data()` helper standardizes dict creation, but still no formal validation.
 
 ---
 

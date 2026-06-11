@@ -44,5 +44,7 @@
   "Runs Test for Randomness": "Precision-based (CI Width)",
   "Equivalence Test (TOST) - Two Independent Samples": "Equivalence / Non-Inferiority",
   "F-Test for Two Variances": "Two Independent Means (t-test)",
-  "Poisson Goodness-of-Fit Test": "Chi-Square Test"
+  "Poisson Goodness-of-Fit Test": "Chi-Square Test",
+  "Cochran-Mantel-Haenszel Test": "Chi-Square Test",
+  "Two-sample Proportion Test": "Two-sample Proportion"
 }

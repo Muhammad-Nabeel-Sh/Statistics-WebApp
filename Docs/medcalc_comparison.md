@@ -72,9 +72,9 @@
 | Fleiss' Kappa | ✅ Interactive widget | ❌ Not listed |
 | Weighted Kappa | ✅ Interactive widget | ❌ Not listed |
 | Cronbach's alpha | ✅ In factor analysis | ✅ Reliability analysis |
-| Intraclass correlation (ICC) | ❌ Not available | ✅ ICC with CI |
+| Intraclass correlation (ICC) | ✅ Interactive widget | ✅ ICC with CI |
 
-**Summary:** Our app has wider categorical test breadth (multinomial exact, Fleiss/weighted kappa, Poisson GOF). MedCalc has CMH test and ICC which we lack.
+**Summary:** Our app has wider categorical test breadth (multinomial exact, Fleiss/weighted kappa, Poisson GOF). MedCalc has CMH test which we lack. **ICC is now available** in our app (added June 2026).
 
 ---
 
@@ -347,7 +347,6 @@
 | 🟠 **High** | **Westgard QC rules** (1:2S, 1:3S, 2:2S, 4:1S, 10:X) | Clinical laboratory QC |
 | 🟡 **Medium** | **Meta-analysis computation** (pooled effects, heterogeneity, SROC) | Evidence synthesis, diagnostic test accuracy meta-analysis |
 | 🟡 **Medium** | **RMST (Restricted Mean Survival Time)** | Survival analysis when PH assumption fails |
-| 🟡 **Medium** | **Intraclass correlation (ICC)** | Reliability studies |
 | 🟡 **Medium** | **Cochran-Mantel-Haenszel test** | Stratified categorical analysis |
 | 🟡 **Medium** | **Passing-Bablok & Deming regression** | Method comparison (overlaps with #2) |
 | 🟢 **Low** | **PowerPoint export, graph annotations** | Publication workflow |
@@ -381,8 +380,6 @@ Based on this comparison, the following enhancements would most narrow the gap w
 5. **Meta-Analysis Computation** — Add pooled effect sizes, heterogeneity statistics, SROC to existing forest/funnel plots
 6. **RMST for Survival** — Alternative to Cox when PH assumption is violated
 7. **Cochran-Mantel-Haenszel** — Stratified categorical analysis
-8. **ICC** — Intraclass correlation coefficient for reliability studies
-
 ### Phase 4 — Publication Workflow
 9. **PowerPoint export** — Direct export of graphs to PPTX slides
 10. **Graph annotations** — Text boxes, arrows, reference lines on plots

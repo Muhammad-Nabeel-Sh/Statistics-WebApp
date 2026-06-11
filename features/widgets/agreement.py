@@ -18,6 +18,269 @@ from core.utils import (
 from features.widgets import register_test
 
 
+
+
+@register_test("Gwet's AC1")
+def render_gwet_s_ac1(external_data=None):
+
+    st.subheader("Interactive Gwet's AC1")
+
+    st.info("""
+    **Gwet's AC1** is an inter-rater reliability coefficient that corrects for chance agreement
+    more robustly than Cohen's Kappa. It is less affected by prevalence and marginal distributions.
+    """)
+
+    np.random.seed(42)
+
+    n_subj_g = st.slider("Number of Subjects", 20, 100, 50, key="gwet_n")
+    n_cat_g = st.slider("Number of Categories", 2, 5, 3, key="gwet_k")
+    agree_g = st.slider("Agreement Level", 0.5, 1.0, 0.8, 0.05, key="gwet_agree")
+    prev_g = st.selectbox("Prevalence", ["Low", "Medium", "High"], key="gwet_prev")
+
+    if prev_g == "Low":
+        base_prob = np.array([0.7] + [0.3 / (n_cat_g - 1)] * (n_cat_g - 1))
+    elif prev_g == "Medium":
+        base_prob = np.array([1 / n_cat_g] * n_cat_g)
+    else:
+        base_prob = np.array([0.3] + [0.7 / (n_cat_g - 1)] * (n_cat_g - 1))
+
+    base_prob = base_prob / base_prob.sum()
+    rater1_g = np.random.choice(n_cat_g, size=n_subj_g, p=base_prob)
+    rater2_g = np.zeros(n_subj_g, dtype=int)
+    for i in range(n_subj_g):
+        if np.random.random() < agree_g:
+            rater2_g[i] = rater1_g[i]
+        else:
+            probs = np.ones(n_cat_g) * (1 - agree_g) / (n_cat_g - 1)
+            probs[rater1_g[i]] = 0
+            rater2_g[i] = np.random.choice(n_cat_g, p=probs / probs.sum())
+
+    ct_g = np.zeros((n_cat_g, n_cat_g), dtype=int)
+    for i in range(n_subj_g):
+        ct_g[rater1_g[i], rater2_g[i]] += 1
+
+    po_g = np.trace(ct_g) / n_subj_g
+    pk_g = ct_g.sum(axis=1) / n_subj_g
+    qk_g = ct_g.sum(axis=0) / n_subj_g
+    pe_g = np.sum(pk_g * qk_g) / (1 - 1 / n_cat_g) if n_cat_g > 1 else 0
+    ac1 = (po_g - pe_g) / (1 - pe_g) if pe_g < 1 else 0
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Observed Agreement (pₒ)", f"{po_g:.3f}")
+    col2.metric("Chance Agreement (pₑ)", f"{pe_g:.3f}")
+    col3.metric("AC1 Coefficient", f"{ac1:.4f}")
+
+    labels = [f"Cat {i + 1}" for i in range(n_cat_g)]
+    fig = go.Figure(data=go.Heatmap(z=ct_g, x=labels, y=labels,
+                                     colorscale="Blues", text=ct_g,
+                                     texttemplate="%{text}", textfont={"size": 12}))
+    fig.update_layout(template="plotly_dark", height=450,
+                      xaxis_title="Rater 2", yaxis_title="Rater 1",
+                      title="Confusion Matrix (Rater 1 × Rater 2)")
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.divider()
+    st.subheader("Detailed Results")
+    st.table(pd.DataFrame({
+        "Metric": ["Observed Agreement pₒ", "Chance Agreement pₑ",
+                   "AC1", "Subjects", "Categories"],
+        "Value": [f"{po_g:.4f}", f"{pe_g:.4f}", f"{ac1:.4f}",
+                  f"{n_subj_g}", f"{n_cat_g}"],
+    }))
+
+
+@register_test("Krippendorff's Alpha")
+def render_krippendorff_s_alpha(external_data=None):
+
+    st.subheader("Interactive Krippendorff's Alpha")
+
+    st.info("""
+    **Krippendorff's Alpha** is a versatile inter-rater reliability coefficient
+    that handles multiple raters, missing data, and any measurement level
+    (nominal, ordinal, interval, ratio).
+    """)
+
+    np.random.seed(42)
+
+    n_subj_k = st.slider("Number of Subjects", 10, 50, 20, key="krip_n")
+    n_rat_k = st.slider("Number of Raters", 2, 5, 3, key="krip_rat")
+    meas_k = st.selectbox("Measurement Level", ["Nominal", "Ordinal", "Interval"], key="krip_meas")
+    agree_k = st.slider("Agreement Level", 0.5, 1.0, 0.8, 0.05, key="krip_agree")
+
+    n_cat_k = 5
+    base_k = np.array([1 / n_cat_k] * n_cat_k)
+    data_k = np.zeros((n_subj_k, n_rat_k), dtype=int)
+
+    for s in range(n_subj_k):
+        true_cat = np.random.choice(n_cat_k, p=base_k)
+        for r in range(n_rat_k):
+            if np.random.random() < agree_k:
+                data_k[s, r] = true_cat
+            else:
+                others = [c for c in range(n_cat_k) if c != true_cat]
+                data_k[s, r] = np.random.choice(others)
+
+    n_pairs = 0
+    concordant = 0
+    total_distance = 0.0
+
+    for s in range(n_subj_k):
+        vals = data_k[s, :]
+        for i in range(n_rat_k):
+            for j in range(i + 1, n_rat_k):
+                n_pairs += 1
+                if meas_k == "Nominal":
+                    d = 0 if vals[i] == vals[j] else 1
+                elif meas_k == "Ordinal":
+                    d = (vals[i] - vals[j]) ** 2
+                else:
+                    d = (vals[i] - vals[j]) ** 2
+                total_distance += d
+                if vals[i] == vals[j]:
+                    concordant += 1
+
+    de = n_pairs * (n_cat_k ** 2 - 1) / (6 * n_cat_k) if meas_k == "Ordinal" else 0
+    if meas_k == "Nominal":
+        pk_k = np.array([np.sum(data_k == c) for c in range(n_cat_k)])
+        pk_k = pk_k / pk_k.sum()
+        de = n_pairs * (1 - np.sum(pk_k ** 2))
+    elif meas_k == "Interval":
+        de = n_pairs * np.var(data_k.ravel(), ddof=0) * 2
+
+    alpha_k = 1 - total_distance / de if de > 0 else 0
+
+    interp = "Poor" if alpha_k < 0.4 else ("Fair" if alpha_k < 0.6 else
+                                            ("Good" if alpha_k < 0.75 else "Excellent"))
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Krippendorff's α", f"{alpha_k:.4f}")
+    col2.metric("Interpretation", interp)
+    col3.metric("Rater Pairs", f"{n_pairs}")
+
+    fig = go.Figure(data=go.Heatmap(z=data_k, colorscale="Blues",
+                                     x=[f"R{r + 1}" for r in range(n_rat_k)],
+                                     y=[f"S{s + 1}" for s in range(n_subj_k)],
+                                     text=data_k, texttemplate="%{text}",
+                                     textfont={"size": 9}))
+    fig.update_layout(template="plotly_dark", height=500,
+                      xaxis_title="Rater", yaxis_title="Subject",
+                      title="Agreement Matrix (Subject × Rater)")
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.divider()
+    st.subheader("Detailed Results")
+    st.table(pd.DataFrame({
+        "Metric": ["Krippendorff's α", "Interpretation",
+                   "Observed Disagreement", "Expected Disagreement",
+                   "Subjects", "Raters", "Measurement Level"],
+        "Value": [f"{alpha_k:.4f}", interp,
+                  f"{total_distance:.1f}", f"{de:.1f}",
+                  f"{n_subj_k}", f"{n_rat_k}", meas_k],
+    }))
+
+
+@register_test("Intraclass Correlation Coefficient (ICC)")
+def render_intraclass_correlation_coefficient_icc(external_data=None):
+
+    from scipy.stats import f as f_dist
+
+    st.subheader("Interactive Intraclass Correlation Coefficient (ICC)")
+
+    st.info("""
+    **Intraclass Correlation Coefficient (ICC)** measures the reliability of ratings
+    by multiple raters on the same subjects.
+    - **ICC(1,1)**: one-way random, single measure
+    - **ICC(2,1)**: two-way random, single measure (absolute agreement)
+    - **ICC(3,1)**: two-way mixed, single measure (consistency)
+    """)
+
+    np.random.seed(42)
+
+    n_subj_i = st.slider("Number of Subjects", 10, 100, 30, key="icc_n")
+    n_rat_i = st.slider("Number of Raters", 2, 5, 3, key="icc_rat")
+    icc_type = st.selectbox("ICC Type", ["ICC(1,1)", "ICC(2,1)", "ICC(3,1)"], key="icc_type")
+    rel_i = st.slider("True Reliability", 0.0, 1.0, 0.7, 0.05, key="icc_rel")
+
+    true_scores = np.random.normal(0, 1, n_subj_i)
+    rater_bias = np.random.normal(0, 0.3, n_rat_i)
+    data_i = np.zeros((n_subj_i, n_rat_i))
+    for s in range(n_subj_i):
+        for r in range(n_rat_i):
+            noise = np.random.normal(0, np.sqrt(1 / rel_i - 1)) if rel_i > 0 else np.random.normal(0, 10)
+            data_i[s, r] = true_scores[s] + rater_bias[r] + noise
+
+    grand_mean_i = data_i.mean()
+    ss_subj = n_rat_i * np.sum((data_i.mean(axis=1) - grand_mean_i) ** 2)
+    ss_rater = n_subj_i * np.sum((data_i.mean(axis=0) - grand_mean_i) ** 2)
+    ss_total = np.sum((data_i - grand_mean_i) ** 2)
+    ss_res = ss_total - ss_subj - ss_rater
+    ss_within = ss_total - ss_subj
+
+    ms_subj = ss_subj / (n_subj_i - 1)
+    ms_rater = ss_rater / (n_rat_i - 1)
+    ms_res = ss_res / ((n_subj_i - 1) * (n_rat_i - 1))
+    ms_within = ss_within / (n_subj_i * (n_rat_i - 1))
+
+    if icc_type == "ICC(1,1)":
+        icc_val = (ms_subj - ms_within) / (ms_subj + (n_rat_i - 1) * ms_within)
+        F_icc = ms_subj / ms_within
+        df1_i = n_subj_i - 1
+        df2_i = n_subj_i * (n_rat_i - 1)
+    elif icc_type == "ICC(2,1)":
+        icc_val = (ms_subj - ms_res) / (ms_subj + (n_rat_i - 1) * ms_res + n_rat_i * (ms_rater - ms_res) / n_subj_i)
+        F_icc = ms_subj / ms_res
+        df1_i = n_subj_i - 1
+        df2_i = (n_subj_i - 1) * (n_rat_i - 1)
+    else:
+        icc_val = (ms_subj - ms_res) / (ms_subj + (n_rat_i - 1) * ms_res)
+        F_icc = ms_subj / ms_res
+        df1_i = n_subj_i - 1
+        df2_i = (n_subj_i - 1) * (n_rat_i - 1)
+
+    icc_val = max(-1, min(1, icc_val))
+    p_icc = 1 - f_dist.cdf(F_icc, df1_i, df2_i)
+
+    se_icc = np.sqrt((2 * (1 - icc_val) ** 2 * (1 + (n_rat_i - 1) * icc_val) ** 2) /
+                     (n_rat_i * (n_rat_i - 1) * (n_subj_i - 1))) if n_subj_i > 1 else 0
+    ci_low = icc_val - 1.96 * se_icc
+    ci_high = icc_val + 1.96 * se_icc
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("ICC", f"{icc_val:.4f}")
+    col2.metric("F-statistic", f"{F_icc:.3f}")
+    col3.metric("p-value", f"{p_icc:.4f}")
+
+    st.latex(rf"{icc_type} = {icc_val:.4f}")
+    st.latex(rf"F({df1_i}, {df2_i}) = {F_icc:.3f}")
+    st.latex(rf"95\%\ \text{{CI}} = [{ci_low:.4f},\ {ci_high:.4f}]")
+
+    subj_means = data_i.mean(axis=1)
+    fig = go.Figure()
+    for r in range(n_rat_i):
+        fig.add_trace(go.Scatter(x=subj_means, y=data_i[:, r],
+                                  mode="markers", name=f"Rater {r + 1}",
+                                  marker=dict(size=6)))
+    fig.add_trace(go.Scatter(x=[subj_means.min(), subj_means.max()],
+                              y=[subj_means.min(), subj_means.max()],
+                              mode="lines", name="Perfect Agreement",
+                              line=dict(color="red", dash="dash")))
+    fig.update_layout(template="plotly_dark", height=450,
+                      xaxis_title="Subject Mean across All Raters",
+                      yaxis_title="Individual Rater Score",
+                      title=f"{icc_type} = {icc_val:.3f}")
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.divider()
+    st.subheader("Detailed Results")
+    st.table(pd.DataFrame({
+        "Metric": [f"{icc_type}", "F-statistic", "df1", "df2",
+                   "p-value", "95% CI Lower", "95% CI Upper",
+                   "Subjects", "Raters"],
+        "Value": [f"{icc_val:.4f}", f"{F_icc:.3f}", f"{df1_i}", f"{df2_i}",
+                  format_p_value(p_icc), f"{ci_low:.4f}", f"{ci_high:.4f}",
+                  f"{n_subj_i}", f"{n_rat_i}"],
+    }))
+
 @register_test("Cohen's Kappa (Agreement Analysis)")
 def render_cohen_s_kappa_agreement_analysis(external_data=None):
     st.subheader("Interactive Agreement Analysis (Cohen's Kappa)")

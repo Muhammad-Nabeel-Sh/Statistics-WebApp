@@ -108,7 +108,7 @@ SPSS is modular — each numbered section is a separate paid add-on.
 | **Outlier Tests** (Grubbs, Rosner, Mahalanobis, IQR) | ✅ **4 methods** in diagnostics | ⚠ Limited (Explore, Regression diagnostics) | |
 | Normality Tests (Shapiro-Wilk, K-S, A-D, etc.) | ✅ **5 methods** in diagnostics | ✅ Base (Explore, NPAR) | |
 
-**Summary:** Our app covers **more individual test types** (~50+ vs Base ~25-30) with interactive widgets. SPSS has key tests we lack (partial correlation, nonlinear regression, probit, 2SLS, life tables). SPSS's Exact Tests add-on (30+ exact tests) overlaps with many of our interactive tests. **Our unique tests**: Fleiss' Kappa, Weighted Kappa, Bland-Altman, Permutation MANOVA, TOST, point-biserial, all diagnostic accuracy tests.
+**Summary:** Our app covers **more individual test types** (71 vs Base ~25-30) with interactive widgets. SPSS has key tests we lack (partial correlation, nonlinear regression, probit, 2SLS, life tables). SPSS's Exact Tests add-on (30+ exact tests) overlaps with many of our interactive tests. **Our unique tests**: Fleiss' Kappa, Weighted Kappa, Bland-Altman, Permutation MANOVA, TOST, point-biserial, all diagnostic accuracy tests.
 
 ---
 
@@ -426,7 +426,7 @@ SPSS is modular — each numbered section is a separate paid add-on.
 | Feature | Our App | SPSS |
 |---------|---------|------|
 | **Test Finder Wizard** | ✅ 6-step interactive wizard | ❌ Not available |
-| **Interactive test widgets** | ✅ **41 widgets** with real-time sliders | ❌ Static output |
+| **Interactive test widgets** | ✅ **71 widgets** with real-time sliders | ❌ Static output |
 | **Interactive graph explorer** | ✅ **83 graph types** with real-time sliders | ❌ Static graphs |
 | **Step-by-step solved examples** | ✅ 7 examples, LaTeX formulas, full walkthrough | ❌ Not available |
 | **Glossary** | ✅ ~150 terms, 14 categories | ❌ Not available |
@@ -451,7 +451,7 @@ SPSS is modular — each numbered section is a separate paid add-on.
 |----------|---------|------|-----------|
 | **Cost** | **Free** | $105–$300+/month | **Our App** |
 | **Installation** | **Zero** (web browser) | Desktop install | **Our App** |
-| **Hypothesis Tests** | **50+ tests, all interactive** | 25-30 Base + add-ons (static) | **Our App** (breadth + interactivity) |
+| **Hypothesis Tests** | **71 tests, all interactive** | 25-30 Base + add-ons (static) | **Our App** (breadth + interactivity) |
 | **Nonparametric Post-Hoc** | ✅ **6 methods** | ❌ **None** | **Our App** |
 | **Power Analysis** | **30 types, 5 modes, adjustments** | ~15 types, 3 modes | **Our App** |
 | **Graphs** | **83 types, all interactive** | ~50 types, static | **Our App** (count + interactivity) |
@@ -478,7 +478,7 @@ SPSS is modular — each numbered section is a separate paid add-on.
 
 | What we do better | What SPSS does better |
 |-------------------|----------------------|
-| **Interactive widgets** (41 tests, 83 graphs — all real-time sliders) | **Data management** (transformations, labeling, merging, DB connectors) |
+| **Interactive widgets** (71 tests, 83 graphs — all real-time sliders) | **Data management** (transformations, labeling, merging, DB connectors) |
 | **Educational design** (interpretations, test finder, glossary, examples) | **Regression** (nonlinear, probit, 2SLS, mixed models, GENLIN, GEE, GLMM) |
 | **Power analysis** (30 types vs ~15, 5 modes vs 3, adjustments, converter) | **Multivariate analysis** (factor, discriminant, correspondence, MDS, CATREG) |
 | **Post-hoc methods** (23 methods + 6 visualizations vs basic set) | **Time series** (ARIMA, exponential smoothing, expert modeler, decomposition) |
@@ -495,7 +495,7 @@ SPSS is modular — each numbered section is a separate paid add-on.
 | Feature | What it does |
 |---------|-------------|
 | **Test Finder Wizard** | Interactive 6-step questionnaire → test recommendation |
-| **41 Interactive Test Widgets** | All with real-time parameter sliders |
+| **71 Interactive Test Widgets** | All with real-time parameter sliders |
 | **83 Interactive Graph Types** | All with adjustable parameters |
 | **23 Post-Hoc Methods** | Including nonparametric, MANOVA, repeated measures contexts |
 | **6 Educational Table Explorers** | Interactive learning modules for cross-tab concepts |
@@ -592,6 +592,6 @@ This shows what you can access at each price point vs our app:
 
 ---
 
-*Generated May 2026. Our app: ~28,000 lines across 7 apps, 12 feature modules, 4 core modules. SPSS: IBM SPSS Statistics v32 (released 2026), 10+ add-on modules.*
+*Generated June 2026. Our app: ~40,000 lines across 8 apps (1 legacy), 14 feature modules, 4 core modules. SPSS: IBM SPSS Statistics v32 (released 2026), 10+ add-on modules.*
 
 *Bottom line: Our app covers roughly 40% of SPSS's feature set (higher in hypothesis testing / power / post-hoc, much lower in data management / multivariate / time series / mixed models / survey design). Our interactive educational features, nonparametric post-hoc methods, meta-analysis, and comprehensive power analysis have **no SPSS equivalent at any price tier**.*

@@ -1432,5 +1432,394 @@ def render_permutation_manova_or_non_parametric_manova(external_data=None):
         ph_groups = [g[:n_pm // k_pm, 0] if g.ndim > 1 else g[:n_pm // k_pm] for g in pm_groups] if pm_groups[0].ndim > 1 else pm_groups
         render_post_hoc(ph_groups, param_type="nonparametric", key="permanova_ph")
 
+@register_test("Brunner-Munzel Test")
+def render_brunner_munzel_test(external_data=None):
+
+    from scipy.stats import mannwhitneyu, rankdata
+
+    st.subheader("Interactive Brunner-Munzel Test")
+
+    if external_data and external_data.get("using_uploaded"):
+        src = external_data
+    else:
+        from core.utils import data_source_toggle
+        src = data_source_toggle("brunner_munzel", mode="two_sample")
+
+    if src["using_uploaded"]:
+        g1 = src["data"]["group1"]
+        g2 = src["data"]["group2"]
+    else:
+        np.random.seed(42)
+        mu1 = st.slider("Group 1 Location", -5.0, 5.0, 0.0, 0.1, key="bm_m1")
+        mu2 = st.slider("Group 2 Location", -5.0, 5.0, 1.0, 0.1, key="bm_m2")
+        sd1 = st.slider("Group 1 Spread", 0.1, 5.0, 1.0, 0.1, key="bm_sd1")
+        sd2 = st.slider("Group 2 Spread", 0.1, 5.0, 2.0, 0.1, key="bm_sd2")
+        n = st.slider("Sample Size per Group", 10, 200, 50, key="bm_n")
+        dist = st.selectbox("Distribution", ["Normal", "Exponential", "Uniform"],
+                            key="bm_dist")
+        if dist == "Normal":
+            g1 = np.random.normal(mu1, sd1, n)
+            g2 = np.random.normal(mu2, sd2, n)
+        elif dist == "Exponential":
+            g1 = np.random.exponential(sd1, n) + mu1
+            g2 = np.random.exponential(sd2, n) + mu2
+        else:
+            g1 = np.random.uniform(mu1 - sd1, mu1 + sd1, n)
+            g2 = np.random.uniform(mu2 - sd2, mu2 + sd2, n)
+
+    def _brunner_munzel(x, y):
+        n1, n2 = len(x), len(y)
+        combined = np.concatenate([x, y])
+        R = rankdata(combined)
+        R1 = R[:n1]
+        R2 = R[n1:]
+        R1_bar = np.mean(R1)
+        R2_bar = np.mean(R2)
+
+        p_hat = (R2_bar - (n2 + 1) / 2) / n1
+
+        S_sq = np.var(R, ddof=1)
+        S1_sq = np.var(R1, ddof=1)
+        S2_sq = np.var(R2, ddof=1)
+
+        sigma_sq = (n1 * n2) * (S_sq / (n1 + n2) -
+                                 (S1_sq / n1 * (n1 - 1) + S2_sq / n2 * (n2 - 1)) /
+                                 ((n1 + n2) * (n1 + n2 - 1)))
+
+        sigma_sq = max(sigma_sq, 1e-10)
+        W = (p_hat - 0.5) / np.sqrt(sigma_sq) * np.sqrt(n1 * n2)
+
+        num = (S1_sq / n1 + S2_sq / n2) ** 2
+        den = (S1_sq / n1) ** 2 / (n1 - 1) + (S2_sq / n2) ** 2 / (n2 - 1)
+        df = num / den if den > 0 else 1
+
+        from scipy.stats import t as t_dist
+        p = 2 * (1 - t_dist.cdf(abs(W), df))
+        return W, p, df, p_hat
+
+    W_bm, p_bm, df_bm, p_hat_bm = _brunner_munzel(
+        np.asarray(g1), np.asarray(g2)
+    )
+
+    mw_stat, mw_p = mannwhitneyu(g1, g2, alternative="two-sided")
+
+    st.divider()
+    st.subheader("Results")
+
+    col1, col2 = st.columns(2)
+    col1.metric("Brunner-Munzel W", f"{W_bm:.3f}")
+    col2.metric("Relative Effect p̂", f"{p_hat_bm:.3f}")
+
+    st.latex(rf"W = {W_bm:.3f}")
+    st.latex(rf"df = {df_bm:.1f}")
+    st.latex(rf"\text{{{format_p_value(p_bm)}}}")
+    st.latex(rf"\hat{{p}} = {p_hat_bm:.3f} \quad "
+             rf"(\text{{interpretation: }} P(\text{{Group 2 > Group 1}}) = {p_hat_bm:.3f})")
+
+    st.info(
+        f"**Comparison with Mann-Whitney U:** U = {mw_stat:.1f}, "
+        f"p = {format_p_value(mw_p)}."
+    )
+
+    fig_bm = go.Figure()
+    fig_bm.add_trace(go.Violin(y=g1, name="Group 1", box_visible=True,
+                                meanline_visible=True, fillcolor="#4C78A8",
+                                opacity=0.6, line_color="#4C78A8"))
+    fig_bm.add_trace(go.Violin(y=g2, name="Group 2", box_visible=True,
+                                meanline_visible=True, fillcolor="#F58518",
+                                opacity=0.6, line_color="#F58518"))
+    fig_bm.update_layout(template="plotly_dark", height=400,
+                          yaxis_title="Value",
+                          title="Group Distributions (Brunner-Munzel Test)")
+    st.plotly_chart(fig_bm, use_container_width=True)
+
+    render_post_hoc(
+        [np.asarray(g1), np.asarray(g2)],
+        param_type="nonparametric",
+        key="brunner_munzel_ph",
+    )
+
+
+
+
+@register_test("Two-Sample Kolmogorov-Smirnov Test")
+def render_two_sample_kolmogorov_smirnov_test(external_data=None):
+
+    from scipy.stats import ks_2samp
+
+    st.subheader("Interactive Two-Sample Kolmogorov-Smirnov Test")
+
+    st.info("""
+    **Two-Sample Kolmogorov-Smirnov Test** compares the empirical distributions of two samples.
+    It is sensitive to differences in location, shape, and spread.
+    H₀: Both samples come from the same continuous distribution.
+    """)
+
+    np.random.seed(42)
+
+    n_ks = st.slider("Sample Size", 10, 200, 50, key="ks2_n")
+    dist1 = st.selectbox("Distribution 1", ["Normal", "Uniform", "Exponential", "t (df=3)"], key="ks2_d1")
+    dist2 = st.selectbox("Distribution 2", ["Normal", "Uniform", "Exponential", "t (df=3)"], key="ks2_d2")
+    shift = st.slider("Shift (distribution 2)", -2.0, 2.0, 0.5, 0.1, key="ks2_shift")
+    scale_diff = st.slider("Scale Difference", 0.5, 2.0, 1.0, 0.1, key="ks2_scale")
+
+    def _sample(dist, n, loc=0, scale=1):
+        if dist == "Normal":
+            return np.random.normal(loc, scale, n)
+        elif dist == "Uniform":
+            return np.random.uniform(loc - scale, loc + scale, n)
+        elif dist == "Exponential":
+            return np.random.exponential(scale, n) + loc
+        else:
+            from scipy.stats import t as t_dist
+            return t_dist.rvs(df=3, loc=loc, scale=scale, size=n)
+
+    s1 = _sample(dist1, n_ks, loc=0, scale=1)
+    s2 = _sample(dist2, n_ks, loc=shift, scale=scale_diff)
+
+    D_ks, p_ks = ks_2samp(s1, s2)
+
+    col1, col2 = st.columns(2)
+    col1.metric("D Statistic", f"{D_ks:.4f}")
+    col2.metric("p-value", f"{p_ks:.4f}")
+
+    st.subheader("Distribution Comparison")
+
+    bins = np.histogram_bin_edges(np.concatenate([s1, s2]), bins="auto")
+    fig = go.Figure()
+
+    fig.add_trace(go.Histogram(x=s1, name=dist1, opacity=0.6, nbinsx=len(bins),
+                                marker_color="#4C78A8", histnorm="probability density"))
+    fig.add_trace(go.Histogram(x=s2, name=dist2, opacity=0.6, nbinsx=len(bins),
+                                marker_color="#F58518", histnorm="probability density"))
+
+    from scipy.stats import norm as norm_ks
+
+    x_grid = np.linspace(min(s1.min(), s2.min()), max(s1.max(), s2.max()), 200)
+    ecdf1 = np.array([np.mean(s1 <= x) for x in x_grid])
+    ecdf2 = np.array([np.mean(s2 <= x) for x in x_grid])
+
+    fig.add_trace(go.Scatter(x=x_grid, y=ecdf1, mode="lines",
+                              name=f"{dist1} ECDF", line=dict(color="#4C78A8", dash="dot")))
+    fig.add_trace(go.Scatter(x=x_grid, y=ecdf2, mode="lines",
+                              name=f"{dist2} ECDF", line=dict(color="#F58518", dash="dot")))
+
+    fig.update_layout(template="plotly_dark", height=500,
+                      xaxis_title="Value", yaxis_title="Density / ECDF",
+                      title="Histograms with Empirical CDF Overlay")
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.divider()
+    st.subheader("Detailed Results")
+    st.table(pd.DataFrame({
+        "Metric": ["D-statistic", "p-value", "Sample Size Dist 1", "Sample Size Dist 2"],
+        "Value": [f"{D_ks:.4f}", format_p_value(p_ks), f"{n_ks}", f"{n_ks}"],
+    }))
+
+
+@register_test("Jonckheere-Terpstra Test")
+def render_jonckheere_terpstra_test(external_data=None):
+
+    from scipy.stats import mannwhitneyu
+    from scipy.stats import norm as norm_jt
+
+    st.subheader("Interactive Jonckheere-Terpstra Test")
+
+    st.info("""
+    **Jonckheere-Terpstra Test** tests for an ordered trend across k independent groups.
+    H₀: median₁ = median₂ = … = medianₖ
+    H₁: median₁ ≤ median₂ ≤ … ≤ medianₖ (at least one strict inequality)
+    It is more powerful than Kruskal-Wallis when a monotonic trend is expected.
+    """)
+
+    np.random.seed(42)
+
+    group_sizes = st.slider("Per-Group Sample Size", 10, 50, 20, key="jt_n")
+    n_groups = st.slider("Number of Groups", 3, 5, 3, key="jt_k")
+    trend = st.slider("Trend Strength", 0.0, 3.0, 0.5, 0.1, key="jt_trend")
+
+    groups_jt = []
+    means = [i * trend for i in range(n_groups)]
+    for m in means:
+        groups_jt.append(np.random.exponential(1, group_sizes) + m)
+
+    J = 0
+    for i in range(n_groups):
+        for j in range(i + 1, n_groups):
+            u_stat, _ = mannwhitneyu(groups_jt[i], groups_jt[j], alternative="less")
+            J += u_stat
+
+    n_total_jt = n_groups * group_sizes
+    n_per_jt = group_sizes
+    E_J = (n_total_jt ** 2 - sum(n_per_jt ** 2 for _ in range(n_groups))) / 4
+    Var_J = (n_total_jt ** 2 * (2 * n_total_jt + 3) - sum(
+        n_per_jt ** 2 * (2 * n_per_jt + 3) for _ in range(n_groups))) / 72
+    z_jt = (J - E_J) / np.sqrt(Var_J) if Var_J > 0 else 0
+    p_jt = 2 * (1 - norm_jt.cdf(abs(z_jt)))
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("J Statistic", f"{J:.1f}")
+    col2.metric("z-score", f"{z_jt:.3f}")
+    col3.metric("p-value", f"{p_jt:.4f}")
+
+    fig = go.Figure()
+    for i, g in enumerate(groups_jt):
+        fig.add_trace(go.Box(y=g, name=f"Group {i + 1} (μ≈{means[i]:.1f})",
+                              marker_color=f"rgba({50 + i * 40}, {100 + i * 30}, 200, 0.7)"))
+    fig.update_layout(template="plotly_dark", height=450,
+                      title="Box Plots by Group (ordered by increasing mean)")
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.divider()
+    st.subheader("Detailed Results")
+    st.table(pd.DataFrame({
+        "Metric": ["J Statistic", "E[J]", "Var[J]", "z-score", "p-value", "Groups", "Per-group n"],
+        "Value": [f"{J:.1f}", f"{E_J:.1f}", f"{Var_J:.1f}", f"{z_jt:.3f}",
+                  format_p_value(p_jt), f"{n_groups}", f"{group_sizes}"],
+    }))
+
+
+@register_test("Page Test")
+def render_page_test(external_data=None):
+
+    from scipy.stats import page_trend_test
+
+    st.subheader("Interactive Page Test")
+
+    st.info("""
+    **Page's L Test** is a nonparametric test for monotonic trend across **repeated measures** conditions.
+    H₀: All conditions have the same median
+    H₁: median₁ < median₂ < … < medianₖ (ordered alternative)
+    """)
+
+    np.random.seed(42)
+
+    n_subj = st.slider("Number of Subjects", 10, 50, 20, key="page_n")
+    n_cond = st.slider("Number of Conditions", 3, 6, 4, key="page_k")
+    trend_st = st.slider("Trend Strength", 0.0, 3.0, 0.5, 0.1, key="page_trend")
+
+    data_page = np.zeros((n_subj, n_cond))
+    for i in range(n_subj):
+        base = np.random.exponential(1)
+        for j in range(n_cond):
+            data_page[i, j] = base + j * trend_st + np.random.normal(0, 0.5)
+
+    res = page_trend_test(data_page)
+    L_stat = res.statistic
+    p_page = res.pvalue
+    # Standardized Z for Page's L
+    n_p, k_p = data_page.shape
+    z_page = (12 * L_stat - 3 * n_p * k_p * (k_p + 1) ** 2) / np.sqrt(n_p * k_p * (k_p + 1) * (k_p ** 2 - 1))
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("L Statistic", f"{L_stat:.1f}")
+    col2.metric("Z Statistic", f"{z_page:.3f}")
+    col3.metric("p-value", f"{p_page:.4f}")
+
+    fig = go.Figure()
+    cond_labels = [f"C{j + 1}" for j in range(n_cond)]
+
+    for i in range(n_subj):
+        fig.add_trace(go.Scatter(x=cond_labels, y=data_page[i], mode="lines+markers",
+                                  showlegend=False,
+                                  line=dict(color="rgba(200, 200, 200, 0.3)", width=1),
+                                  marker=dict(size=3)))
+
+    means_page = data_page.mean(axis=0)
+    fig.add_trace(go.Scatter(x=cond_labels, y=means_page, mode="lines+markers",
+                              name="Mean Trend", line=dict(color="red", width=3),
+                              marker=dict(color="red", size=10)))
+
+    fig.update_layout(template="plotly_dark", height=500,
+                      xaxis_title="Condition", yaxis_title="Value",
+                      title=f"Subject Trajectories (n={n_subj}) with Mean Trend")
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.divider()
+    st.subheader("Detailed Results")
+    st.table(pd.DataFrame({
+        "Metric": ["L Statistic", "Z Statistic", "p-value", "Subjects", "Conditions"],
+        "Value": [f"{L_stat:.1f}", f"{z_page:.3f}", format_p_value(p_page),
+                  f"{n_subj}", f"{n_cond}"],
+    }))
+
+
+@register_test("Mann-Kendall Trend Test")
+def render_mann_kendall_trend_test(external_data=None):
+
+    from scipy.stats import norm as norm_mk
+    from scipy.special import gammaln
+
+    st.subheader("Interactive Mann-Kendall Trend Test")
+
+    st.info("""
+    **Mann-Kendall Trend Test** detects monotonic trends in time series data.
+    H₀: No monotonic trend (independent and identically distributed)
+    H₁: Presence of a monotonic upward or downward trend
+    Sen's slope estimates the magnitude of the trend.
+    """)
+
+    np.random.seed(42)
+
+    n_years = st.slider("Number of Time Points", 10, 100, 30, key="mk_n")
+    slope_val = st.slider("Annual Change (Slope)", -1.0, 1.0, 0.05, 0.01, key="mk_slope")
+    noise = st.slider("Noise Level", 0.1, 2.0, 0.5, 0.1, key="mk_noise")
+    seasonality = st.selectbox("Seasonality", ["None", "Monthly", "Quarterly"], key="mk_season")
+
+    t = np.arange(n_years)
+    seasonal_effect = np.zeros(n_years)
+    if seasonality == "Monthly":
+        seasonal_effect = 0.5 * np.sin(2 * np.pi * t / 12)
+    elif seasonality == "Quarterly":
+        seasonal_effect = 0.3 * np.sin(2 * np.pi * t / 4)
+
+    values_mk = slope_val * t + seasonal_effect + np.random.normal(0, noise, n_years)
+
+    S = 0
+    n_mk = len(values_mk)
+    for i in range(n_mk):
+        for j in range(i + 1, n_mk):
+            S += np.sign(values_mk[j] - values_mk[i])
+
+    Var_S = n_mk * (n_mk - 1) * (2 * n_mk + 5) / 18
+    z_mk = (S - np.sign(S)) / np.sqrt(Var_S) if Var_S > 0 else 0
+    p_mk = 2 * (1 - norm_mk.cdf(abs(z_mk)))
+
+    slopes_arr = []
+    for i in range(n_mk):
+        for j in range(i + 1, n_mk):
+            if t[j] != t[i]:
+                slopes_arr.append((values_mk[j] - values_mk[i]) / (t[j] - t[i]))
+    sens_slope = np.median(slopes_arr) if slopes_arr else 0
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("S Statistic", f"{S:.0f}")
+    col2.metric("Z", f"{z_mk:.3f}")
+    col3.metric("p-value", f"{p_mk:.4f}")
+    col4.metric("Sen's Slope", f"{sens_slope:.4f}")
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=t, y=values_mk, mode="markers+lines",
+                              name="Observed", marker=dict(color="#4C78A8", size=5),
+                              line=dict(color="#4C78A8", width=1)))
+    trend_line = sens_slope * t + (np.median(values_mk) - sens_slope * np.median(t))
+    fig.add_trace(go.Scatter(x=t, y=trend_line, mode="lines",
+                              name=f"Sen's Slope = {sens_slope:.3f}",
+                              line=dict(color="red", width=2, dash="dash")))
+    fig.update_layout(template="plotly_dark", height=450,
+                      xaxis_title="Time", yaxis_title="Value",
+                      title="Time Series with Sen's Slope Trend Line")
+    st.plotly_chart(fig, use_container_width=True)
+
+    st.divider()
+    st.subheader("Detailed Results")
+    st.table(pd.DataFrame({
+        "Metric": ["S Statistic", "Var(S)", "z-score", "p-value",
+                   "Sen's Slope", "Number of Time Points"],
+        "Value": [f"{S:.0f}", f"{Var_S:.1f}", f"{z_mk:.3f}",
+                  format_p_value(p_mk), f"{sens_slope:.4f}", f"{n_mk}"],
+    }))
+
+
 # Correlation and Association Tests
 
