@@ -639,6 +639,85 @@ def _get_conditional(user_input):
             },
         )
 
+    # ── New objectives ─────────────────────────────────────────────
+
+    # 14 — Structure Discovery (PCA / Factor Analysis / Clustering)
+    if obj == "Structure Discovery":
+        return (
+            "What type of data structure are you exploring?",
+            {
+                "Reduce many continuous variables to fewer components — Principal Component Analysis (PCA)": [
+                    "PCA"
+                ],
+                "Identify latent factors underlying observed variables — Factor Analysis (FA)": [
+                    "Factor Analysis"
+                ],
+                "Group observations by similarity — Cluster Analysis (k-means / hierarchical)": [
+                    "Cluster Analysis"
+                ],
+            },
+        )
+
+    # 15 — Agreement / Reliability
+    if obj == "Agreement / Reliability":
+        if dv == "Continuous":
+            return (
+                "Which agreement design applies?",
+                {
+                    "Two methods, same subjects — Bland-Altman Analysis": [
+                        "Bland-Altman Analysis"
+                    ],
+                    "Two+ raters/methods, continuous outcome — Intraclass Correlation Coefficient (ICC)": [
+                        "Intraclass Correlation Coefficient (ICC)"
+                    ],
+                },
+            )
+        if dv in ("Categorical", "Binary/Dichotomous"):
+            return (
+                "How many raters and what measurement level?",
+                {
+                    "2 raters, nominal categories — Cohen's Kappa": [
+                        "Cohen's Kappa (Agreement Analysis)"
+                    ],
+                    "2 raters, ordinal categories — Weighted Kappa": [
+                        "Weighted Kappa"
+                    ],
+                    "3+ raters, nominal categories — Fleiss' Kappa": [
+                        "Fleiss' Kappa"
+                    ],
+                    "3+ raters, any level, missing data allowed — Krippendorff's Alpha": [
+                        "Krippendorff's Alpha"
+                    ],
+                },
+            )
+
+    # 16 — Trend / Time Series
+    if obj == "Trend / Time Series":
+        if groups == "1":
+            return (
+                "What is the nature of your data?",
+                {
+                    "Binary/continuous sequence — test for randomness (Runs Test)": [
+                        "Runs Test for Randomness"
+                    ],
+                    "Continuous time-series — detect monotonic trend (Mann-Kendall)": [
+                        "Mann-Kendall Trend Test"
+                    ],
+                },
+            )
+
+    # 17 — Equivalence / Non-inferiority
+    if obj == "Equivalence / Non-inferiority":
+        if groups == "2" and relation == "Independent" and dv == "Continuous":
+            return (
+                "Which design applies?",
+                {
+                    "Two independent groups, continuous outcome — TOST (Two One-Sided Tests)": [
+                        "Equivalence Test (TOST) - Two Independent Samples"
+                    ],
+                },
+            )
+
     return None
 
 
@@ -700,6 +779,12 @@ def _categorize_tests():
             cat_key = ("Survival Analysis",)
         elif objective == "Diagnostic Accuracy":
             cat_key = ("Diagnostic Accuracy",)
+        elif objective == "Agreement / Reliability":
+            cat_key = ("Agreement / Reliability",)
+        elif objective == "Trend / Time Series":
+            cat_key = ("Trend / Time Series",)
+        elif objective == "Equivalence / Non-inferiority":
+            cat_key = ("Equivalence / Non-inferiority",)
         elif groups == "1":
             if _is_parametric(rule):
                 cat_key = ("One-sample", "Parametric")
@@ -771,6 +856,9 @@ def _categorize_tests():
             ("Regression & Prediction",): 700,
             ("Survival Analysis",): 800,
             ("Diagnostic Accuracy",): 900,
+            ("Agreement / Reliability",): 950,
+            ("Trend / Time Series",): 970,
+            ("Equivalence / Non-inferiority",): 980,
             ("Other Tests", "Parametric"): 1000,
             ("Other Tests", "Non-parametric"): 1010,
             ("Other Tests", "Flexible/Any Design"): 1020,
@@ -966,6 +1054,10 @@ def render_test_finder():
             "Prediction",
             "Diagnostic Accuracy",
             "Survival Analysis",
+            "Structure Discovery",
+            "Agreement / Reliability",
+            "Trend / Time Series",
+            "Equivalence / Non-inferiority",
         ]
         default_obj_idx = 0
         Objective = st.selectbox("What is your goal?", obj_opts, index=default_obj_idx)
@@ -1064,6 +1156,19 @@ def render_test_finder():
                 st.success("Recommended Statistical Test(s):")
 
                 for test in st.session_state.results:
+                    _SPECIAL = {"PCA", "Factor Analysis", "Cluster Analysis"}
+                    if test in _SPECIAL:
+                        _app_map = {
+                            "PCA": ("Factor Analysis", "apps/app_factor.py"),
+                            "Factor Analysis": ("Factor Analysis", "apps/app_factor.py"),
+                            "Cluster Analysis": ("Data Workspace", "apps/app_data_workspace.py"),
+                        }
+                        app_name, app_cmd = _app_map[test]
+                        with st.container(border=True):
+                            st.markdown(f"**{test}** — use the **{app_name}** app")
+                            st.code(app_cmd, language="sh")
+                        continue
+
                     if st.button(
                         f"▶ {test}", key=f"btn_{test}", use_container_width=True
                     ):

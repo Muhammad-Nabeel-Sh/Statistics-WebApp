@@ -364,7 +364,7 @@ multinomial_test = TestDefinition(
 
 runs_test_for_randomness = TestDefinition(
     name="Runs Test for Randomness",
-    objective="Comparison",
+    objective='Trend / Time Series',
     dependent_var=["Binary/Dichotomous", "Categorical", "Continuous"],
     independent_var="None",
     groups="1",
@@ -1919,7 +1919,7 @@ likelihood_ratio_analysis = TestDefinition(
 
 cohen_s_kappa_agreement_analysis = TestDefinition(
     name="Cohen's Kappa (Agreement Analysis)",
-    objective="Diagnostic Accuracy",
+    objective='Agreement / Reliability',
     dependent_var="Categorical",
     independent_var="Categorical",
     groups="2",
@@ -1953,7 +1953,7 @@ cohen_s_kappa_agreement_analysis = TestDefinition(
 
 bland_altman_analysis = TestDefinition(
     name="Bland-Altman Analysis",
-    objective="Diagnostic Accuracy",
+    objective='Agreement / Reliability',
     dependent_var="Continuous",
     independent_var="Continuous",
     groups="2",
@@ -1992,7 +1992,7 @@ bland_altman_analysis = TestDefinition(
 
 weighted_kappa = TestDefinition(
     name="Weighted Kappa",
-    objective="Diagnostic Accuracy",
+    objective='Agreement / Reliability',
     dependent_var="Ordinal",
     independent_var="Ordinal",
     groups="2",
@@ -2028,7 +2028,7 @@ weighted_kappa = TestDefinition(
 
 fleiss_kappa = TestDefinition(
     name="Fleiss' Kappa",
-    objective="Diagnostic Accuracy",
+    objective='Agreement / Reliability',
     dependent_var="Categorical",
     independent_var="Categorical",
     groups="More than 2",
@@ -2570,7 +2570,7 @@ page_test = TestDefinition(
 
 mann_kendall_trend_test = TestDefinition(
     name="Mann-Kendall Trend Test",
-    objective="Association/Correlation",
+    objective='Trend / Time Series',
     dependent_var="Continuous",
     independent_var="None",
     groups="1",
@@ -2818,7 +2818,7 @@ stuart_maxwell_test = TestDefinition(
 
 gwet_s_ac1 = TestDefinition(
     name="Gwet's AC1",
-    objective="Association/Correlation",
+    objective='Agreement / Reliability',
     dependent_var="Categorical",
     independent_var=["Categorical", "Binary/Dichotomous"],
     groups="2",
@@ -2869,7 +2869,7 @@ gwet_s_ac1 = TestDefinition(
 
 krippendorff_s_alpha = TestDefinition(
     name="Krippendorff's Alpha",
-    objective="Association/Correlation",
+    objective='Agreement / Reliability',
     dependent_var=["Ordinal", "Continuous", "Categorical"],
     independent_var="Categorical",
     groups="More than 2",
@@ -2925,7 +2925,7 @@ krippendorff_s_alpha = TestDefinition(
 
 intraclass_correlation_coefficient_icc = TestDefinition(
     name="Intraclass Correlation Coefficient (ICC)",
-    objective="Association/Correlation",
+    objective='Agreement / Reliability',
     dependent_var="Continuous",
     independent_var="Categorical",
     groups="More than 2",
