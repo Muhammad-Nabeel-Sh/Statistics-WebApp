@@ -647,22 +647,19 @@ def _categorize_tests():
     from collections import defaultdict
 
     def _is_parametric(rule):
-        """Check if test is primarily parametric."""
-        dist = rule.get("Distribution", "any")
+        dist = rule.distribution if rule.distribution else "any"
         if isinstance(dist, str):
             return dist == "Normal"
         return "Normal" in dist and "Non-normal" not in dist
 
     def _is_nonparametric(rule):
-        """Check if test is primarily non-parametric."""
-        dist = rule.get("Distribution", "any")
+        dist = rule.distribution if rule.distribution else "any"
         if isinstance(dist, str):
             return dist == "Non-normal"
         return "Non-normal" in dist and "Normal" not in dist
 
     def _is_any_dist(rule):
-        """Check if test works with any distribution."""
-        dist = rule.get("Distribution", "any")
+        dist = rule.distribution if rule.distribution else "any"
         if isinstance(dist, str):
             return dist == "any"
         return "any" in dist or ("Normal" in dist and "Non-normal" in dist)
@@ -693,7 +690,7 @@ def _categorize_tests():
     for rule in rules:
         groups = _get_groups(rule.get("Groups", "any"))
         relation = _get_relation(rule.get("Relation", "any"))
-        objective = rule.get("Objective", "Unknown")
+        objective = rule.objective or "Unknown"
 
         if objective == "Association/Correlation":
             cat_key = ("Correlation & Association",)
@@ -748,7 +745,7 @@ def _categorize_tests():
 
         if cat_key not in categories:
             category_order.append(cat_key)
-        categories[cat_key].append(rule["name"])
+        categories[cat_key].append(rule.name)
 
     for cat_key in categories:
         categories[cat_key] = sorted(set(categories[cat_key]))
@@ -823,7 +820,7 @@ def render_all_tests_section():
 def _open_test_directly(test_name):
     """Open a test directly in the finder's right panel."""
     from core.data import rules
-    rule = next((r for r in rules if r["name"] == test_name), None)
+    rule = next((r for r in rules if r.name == test_name), None)
     st.session_state.view = "detail"
     st.session_state.detail_test = test_name
     st.rerun()
@@ -841,6 +838,12 @@ try:
         "One-sample Wilcoxon Signed-Rank Test": _solved_mod._solved_wilcoxon,
         "Chi-Square Goodness-of-Fit Test": _solved_mod._solved_chisquare_gof,
         "Multinomial Test": _solved_mod._solved_multinomial,
+        "Student's t-test (Independent)": _solved_mod._solved_students_ttest,
+        "Welch's t-test (Independent, Unequal Variances)": _solved_mod._solved_welch_ttest,
+        "Yuen's Trimmed t-test": _solved_mod._solved_yuen_ttest,
+        "Paired t-test": _solved_mod._solved_paired_ttest,
+        "Sign Test (Paired)": _solved_mod._solved_paired_sign,
+        "Wilcoxon Signed-Rank Test": _solved_mod._solved_wilcoxon_paired,
     }
 except Exception:
     pass
@@ -850,7 +853,7 @@ def render_test_detail_page(test_name):
     """Render a full-page detail view for a statistical test."""
     from core.data import rules
 
-    rule = next((r for r in rules if r["name"] == test_name), None)
+    rule = next((r for r in rules if r.name == test_name), None)
     if rule is None:
         st.error(f"Test '{test_name}' not found.")
         if st.button("← Back to Results"):
@@ -867,29 +870,29 @@ def render_test_detail_page(test_name):
     col_left, col_right = st.columns(2, gap="large")
 
     with col_left:
-        if "Core_Assumptions" in rule:
+        if rule.core_assumptions:
             st.subheader("Core Assumptions")
-            st.info(rule["Core_Assumptions"])
+            st.info(rule.core_assumptions)
 
-        if "Explanation" in rule:
+        if rule.explanation:
             st.subheader("Explanation")
-            st.markdown(rule["Explanation"])
+            st.markdown(rule.explanation)
 
-        if "Formula" in rule:
+        if rule.formula:
             st.subheader("Formulae")
-            render_latex(rule["Formula"])
+            render_latex(rule.formula)
 
-        if "Decision Rules" in rule:
+        if rule.decision_rules:
             st.subheader("Decision Rules")
-            st.info(rule["Decision Rules"])
+            st.info(rule.decision_rules)
 
-        if "Interpretation" in rule:
+        if rule.interpretation:
             st.subheader("Interpretation")
-            st.success(rule["Interpretation"])
+            st.success(rule.interpretation)
 
-        if "Post-Hoc" in rule:
+        if rule.post_hoc:
             st.subheader("Available Post-Hoc Tests")
-            st.info("\n".join(f"- {m.strip()}" for m in rule["Post-Hoc"].split(",")))
+            st.info("\n".join(f"- {m.strip()}" for m in rule.post_hoc.split(",")))
 
         # Assumption Checks — cross-link to Diagnostics app
         diag_entries = _TEST_DIAG_MAP.get(test_name)
@@ -909,18 +912,18 @@ def render_test_detail_page(test_name):
                     cols[2].markdown(desc)
 
     with col_right:
-        if "Example" in rule:
+        if rule.example:
             st.subheader("Examples")
-            st.markdown(rule["Example"])
+            st.markdown(rule.example)
 
         _solved_fn = _SOLVED_EXAMPLE_MAP.get(test_name)
         if _solved_fn:
             with st.expander("📝 Step-by-Step Walkthrough", expanded=False):
                 _solved_fn()
 
-        if "Realworld_Applications" in rule:
+        if rule.realworld_apps:
             st.subheader("Real-world Applications")
-            st.info(rule["Realworld_Applications"])
+            st.info(rule.realworld_apps)
 
         st.subheader("Interactive Calculator")
         render_test_widget(test_name)

@@ -31,6 +31,6 @@ def find_matching_tests(user_input):
 
     for rule in rules:
         if matches_rule(user_input, rule):
-            matches.append(rule["name"])
+            matches.append(rule.name)
 
     return matches
